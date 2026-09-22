@@ -1,0 +1,41 @@
+# --- Roblox / Rojo artifacts ---
+# Built place/model files (generated from source). Never commit build output.
+/build/
+*.rbxlx
+*.rbxmx
+*.rbxm
+*.rbxl.lock
+
+# Exception: the Studio-authored office environment is a required SOURCE asset
+# (mapped to Workspace.Office in default.project.json), not build output.
+!assets/Office.rbxm
+
+# Rojo local server / plugin state
+*.rbxlx.lock
+.rojo/
+
+# Roblox Studio local state / autosaves / logs
+*.rbxlx.bak
+*.rbxl.bak
+*.lock
+*.log
+rbx-storage*
+!MysteryCaseRoblox.rbxl
+
+# --- Tooling / editors ---
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+.luau/
+luau-analyze.json
+
+# --- OS ---
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# --- Secrets (never commit) ---
+*.env
+.env.*
+!/.env.example

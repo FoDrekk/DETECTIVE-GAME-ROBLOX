@@ -1,0 +1,69 @@
+{
+  "name": "MysteryCaseRoblox",
+  "tree": {
+    "$className": "DataModel",
+
+    "ReplicatedStorage": {
+      "$className": "ReplicatedStorage",
+      "Shared": {
+        "$path": "src/shared"
+      },
+      "Config": {
+        "$path": "src/config"
+      },
+      "UI": {
+        "$path": "src/ui"
+      }
+    },
+
+    "ServerScriptService": {
+      "$className": "ServerScriptService",
+      "Server": {
+        "$path": "src/server"
+      },
+      "UnitTestRunner": {
+        "$path": "tests/UnitTestRunner.server.luau",
+        "$properties": {
+          "Disabled": true
+        }
+      }
+    },
+
+    "ServerStorage": {
+      "$className": "ServerStorage",
+      "UnitTest": {
+        "$className": "Folder",
+        "RunUnitTest": {
+          "$path": "tests/RunUnitTest.luau"
+        },
+        "Cases": {
+          "$path": "tests/cases"
+        }
+      }
+    },
+
+    "StarterPlayer": {
+      "$className": "StarterPlayer",
+      "StarterPlayerScripts": {
+        "$className": "StarterPlayerScripts",
+        "Client": {
+          "$path": "src/client"
+        }
+      }
+    },
+
+    "Workspace": {
+      "$className": "Workspace",
+      "$properties": {
+        "FilteringEnabled": true
+      },
+      "Office": {
+        "$path": "assets/Office.rbxm"
+      }
+    },
+
+    "Lighting": {
+      "$className": "Lighting"
+    }
+  }
+}

@@ -1,0 +1,134 @@
+--!strict
+--[[
+	ServerBootstrap
+	Single entry point. Initialises services in dependency order and wires
+	player lifecycle. Loaded by Rojo as Server/index.
+]]
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
+local Signals = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Signals"))
+local Logger = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Logger"))
+local CaseRegistry = require(ReplicatedStorage:WaitForChild("Config"):WaitForChild("CaseRegistry"))
+
+local log = Logger.scoped("ServerBootstrap")
+
+local Services = script
+
+local PlayerDataService = require(Services:WaitForChild("PlayerDataService"))
+local CaseService = require(Services:WaitForChild("CaseService"))
+local EvidenceService = require(Services:WaitForChild("EvidenceService"))
+local TimelineService = require(Services:WaitForChild("TimelineService"))
+local ObjectiveService = require(Services:WaitForChild("ObjectiveService"))
+local InteractionService = require(Services:WaitForChild("InteractionService"))
+local GameStateService = require(Services:WaitForChild("GameStateService"))
+local OfficeRoom = require(Services:WaitForChild("OfficeRoom"))
+
+--[[
+	Fail loudly on unrecoverable configuration errors. A missing active case is
+	a fatal misconfiguration: the game cannot present any content.
+]]
+local function assertConfiguration()
+	local activeCase = CaseRegistry.get(Config.Game.AutoStartCase)
+	if not activeCase then
+		Logger.fatal("ServerBootstrap", "active case is not registered", {
+			caseId = Config.Game.AutoStartCase,
+		})
+	end
+end
+
+local function bootstrap()
+	Logger.setMinSeverity(Config.Logging.MinSeverity :: Logger.Severity)
+	assertConfiguration()
+
+	-- 0. Environment integration (lighting, ground, authored-content validation).
+	OfficeRoom.start()
+
+	-- 1. Create remote objects.
+	local signals = Signals.getFolder()
+	local evidenceEvent = Signals.get(Signals.Names.EvidenceDiscovered)
+	local timelineEvent = Signals.get(Signals.Names.TimelineUpdated)
+	local objectiveEvent = Signals.get(Signals.Names.ObjectiveUpdated)
+	local objectiveCompletedEvent = Signals.get(Signals.Names.ObjectiveCompleted)
+	local requestObjectives = Signals.get(Signals.Names.RequestObjectives)
+	local requestTimeline = Signals.get(Signals.Names.RequestTimeline)
+
+	-- 2. Start stateless/registry services.
+	PlayerDataService.start()
+	CaseService.start()
+	EvidenceService.start()
+	TimelineService.start()
+	ObjectiveService.start()
+	InteractionService.start()
+
+	-- 3. Bridge service events to clients.
+	EvidenceService.onDiscovered().Event:Connect(function(player: Player, payload)
+		evidenceEvent:FireClient(player, payload)
+	end)
+
+	TimelineService.onUpdated().Event:Connect(function(player: Player, payload)
+		timelineEvent:FireClient(player, payload)
+	end)
+
+	ObjectiveService.onUpdated().Event:Connect(function(player: Player, payload, justCompleted)
+		objectiveEvent:FireClient(player, payload)
+		if justCompleted then
+			objectiveCompletedEvent:FireClient(player, payload)
+		end
+	end)
+
+	-- 4. Phase machine (depends on cases + player data).
+	GameStateService.start()
+
+	-- 5. Player lifecycle. Initialise data, then let the phase machine
+	--    grant the case and broadcast the phase.
+	local handled: { [number]: boolean } = {}
+	local function onPlayerAdded(player: Player)
+		if handled[player.UserId] then
+			return
+		end
+		handled[player.UserId] = true
+		PlayerDataService.initialize(player, Config.Game.AutoStartCase)
+		GameStateService.enterBriefingFor(player)
+		ObjectiveService.sendCurrent(player)
+		TimelineService.sendCurrent(player)
+	end
+
+	Players.PlayerAdded:Connect(onPlayerAdded)
+	for _, player in ipairs(Players:GetPlayers()) do
+		onPlayerAdded(player)
+	end
+	Players.PlayerRemoving:Connect(function(player)
+		handled[player.UserId] = nil
+	end)
+
+	-- 6. Interaction requests.
+	local requestEvent = Signals.get(Signals.Names.InteractionRequest)
+	requestEvent.OnServerEvent:Connect(function(player: Player, instance: Instance, kind)
+		InteractionService.handleRequest(player, instance, kind)
+	end)
+
+	-- 7. Objective sync requests (join-race guard, mirrors RequestCase).
+	requestObjectives.OnServerEvent:Connect(function(player: Player)
+		if PlayerDataService.get(player) then
+			ObjectiveService.sendCurrent(player)
+		end
+	end)
+
+	-- 8. Timeline sync requests (join-race guard).
+	requestTimeline.OnServerEvent:Connect(function(player: Player)
+		if PlayerDataService.get(player) then
+			TimelineService.sendCurrent(player)
+		end
+	end)
+
+	log:info("server ready", {
+		signals = #signals:GetChildren(),
+		phase = GameStateService.getPhase(),
+		caseId = Config.Game.AutoStartCase,
+	})
+end
+
+bootstrap()
