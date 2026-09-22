@@ -36,8 +36,9 @@ Both `InteractionService` (server validation) and `InteractionController`
 (client presentation) parse attributes through `Interactable.describe`, so the
 two sides can never disagree. Attribute contract: `InteractionKind`,
 `PromptLabel`, optional `EvidenceId`, optional `ReadableText`, optional
-`SuspectId` (Phase 2F; NPC preparation, unused by any handler yet). Enabled
-kinds are declared once in `Interactable.EnabledKinds`.
+`SuspectId` (identifies which suspect a Talk-kind interactable represents;
+since Phase 2G, `InteractionService`'s Talk handler consumes this to start a
+conversation). Enabled kinds are declared once in `Interactable.EnabledKinds`.
 
 ### Logging
 `src/shared/Logger.luau` provides scoped, severity-based logging
@@ -63,6 +64,16 @@ one meaning.
 `require(ServerStorage.UnitTest.RunUnitTest)(filter?, timeout?)`.
 Results print `[PASS]`/`[FAIL]`/`[TIMEOUT]` plus a `[SUMMARY]` line.
 `UnitTestRunner` is a disabled Script for manual runs.
+
+Mock player UserIds come from `t.nextUserId()` (Phase 2G.1), a single
+ever-decrementing counter owned by `RunUnitTest.luau` itself — always
+negative, so a mock id can never collide with a real `Player.UserId`
+(always positive), and never reset within a session, so a second
+`RunUnitTest()` call in the same Play session can never collide with mock
+`PlayerDataService` state an earlier call left behind. Each run also clears
+the `PlayerDataService` entries for the mock ids it dispensed once it
+finishes, so repeated runs in one session stay clean rather than merely
+non-colliding. No test file keeps its own local UserId counter.
 
 ## World vs. logic split
 
@@ -92,12 +103,19 @@ validates that the authored interactables satisfy the gameplay contract.
   objective sequencing (see below). Evaluates generic evidence/interaction/
   target requirements from case data; owns completion; publishes
   `StoryEvents` `"ObjectiveCompleted"`.
+- **ConversationService** (Phase 2G) — authoritative, data-driven suspect
+  conversations. Owns `activeConversation`/`completedConversations`/
+  `unlockedStatements` per player; publishes `StoryEvents`
+  `"ConversationStarted"`/`"ConversationCompleted"` (see below).
 - **InteractionService** — validates interaction requests and dispatches to
-  per-kind handlers (Examine/Read/PickUp/Talk).
+  per-kind handlers (Examine/Read/PickUp/Talk). Talk starts a conversation via
+  `ConversationService`.
 - **GameStateService** — shared phase machine (MainMenu/CaseBriefing/
   Investigation/CaseClosed), broadcasts phase changes.
 - **OfficeRoom** — runtime lighting/spawn cleanup and authored-content validation
   for the Studio-built `Workspace.Office` environment.
+- **SuspectSpawner** (Phase 2G) — runtime placement of a physical NPC for each
+  suspect that authors an `npcPlacement` (see below).
 - **StoryEvents** (Phase 2F) — minimal, generic server-only publish/subscribe
   for future story systems to observe authoritative facts (see below).
 
@@ -110,6 +128,8 @@ validates that the authored interactables satisfy the gameplay contract.
 - **CaseBriefingView** — cinematic case briefing overlay.
 - **ObjectiveView** — minimal current-objective checklist + completion banner.
 - **TimelineView** — case timeline overlay (discovered events only), T to open.
+- **DialogueView** (Phase 2G) — full-screen conversation presentation; renders
+  only the single server-authorized dialogue step it is given.
 - **CameraController** — third-person explore + smooth examine framing.
 
 ## Data contracts
@@ -118,7 +138,7 @@ validates that the authored interactables satisfy the gameplay contract.
   `InteractionKind`, `PromptLabel`, optional `EvidenceId`; parsed exclusively via
   `src/shared/Interactable.luau`.
 - Cases follow `Types.CaseDefinition`: id, title, description, suspects,
-  locations, evidence, timeline, objectives.
+  locations, evidence, timeline, objectives, conversations, statements.
 - Evidence follows `Types.EvidenceDefinition`: id, name, description, location,
   importance, plus optional `details`, `timestamp`, `category`,
   `timelineEventId`, `relatedEvidenceIds` (plus runtime `discovered`).
@@ -171,11 +191,8 @@ the client. This phase adds access, not content — CASE-001's suspects and
 locations are unread by any other system.
 
 `Interactable`'s attribute contract gained an optional `SuspectId` attribute,
-read into `Descriptor.suspectId` exactly like `EvidenceId`. This lets a future
-NPC use the same tagged-instance contract (`Interactable.describe`,
-`Interactable.isKind`, `Interactable.getPart`) and the existing `Talk`
-handler in `InteractionService.HANDLERS` instead of a parallel system. No NPC
-instance, model, or dialogue exists yet.
+read into `Descriptor.suspectId` exactly like `EvidenceId`. Since Phase 2G
+this is what a Talk-kind NPC uses instead of a parallel interaction system.
 
 ## StoryEvents (Phase 2F)
 
@@ -199,17 +216,124 @@ it — this module is not a place to pre-declare future story content (no
 
 This is separate from `Shared/Signals.luau`, which wraps `RemoteEvent`s for
 client↔server communication. `StoryEvents` never crosses the client boundary.
+Since Phase 2G it also carries `"ConversationStarted"`/`"ConversationCompleted"`,
+published by `ConversationService`.
 
-## Deliberately not implemented (Phase 2F boundary)
+## Suspect NPCs (Phase 2G)
 
-Phase 2F prepares architecture only; it adds no story content and no new
-player-facing systems. Explicitly out of scope until their own phase:
-dialogue/statement/contradiction/deduction type contracts (no consuming
-system exists yet, so contracts would be speculative — the `StoryEventKind`
-union above is the intended future extension point once one does), NPC
-models/dialogue/interrogation, contradiction/deduction/accusation gameplay,
-persistence/DataStore, instanced per-session phase machines for multiplayer,
-and automated CI wiring for the test harness.
+A suspect becomes a physical, talkable presence in the office purely through
+data: `Types.SuspectDefinition.npcPlacement` (`{ position: Vector3, lookAt:
+Vector3? }`), authored per suspect in case data. `SuspectSpawner.start()`
+(called from `init.server.luau`, after `OfficeRoom.start()`) loops over
+`CaseService.getSuspects(activeCaseId)` — never a raw case table, and no
+suspect id is hardcoded — and builds a static (unanimated), R6-proportioned
+humanoid rig for every suspect that has `npcPlacement`; a suspect without one
+simply has no physical NPC. Only `SUS-001` (Mara Reyes) has `npcPlacement`
+this phase, per the "one playable suspect" scope.
+
+The spawned rig's root part is tagged with the existing `Interactable`
+contract (`InteractionKind = "Talk"`, `PromptLabel`, `SuspectId`) — no
+NPC-specific interaction path exists anywhere. `InteractionController` (client
+scan/prompt) and `InteractionService` (server validation: tag, kind match,
+distance) treat it exactly like any other interactable; the only new logic is
+`InteractionService`'s `talkHandler`, which calls
+`ConversationService.begin(player, descriptor.suspectId)`.
+
+## Conversations (Phase 2G)
+
+`ConversationService` is the sole authority over conversation state. Per
+player (`PlayerCaseState`): `activeConversation: { suspectId, nodeId }?`,
+`completedConversations: { [suspectId]: boolean }`, `unlockedStatements:
+{ [statementId]: boolean }`. The client never supplies or infers any of it.
+
+Conversations are authored per case as `Types.ConversationDefinition`: a
+`suspectId`, a `startNodeId`, and a map of `Types.DialogueNodeDefinition`
+(`id`, `speaker`, `text`, `next: string?`, `statementId: string?`). This
+phase's conversations are deterministic and linear (`next` forms a single
+chain); no branching/choice contract exists, since nothing in Case001
+justifies one yet.
+
+- `ConversationService.begin(player, suspectId)` — rejects if the player
+  already has an active conversation, the suspect doesn't exist, or the
+  suspect has no authored conversation. Otherwise sets `activeConversation`
+  to the start node, unlocks that node's statement if any, and publishes
+  `"ConversationStarted"`.
+- `ConversationService.advance(player)` — rejects with no active
+  conversation. Otherwise follows the current node's `next`. Continuing past
+  a node with `next == nil` completes the conversation instead: clears
+  `activeConversation`, records `completedConversations[suspectId] = true`
+  exactly once (idempotent — replaying the same conversation later publishes
+  no second `"ConversationCompleted"`), and publishes the event on first
+  completion only.
+- `ConversationService.leave(player)` — closes the conversation early (no
+  completion, no event); already-unlocked statements stay unlocked. Safe to
+  call with nothing active.
+- `ConversationService.getCurrentPayload(player)` — synchronous re-read of
+  the current step, for resync and for tests (Deferred `BindableEvent`
+  delivery made waiting on `onUpdated` from inside a test unreliable — see
+  Phase 2F's `StoryEvents_Test` notes; the same lesson applies here).
+
+Player cleanup needs no extra code: `PlayerDataService.clear` already wipes
+the whole `PlayerCaseState`, including `activeConversation`, on
+`PlayerRemoving`.
+
+### Movement lock (controlled dialogue mode, Phase 2G.1)
+
+A conversation could otherwise go stale if the player walked away mid-line
+without pressing ESC. Rather than detect that (which would need a polling
+loop or per-frame distance check), `ConversationService` makes it
+structurally impossible: `begin` server-side sets the player's
+`Humanoid.WalkSpeed`/`JumpPower`/`JumpHeight` to `0`, after capturing the
+prior values; every path that clears `activeConversation` (`leave`, natural
+completion, and each fail-safe branch in `advance`) restores exactly those
+captured values. This is a no-op for a player with no `Character` (e.g. every
+mock player in the test suite), so it never affects tests that don't
+exercise it. Dialogue input (continue/close) is untouched — only
+walking/jumping is suspended, and only for the conversation's duration.
+
+### Dialogue payload (spoiler safety)
+
+`Types.DialoguePayload` — the only shape ever sent to a client — carries
+`active`, `suspectId`, `suspectName`, `nodeId`, `speaker`, `text`,
+`canContinue`, `completed`, and `unlockedStatement?`. It never carries the
+raw node's `next` pointer, `statementId`, or any other node in the graph. The
+client cannot see a future line, a locked branch, or the conversation's
+internal structure — only the one line it has just been authorized to show.
+
+### Statements
+
+`Types.StatementDefinition` is `{ id, suspectId, label }` — deliberately no
+`text` field. A statement's content is resolved at unlock time by reading the
+source suspect's own authored data (`CaseService.getSuspect(...).alibi`), so
+it can never drift from the fact it represents and no content is duplicated
+across two places in case data. CASE-001 ships exactly one:
+`STMT-SUS-001-ALIBI`, unlocked the moment the conversation reaches the node
+that reveals it.
+
+## Objective/conversation integration (Phase 2G)
+
+`ObjectiveRequirement.interaction = "Talk"` plus `target = <NPC instance
+Name>` (both fields already existed — see Phase 2F) is sufficient to express
+"talk to this suspect" as an objective requirement; no new requirement schema
+was added. CASE-001's `OBJ-001` is deliberately **not** modified to require
+talking to Mara Reyes: adding a requirement to it would change what already
+counted as complete for existing playthroughs (a regression), and authoring a
+new objective whose only purpose is to demonstrate the mechanic would be
+inventing storyline content that doesn't exist in the case data. The
+mechanism is proven end-to-end instead by a synthetic test case (see
+`ObjectiveService_Test`'s `CASE-TEST-SEQ` fixture, `OBJ-C`).
+
+## Deliberately not implemented (Phase 2G boundary)
+
+Phase 2G is a one-suspect vertical slice: encounter → talk → linear dialogue
+→ completion → one statement unlocked. Explicitly out of scope until their
+own phase: a second suspect or any suspect beyond SUS-001, branching
+dialogue/choices, interrogation, contradiction/deduction gameplay,
+accusation/case resolution, NPC AI/movement/animation, voice acting,
+cinematic cutscenes, additional locations, persistence, and multiplayer/
+per-session state. `Types.DialogueNodeDefinition.next` already supports a
+linear chain only — a real choice/branch contract remains future work, added
+only once a case's content actually needs it.
 
 ## Extension points (future phases)
 
@@ -217,6 +341,9 @@ Add cases by dropping `CaseNNN.luau` in `src/config` (or registering one
 in-memory via `CaseRegistry.register`, used by the test harness). Add
 interaction kinds by adding a handler to `InteractionService.HANDLERS` and
 enabling it in `Interactable.EnabledKinds`. Add objectives/timeline events —
-including multi-objective sequences via `prerequisites` — by extending case
-data only; services evaluate requirements generically. Add a new
-`StoryEvents` kind only once a system actually publishes it.
+including multi-objective sequences via `prerequisites`, or a Talk+target
+requirement — by extending case data only; services evaluate requirements
+generically. Add a new `StoryEvents` kind only once a system actually
+publishes it. Add a second playable suspect by authoring its `npcPlacement`,
+a `ConversationDefinition`, and (optionally) a `StatementDefinition` in case
+data — no service code changes needed.

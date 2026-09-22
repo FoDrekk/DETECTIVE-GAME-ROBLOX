@@ -11,10 +11,9 @@ return function(t)
 	local PlayerDataService = require(Server:WaitForChild("PlayerDataService"))
 	local expect = t.expect
 
-	local nextUserId = 940000
 	local function makePlayer(): any
-		nextUserId += 1
-		local player = { UserId = nextUserId, Name = `LOG{nextUserId}` }
+		local id = t.nextUserId()
+		local player = { UserId = id, Name = `LOG{id}` }
 		PlayerDataService.initialize(player, "CASE-001")
 		return player
 	end

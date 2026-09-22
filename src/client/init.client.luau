@@ -24,6 +24,7 @@ local EvidencePanel = require(Modules:WaitForChild("EvidencePanel"))
 local CaseBriefingView = require(Modules:WaitForChild("CaseBriefingView"))
 local ObjectiveView = require(Modules:WaitForChild("ObjectiveView"))
 local TimelineView = require(Modules:WaitForChild("TimelineView"))
+local DialogueView = require(Modules:WaitForChild("DialogueView"))
 local CameraController = require(Modules:WaitForChild("CameraController"))
 
 local player = Players.LocalPlayer
@@ -34,10 +35,13 @@ local timelineUpdated = Signals.wait(Signals.Names.TimelineUpdated)
 local objectiveUpdated = Signals.wait(Signals.Names.ObjectiveUpdated)
 local objectiveCompleted = Signals.wait(Signals.Names.ObjectiveCompleted)
 local caseBriefingLoaded = Signals.wait(Signals.Names.CaseBriefingLoaded)
+local dialogueUpdated = Signals.wait(Signals.Names.DialogueUpdated)
 local requestPhaseChange = Signals.wait(Signals.Names.RequestPhaseChange)
 local requestCase = Signals.wait(Signals.Names.RequestCase)
 local requestObjectives = Signals.wait(Signals.Names.RequestObjectives)
 local requestTimeline = Signals.wait(Signals.Names.RequestTimeline)
+local requestDialogueAdvance = Signals.wait(Signals.Names.DialogueAdvance)
+local requestDialogueClose = Signals.wait(Signals.Names.DialogueClose)
 
 local currentPhase: Types.GamePhase = "MainMenu"
 local lastBriefing: Types.CaseBriefing? = nil
@@ -60,10 +64,12 @@ local function applyPhase(phase: Types.GamePhase)
 	if phase == "Investigation" then
 		EvidencePanel.close()
 		TimelineView.close()
+		DialogueView.close()
 		CameraController.stopExamining()
 	elseif phase == "CaseClosed" or phase == "MainMenu" then
 		EvidencePanel.close()
 		TimelineView.close()
+		DialogueView.close()
 	end
 end
 
@@ -79,6 +85,7 @@ local function bootstrap()
 	CaseBriefingView.start()
 	ObjectiveView.start()
 	TimelineView.start()
+	DialogueView.start()
 	CameraController.start()
 
 	-- Interaction scanning.
@@ -96,9 +103,12 @@ local function bootstrap()
 	end)
 
 	-- Input intents.
-	-- Primary interact key (E) is routed by phase: begin briefing, or interact.
+	-- Primary interact key (E) is routed by phase: continue an open dialogue,
+	-- begin briefing, or interact.
 	InputController.onInteract(function()
-		if currentPhase == "CaseBriefing" then
+		if DialogueView.isOpen() then
+			requestDialogueAdvance:FireServer()
+		elseif currentPhase == "CaseBriefing" then
 			requestPhaseChange:FireServer("Investigation")
 		elseif currentPhase == "Investigation" then
 			InteractionController.requestInteract()
@@ -106,9 +116,9 @@ local function bootstrap()
 	end)
 
 	-- Timeline is a non-modal information overlay: it can be opened while
-	-- exploring and is dismissed with T or ESC.
+	-- exploring and is dismissed with T or ESC. Not while a dialogue is open.
 	InputController.onToggleTimeline(function()
-		if currentPhase ~= "Investigation" then
+		if currentPhase ~= "Investigation" or DialogueView.isOpen() then
 			return
 		end
 		TimelineView.toggle()
@@ -116,7 +126,12 @@ local function bootstrap()
 
 	InputController.onClose(function()
 		-- Close whichever overlay is open, then always return to exploration so
-		-- the examine camera can never get stuck.
+		-- the examine camera can never get stuck. A dialogue close is a server
+		-- request (state lives server-side); the view itself closes once the
+		-- server confirms via DialogueUpdated.
+		if DialogueView.isOpen() then
+			requestDialogueClose:FireServer()
+		end
 		if EvidencePanel.isOpen() then
 			EvidencePanel.close()
 		end
@@ -166,6 +181,25 @@ local function bootstrap()
 
 	objectiveCompleted.OnClientEvent:Connect(function(payload: Types.ObjectivePayload)
 		ObjectiveView.showCompleted(payload)
+	end)
+
+	dialogueUpdated.OnClientEvent:Connect(function(payload: Types.DialoguePayload)
+		if payload.active then
+			-- Frame the suspect, same technique as examining evidence.
+			local target = InteractionController.getCurrent()
+			if target then
+				local instance = target.instance
+				local part = instance:IsA("BasePart") and instance or instance:FindFirstChildWhichIsA("BasePart")
+				if part then
+					CameraController.examine(part)
+				end
+			end
+			InteractionController.pauseScan()
+		else
+			CameraController.stopExamining()
+			InteractionController.resumeScan()
+		end
+		DialogueView.update(payload)
 	end)
 
 	-- Join race guard: the server fires the phase/case on PlayerAdded, which can

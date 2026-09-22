@@ -43,6 +43,13 @@ export type SuspectDefinition = {
 	name: string,
 	role: string,
 	alibi: string,
+	-- Optional: where to place a physical NPC for this suspect in the
+	-- current office environment. Absent means no NPC is spawned for this
+	-- suspect. Purely technical staging data, not story content.
+	npcPlacement: {
+		position: Vector3,
+		lookAt: Vector3?,
+	}?,
 }
 
 export type LocationDefinition = {
@@ -98,6 +105,36 @@ export type ObjectiveDefinition = {
 	prerequisites: { string }?,
 }
 
+-- A single line in a linear conversation. `next` is the following node's
+-- id; nil marks the final line -- continuing past it completes the
+-- conversation. `statementId` is unlocked (server-side) the moment this
+-- node is reached. No branching/choices yet: this phase is deterministic
+-- and linear only.
+export type DialogueNodeDefinition = {
+	id: string,
+	speaker: string,
+	text: string,
+	next: string?,
+	statementId: string?,
+}
+
+-- A suspect's conversation: a small graph of DialogueNodeDefinitions.
+export type ConversationDefinition = {
+	suspectId: string,
+	startNodeId: string,
+	nodes: { [string]: DialogueNodeDefinition },
+}
+
+-- A single piece of unlockable investigative information tied to a suspect.
+-- Content is never duplicated here: the client payload is built by reading
+-- the suspect's own authored fields (e.g. alibi) at unlock time, so a
+-- statement can never drift from the suspect data it comes from.
+export type StatementDefinition = {
+	id: string,
+	suspectId: string,
+	label: string,
+}
+
 export type ObjectiveRequirementProgress = {
 	id: string,
 	label: string,
@@ -140,6 +177,8 @@ export type CaseDefinition = {
 	evidence: { EvidenceDefinition },
 	timeline: { TimelineEventDefinition },
 	objectives: { ObjectiveDefinition },
+	conversations: { ConversationDefinition },
+	statements: { StatementDefinition },
 }
 
 export type DiscoveredEvidence = EvidenceDefinition & {
@@ -180,6 +219,14 @@ export type PlayerCaseState = {
 	-- Objectives already reported complete, so completion fires exactly once.
 	completedObjectives: { [string]: boolean },
 	startedAt: number,
+	-- The player's current conversation, if any. Authoritative; the client
+	-- never supplies or infers this.
+	activeConversation: { suspectId: string, nodeId: string }?,
+	-- Suspect ids whose conversation has already been completed once, so
+	-- completion fires exactly once (mirrors completedObjectives).
+	completedConversations: { [string]: boolean },
+	-- Statement ids unlocked for this player so far.
+	unlockedStatements: { [string]: boolean },
 }
 
 export type PlayerData = {
@@ -210,6 +257,31 @@ export type EvidencePayload = {
 	totalEvidence: number,
 	-- The timeline event revealed by this discovery, if it revealed one.
 	revealedEvent: TimelineEventProgress?,
+}
+
+-- A single unlocked statement as sent to the client. `text` is resolved
+-- server-side from the source suspect's authored data at unlock time.
+export type StatementPayload = {
+	id: string,
+	suspectId: string,
+	label: string,
+	text: string,
+}
+
+-- Spoiler-safe view of the player's current dialogue step. Never includes
+-- future nodes, the raw `next` pointer, or anything beyond what is needed
+-- to render this one line.
+export type DialoguePayload = {
+	active: boolean,
+	suspectId: string?,
+	suspectName: string?,
+	nodeId: string?,
+	speaker: string?,
+	text: string?,
+	canContinue: boolean,
+	completed: boolean,
+	-- Present only on the turn a statement is newly unlocked.
+	unlockedStatement: StatementPayload?,
 }
 
 return {}

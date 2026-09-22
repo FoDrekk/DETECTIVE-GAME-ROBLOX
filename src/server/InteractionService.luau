@@ -19,7 +19,8 @@
 	  * Examine — fully implemented (discovers evidence)
 	  * Read    — implemented (discovers evidence, presents readable content)
 	  * PickUp  — foundation only (validated, acknowledged, no inventory)
-	  * Talk    — foundation only (validated, acknowledged, no dialogue)
+	  * Talk    — implemented (Phase 2G): starts a ConversationService
+	              conversation with the interactable's suspect
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -31,6 +32,7 @@ local Interactable = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChi
 local EvidenceService = require(script.Parent:WaitForChild("EvidenceService"))
 local PlayerDataService = require(script.Parent:WaitForChild("PlayerDataService"))
 local ObjectiveService = require(script.Parent:WaitForChild("ObjectiveService"))
+local ConversationService = require(script.Parent:WaitForChild("ConversationService"))
 
 local log = Logger.scoped("InteractionService")
 
@@ -66,9 +68,15 @@ local function pickUpHandler(_player: Player, _descriptor: Descriptor): boolean
 	return true
 end
 
--- Phase 2A foundation: validate and acknowledge, no dialogue trees yet.
-local function talkHandler(_player: Player, _descriptor: Descriptor): boolean
-	return true
+-- Start a conversation with the interactable's suspect. Rejects a Talk-kind
+-- interactable with no SuspectId, and rejects (via ConversationService) if
+-- the player already has an active conversation.
+local function talkHandler(player: Player, descriptor: Descriptor): boolean
+	if not descriptor.suspectId then
+		return false
+	end
+	local started = ConversationService.begin(player, descriptor.suspectId)
+	return started
 end
 
 local HANDLERS: { [Types.InteractionKind]: InteractionHandler } = {

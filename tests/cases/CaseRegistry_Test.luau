@@ -79,8 +79,31 @@ return function(t)
 			evidence = {},
 			timeline = {},
 			objectives = {},
+			conversations = {},
+			statements = {},
 		})
 		expect.truthy(CaseRegistry.get("CASE-REGISTRY-TEST"))
 		expect.truthy(CaseRegistry.get("CASE-001"))
+	end)
+
+	-- Phase 2G audit: exactly one suspect is a playable NPC this phase.
+	t.test("only SUS-001 has an npcPlacement", function()
+		local caseDef = CaseRegistry.get("CASE-001")
+		local byId = {}
+		for _, suspect in ipairs(caseDef.suspects) do
+			byId[suspect.id] = suspect
+		end
+		expect.truthy(byId["SUS-001"].npcPlacement)
+		expect.falsy(byId["SUS-002"].npcPlacement)
+	end)
+
+	-- CASE-001 declares exactly the one conversation/statement Phase 2G ships.
+	t.test("declares SUS-001's conversation and statement", function()
+		local caseDef = CaseRegistry.get("CASE-001")
+		expect.equal(#caseDef.conversations, 1)
+		expect.equal(caseDef.conversations[1].suspectId, "SUS-001")
+		expect.equal(#caseDef.statements, 1)
+		expect.equal(caseDef.statements[1].id, "STMT-SUS-001-ALIBI")
+		expect.equal(caseDef.statements[1].suspectId, "SUS-001")
 	end)
 end

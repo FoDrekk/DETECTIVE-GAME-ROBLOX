@@ -17,6 +17,7 @@
 ]]
 
 local ServerStorage = game:GetService("ServerStorage")
+local ServerScriptService = game:GetService("ServerScriptService")
 
 local function fmt(v: any): string
 	if type(v) == "string" then
@@ -90,6 +91,11 @@ export type Expect = typeof(expect)
 export type Context = {
 	expect: Expect,
 	test: (name: string, fn: () -> ()) -> (),
+	-- A mock Player UserId guaranteed unique for the lifetime of this run
+	-- AND never reused by an earlier or later run in the same session (see
+	-- the harness-level counter below). Always negative, so it can never
+	-- collide with a real Roblox Player.UserId (always positive).
+	nextUserId: () -> number,
 }
 
 -- Runs one test in isolation with a yield-based timeout.
@@ -114,6 +120,14 @@ local function runOne(fn: () -> (), timeout: number): (string, number, string?)
 	end
 end
 
+-- Ever-incrementing, always-negative mock-player UserId counter. Module
+-- scoped, so it is never reset by a repeated call to the function this
+-- module returns within the same session -- only a fresh Play session
+-- resets it. This is what guarantees mock UserIds can never collide with
+-- (or accidentally read) PlayerDataService state left behind by an earlier
+-- run: every run gets a disjoint slice of the id space.
+local nextMockUserId = 0
+
 return function(filter: string?, timeout: number?)
 	timeout = timeout or 5
 	local totals = { run = 0, passed = 0, failed = 0 }
@@ -126,6 +140,16 @@ return function(filter: string?, timeout: number?)
 		return totals
 	end
 
+	-- Mock UserIds handed out during this specific run, so they can be
+	-- cleaned out of PlayerDataService once the run finishes -- repeated
+	-- runs in the same session never accumulate stale mock player data.
+	local mockUserIdsThisRun: { number } = {}
+	local function nextUserId(): number
+		nextMockUserId -= 1
+		table.insert(mockUserIdsThisRun, nextMockUserId)
+		return nextMockUserId
+	end
+
 	for _, module in ipairs(cases:GetDescendants()) do
 		if module:IsA("ModuleScript") and (filter == nil or string.find(module.Name, filter, 1, true)) then
 			local okRequire, caseFn = pcall(require, module)
@@ -134,7 +158,7 @@ return function(filter: string?, timeout: number?)
 				totals.failed += 1
 				warn(string.format("[FAIL] %s | case did not return a function: %s", module.Name, tostring(caseFn)))
 			else
-				local t: Context = { expect = expect, test = nil :: any }
+				local t: Context = { expect = expect, test = nil :: any, nextUserId = nextUserId }
 				t.test = function(name: string, fn: () -> ())
 					totals.run += 1
 					local status, elapsed, message = runOne(fn, timeout)
@@ -153,6 +177,20 @@ return function(filter: string?, timeout: number?)
 					totals.failed += 1
 					warn(string.format("[FAIL] %s | error while building cases: %s", module.Name, tostring(runErr)))
 				end
+			end
+		end
+	end
+
+	-- Clean up this run's mock player data so a later run in the same
+	-- session never inherits it. Only ever touches the negative mock
+	-- UserIds this run itself dispensed -- never a real Player.
+	if #mockUserIdsThisRun > 0 then
+		local okRequire, PlayerDataService = pcall(function()
+			return require(ServerScriptService:WaitForChild("Server"):WaitForChild("PlayerDataService"))
+		end)
+		if okRequire then
+			for _, id in ipairs(mockUserIdsThisRun) do
+				PlayerDataService.clear({ UserId = id } :: any)
 			end
 		end
 	end

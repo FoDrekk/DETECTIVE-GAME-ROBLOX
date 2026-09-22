@@ -19,10 +19,9 @@ return function(t)
 	local CaseRegistry = require(ReplicatedStorage:WaitForChild("Config"):WaitForChild("CaseRegistry"))
 	local expect = t.expect
 
-	local nextUserId = 920000
 	local function makePlayer(): any
-		nextUserId += 1
-		local player = { UserId = nextUserId, Name = `OBJ{nextUserId}` }
+		local id = t.nextUserId()
+		local player = { UserId = id, Name = `OBJ{id}` }
 		PlayerDataService.initialize(player, "CASE-001")
 		return player
 	end
@@ -130,6 +129,8 @@ return function(t)
 		locations = {},
 		evidence = {},
 		timeline = {},
+		conversations = {},
+		statements = {},
 		objectives = {
 			{
 				id = "OBJ-A",
@@ -152,12 +153,28 @@ return function(t)
 				},
 				prerequisites = { "OBJ-A" },
 			},
+			{
+				-- Phase 2G: demonstrates that a conversation target can be
+				-- expressed with the existing ObjectiveRequirement schema
+				-- (interaction = "Talk", target = <interactable Name>) --
+				-- proving the capability without touching CASE-001's real
+				-- OBJ-001 or inventing a new storyline objective for it.
+				id = "OBJ-C",
+				title = "Third",
+				description = "Third objective; requires OBJ-B. Talk requirement.",
+				requiredEvidence = {},
+				requiredInteractions = { "Talk" },
+				requirements = {
+					{ id = "C-REQ-1", label = "Talk to the suspect", interaction = "Talk", target = "SuspectFixture" },
+				},
+				prerequisites = { "OBJ-B" },
+			},
 		},
 	})
 
 	local function makeSeqPlayer(): any
-		nextUserId += 1
-		local player = { UserId = nextUserId, Name = `SEQ{nextUserId}` }
+		local id = t.nextUserId()
+		local player = { UserId = id, Name = `SEQ{id}` }
 		PlayerDataService.initialize(player, "CASE-TEST-SEQ")
 		return player
 	end
@@ -217,5 +234,25 @@ return function(t)
 
 		local advancedSecond = ObjectiveService.recordInteraction(player, "Examine", nil, "Fixture")
 		expect.falsy(advancedSecond)
+	end)
+
+	-- Phase 2G: a Talk interaction with a target advances an objective
+	-- requirement through the existing, unmodified ObjectiveRequirement
+	-- schema -- the same mechanism InteractionService's talkHandler drives
+	-- when a player talks to a suspect NPC.
+	t.test("a Talk interaction with a target advances OBJ-C once unlocked", function()
+		local player = makeSeqPlayer()
+		ObjectiveService.recordInteraction(player, "Examine", nil, "Fixture") -- completes OBJ-A
+		ObjectiveService.recordInteraction(player, "Read", nil, nil) -- completes OBJ-B
+		expect.equal(ObjectiveService.getActiveObjectiveId(player), "OBJ-C")
+
+		-- Wrong target name does not satisfy it.
+		local wrongTarget = ObjectiveService.recordInteraction(player, "Talk", nil, "SomeoneElse")
+		expect.falsy(wrongTarget)
+
+		local advanced = ObjectiveService.recordInteraction(player, "Talk", nil, "SuspectFixture")
+		expect.truthy(advanced)
+		local data = PlayerDataService.get(player)
+		expect.truthy(data and data.caseState.completedObjectives["OBJ-C"])
 	end)
 end

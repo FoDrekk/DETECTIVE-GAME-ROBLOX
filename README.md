@@ -82,8 +82,32 @@ print `[PASS]` / `[FAIL]` / `[TIMEOUT]` plus a `[SUMMARY]` line.
 
 ## Status
 
-Phase 2F in progress: story-system architecture foundation, no new story
-content.
+Phase 2G in progress: first playable story layer — a one-suspect
+encounter/talk/dialogue/completion vertical slice.
+
+- **Suspect NPC**: Mara Reyes (SUS-001) is a static humanoid rig, spawned at
+  runtime near the meeting area from her authored `npcPlacement`, tagged with
+  the existing `Interactable` contract (`Talk`, `SuspectId`). No NPC-specific
+  interaction path — the same `InteractionService`/`InteractionController`
+  code handles her as it does Phone/Laptop/Document.
+- **Conversations**: `ConversationService` is the sole authority over
+  conversation state (start/advance/complete/leave), all server-side. Content
+  is a deterministic, linear 3-line exchange built only from SUS-001's
+  already-authored `name` and `alibi` — no invented facts.
+- **Statement**: completing the conversation unlocks `STMT-SUS-001-ALIBI`,
+  whose text is read live from SUS-001's `alibi` field (never duplicated).
+- **Dialogue UI**: `DialogueView` renders only the single server-authorized
+  line it's given; `[E]` continues, `[ESC]` closes early.
+- Objectives are **not** wired to this conversation: extending `OBJ-001`
+  would regress existing completion behavior, and a new objective solely to
+  demo the feature would invent storyline content. The underlying
+  Talk+target requirement mechanism is proven by a synthetic test case
+  instead. See `docs/ARCHITECTURE.md` for the full reasoning.
+
+See `docs/ARCHITECTURE.md` for the full breakdown, including what is
+deliberately not implemented yet.
+
+Phase 2F: story-system architecture foundation (no new story content).
 
 - **Objective sequencing**: `ObjectiveService` derives the active objective
   from completion + data-driven `prerequisites` instead of a hardcoded first
@@ -93,7 +117,7 @@ content.
   not yet sent to any client.
 - **NPC preparation**: `Interactable` gained an optional `SuspectId`
   attribute, parsed the same way as `EvidenceId`, for a future NPC to reuse
-  the existing interactable contract. No NPC exists yet.
+  the existing interactable contract. (Phase 2G gives this its first NPC.)
 - **StoryEvents**: `src/server/StoryEvents.luau` is a small, additive,
   server-only publish/subscribe layer future story systems can observe
   (`EvidenceDiscovered`, `ObjectiveCompleted` today). The existing discovery
@@ -136,9 +160,12 @@ Phase 2C added clue detail and the case timeline.
 Undiscovered information is never sent to clients: the case payload carries only
 briefing presentation data.
 
-No NPCs, dialogue, interrogation, suspect AI, deduction board, contradiction
-system, accusation, persistence, multiplayer, monetisation, final character
-models or full exterior city yet.
+As of Phase 2C: no NPCs, dialogue, interrogation, suspect AI, deduction board,
+contradiction system, accusation, persistence, multiplayer, monetisation,
+final character models or full exterior city yet. (Phase 2G added one static,
+talkable suspect NPC with a linear conversation — see Status above; NPC
+AI/movement, interrogation, a second suspect, contradiction/deduction and
+accusation are still not implemented.)
 
 ### Core loop
 

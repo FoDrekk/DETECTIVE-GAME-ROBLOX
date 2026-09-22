@@ -29,6 +29,8 @@ local StoryEvents = {}
 export type StoryEventKind =
 	"EvidenceDiscovered"
 	| "ObjectiveCompleted"
+	| "ConversationStarted"
+	| "ConversationCompleted"
 
 local bindables: { [string]: BindableEvent } = {}
 

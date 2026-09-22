@@ -20,12 +20,20 @@ local Case001: Types.CaseDefinition = {
 			name = "Mara Reyes",
 			role = "Spouse",
 			alibi = "Claims she was asleep at home; phone records are unverified.",
+			-- Standing near the meeting table, waiting to be questioned.
+			-- Technical staging only -- no new location or story fact.
+			npcPlacement = {
+				position = Vector3.new(16.5, 3, -19),
+				lookAt = Vector3.new(20, 3, -14),
+			},
 		},
 		{
 			id = "SUS-002",
 			name = "Victor Lane",
 			role = "Business Partner",
 			alibi = "Says he left the office at 22:30. Keycard log suggests otherwise.",
+			-- No npcPlacement: not a playable suspect yet (Phase 2G is a
+			-- one-suspect vertical slice).
 		},
 	},
 
@@ -112,6 +120,50 @@ local Case001: Types.CaseDefinition = {
 				{ id = "REQ-002", label = "Inspect the laptop", evidence = "EV-002" },
 				{ id = "REQ-003", label = "Read the document", interaction = "Read", evidence = "EV-003" },
 			},
+		},
+	},
+
+	-- Phase 2G vertical slice: one suspect, one deterministic linear
+	-- conversation. Every line either uses SUS-001's already-authored name
+	-- (speaker attribution) or its already-authored alibi (the only real
+	-- informational content revealed). The opening and closing lines are
+	-- minimal procedural framing carrying no case facts of their own.
+	conversations = {
+		{
+			suspectId = "SUS-001",
+			startNodeId = "SUS-001-1",
+			nodes = {
+				["SUS-001-1"] = {
+					id = "SUS-001-1",
+					speaker = "Mara Reyes",
+					text = "What do you want to know?",
+					next = "SUS-001-2",
+				},
+				["SUS-001-2"] = {
+					id = "SUS-001-2",
+					speaker = "Mara Reyes",
+					text = "Claims she was asleep at home; phone records are unverified.",
+					next = "SUS-001-3",
+					statementId = "STMT-SUS-001-ALIBI",
+				},
+				["SUS-001-3"] = {
+					id = "SUS-001-3",
+					speaker = "Mara Reyes",
+					text = "That's all I have to say.",
+					next = nil,
+				},
+			},
+		},
+	},
+
+	-- STMT-SUS-001-ALIBI has no separate text of its own: ConversationService
+	-- resolves its content from SUS-001's authored `alibi` field at unlock
+	-- time, so the statement can never drift from the suspect data.
+	statements = {
+		{
+			id = "STMT-SUS-001-ALIBI",
+			suspectId = "SUS-001",
+			label = "Alibi",
 		},
 	},
 }

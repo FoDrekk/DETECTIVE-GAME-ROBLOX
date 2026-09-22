@@ -22,9 +22,11 @@ local CaseService = require(Services:WaitForChild("CaseService"))
 local EvidenceService = require(Services:WaitForChild("EvidenceService"))
 local TimelineService = require(Services:WaitForChild("TimelineService"))
 local ObjectiveService = require(Services:WaitForChild("ObjectiveService"))
+local ConversationService = require(Services:WaitForChild("ConversationService"))
 local InteractionService = require(Services:WaitForChild("InteractionService"))
 local GameStateService = require(Services:WaitForChild("GameStateService"))
 local OfficeRoom = require(Services:WaitForChild("OfficeRoom"))
+local SuspectSpawner = require(Services:WaitForChild("SuspectSpawner"))
 
 --[[
 	Fail loudly on unrecoverable configuration errors. A missing active case is
@@ -45,6 +47,7 @@ local function bootstrap()
 
 	-- 0. Environment integration (lighting, ground, authored-content validation).
 	OfficeRoom.start()
+	SuspectSpawner.start()
 
 	-- 1. Create remote objects.
 	local signals = Signals.getFolder()
@@ -52,6 +55,7 @@ local function bootstrap()
 	local timelineEvent = Signals.get(Signals.Names.TimelineUpdated)
 	local objectiveEvent = Signals.get(Signals.Names.ObjectiveUpdated)
 	local objectiveCompletedEvent = Signals.get(Signals.Names.ObjectiveCompleted)
+	local dialogueEvent = Signals.get(Signals.Names.DialogueUpdated)
 	local requestObjectives = Signals.get(Signals.Names.RequestObjectives)
 	local requestTimeline = Signals.get(Signals.Names.RequestTimeline)
 
@@ -61,6 +65,7 @@ local function bootstrap()
 	EvidenceService.start()
 	TimelineService.start()
 	ObjectiveService.start()
+	ConversationService.start()
 	InteractionService.start()
 
 	-- 3. Bridge service events to clients.
@@ -77,6 +82,10 @@ local function bootstrap()
 		if justCompleted then
 			objectiveCompletedEvent:FireClient(player, payload)
 		end
+	end)
+
+	ConversationService.onUpdated().Event:Connect(function(player: Player, payload)
+		dialogueEvent:FireClient(player, payload)
 	end)
 
 	-- 4. Phase machine (depends on cases + player data).
@@ -122,6 +131,19 @@ local function bootstrap()
 		if PlayerDataService.get(player) then
 			TimelineService.sendCurrent(player)
 		end
+	end)
+
+	-- 9. Dialogue progression requests. Conversations are started via the
+	-- existing InteractionRequest pipeline (Talk kind); these only continue
+	-- or end an already-active conversation.
+	local requestDialogueAdvance = Signals.get(Signals.Names.DialogueAdvance)
+	requestDialogueAdvance.OnServerEvent:Connect(function(player: Player)
+		ConversationService.advance(player)
+	end)
+
+	local requestDialogueClose = Signals.get(Signals.Names.DialogueClose)
+	requestDialogueClose.OnServerEvent:Connect(function(player: Player)
+		ConversationService.leave(player)
 	end)
 
 	log:info("server ready", {

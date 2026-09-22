@@ -27,6 +27,9 @@ local function createCaseState(caseId: string): Types.PlayerCaseState
 		objectiveProgress = {},
 		completedObjectives = {},
 		startedAt = Util.timestamp(),
+		activeConversation = nil,
+		completedConversations = {},
+		unlockedStatements = {},
 	}
 end
 
