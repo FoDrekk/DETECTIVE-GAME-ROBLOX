@@ -136,8 +136,9 @@ function InteractionService.handleRequest(player: Player, instance: Instance, ki
 
 	-- Evidence discovery (inside the handler) advances objective requirements
 	-- keyed by evidence; the interaction itself advances requirements keyed by
-	-- kind. ObjectiveService owns all progress decisions.
-	ObjectiveService.recordInteraction(player, kind, descriptor.evidenceId)
+	-- kind or by the interacted instance's Name. ObjectiveService owns all
+	-- progress decisions.
+	ObjectiveService.recordInteraction(player, kind, descriptor.evidenceId, descriptor.instance.Name)
 end
 
 function InteractionService.start()

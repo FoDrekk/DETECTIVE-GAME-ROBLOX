@@ -57,4 +57,12 @@ function CaseRegistry.getAll(): { [string]: Types.CaseDefinition }
 	return cases
 end
 
+-- Register a case definition directly, without a Config file. Intended for
+-- the test harness and future authoring tooling; does not touch or replace
+-- file-backed cases.
+function CaseRegistry.register(caseDef: Types.CaseDefinition)
+	loadAll()
+	cases[caseDef.id] = caseDef
+end
+
 return CaseRegistry

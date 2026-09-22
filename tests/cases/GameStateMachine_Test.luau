@@ -97,4 +97,35 @@ return function(t)
 		m:reset()
 		expect.equal(m.current, "MainMenu")
 	end)
+
+	-- Builds a machine with GameStateService's actual production topology.
+	-- A fresh, local instance -- never the live singleton -- so these tests
+	-- cannot affect a running game.
+	local function makeProductionMachine()
+		return GameStateMachine.new("MainMenu")
+			:allowBoth("MainMenu", "CaseBriefing")
+			:allowBoth("CaseBriefing", "Investigation")
+			:allowBoth("Investigation", "CaseClosed")
+			:allowBoth("CaseClosed", "MainMenu")
+	end
+
+	-- A client-requested jump straight to "Investigation" from "MainMenu"
+	-- (skipping the briefing; an illegal client-side state transition) must
+	-- be rejected. Note MainMenu -> CaseClosed IS a declared edge (the
+	-- reverse of CaseClosed <-> MainMenu's reset path), so it is not a valid
+	-- illegal-jump example here.
+	t.test("rejects an illegal jump in the production phase topology", function()
+		local m = makeProductionMachine()
+		expect.falsy(m:transition("Investigation"))
+		expect.equal(m.current, "MainMenu")
+	end)
+
+	-- Skipping "Investigation" entirely (CaseBriefing -> CaseClosed) is also
+	-- illegal and must be rejected.
+	t.test("rejects skipping from CaseBriefing straight to CaseClosed", function()
+		local m = makeProductionMachine()
+		m:transition("CaseBriefing")
+		expect.falsy(m:transition("CaseClosed"))
+		expect.equal(m.current, "CaseBriefing")
+	end)
 end

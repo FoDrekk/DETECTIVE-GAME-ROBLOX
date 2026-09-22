@@ -10,6 +10,7 @@ local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Co
 local GameStateMachine = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("GameStateMachine"))
 local Signals = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Signals"))
 local PlayerDataService = require(script.Parent:WaitForChild("PlayerDataService"))
+local CaseService = require(script.Parent:WaitForChild("CaseService"))
 
 local GameStateService = {}
 
@@ -41,7 +42,7 @@ function GameStateService.setPhase(phase: Types.GamePhase): boolean
 end
 
 local function grantCase(player: Player)
-	local payload = require(script.Parent:WaitForChild("CaseService")).buildClientPayload(player)
+	local payload = CaseService.buildClientPayload(player)
 	if payload then
 		caseBriefingLoaded:FireClient(player, payload)
 	end

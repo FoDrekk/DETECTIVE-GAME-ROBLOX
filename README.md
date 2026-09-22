@@ -82,6 +82,26 @@ print `[PASS]` / `[FAIL]` / `[TIMEOUT]` plus a `[SUMMARY]` line.
 
 ## Status
 
+Phase 2F in progress: story-system architecture foundation, no new story
+content.
+
+- **Objective sequencing**: `ObjectiveService` derives the active objective
+  from completion + data-driven `prerequisites` instead of a hardcoded first
+  objective. CASE-001's single objective is unaffected.
+- **Suspect/location access**: `CaseService.getSuspects`/`getLocations` (and
+  singular lookups) read the case's existing authored data. Server-side only;
+  not yet sent to any client.
+- **NPC preparation**: `Interactable` gained an optional `SuspectId`
+  attribute, parsed the same way as `EvidenceId`, for a future NPC to reuse
+  the existing interactable contract. No NPC exists yet.
+- **StoryEvents**: `src/server/StoryEvents.luau` is a small, additive,
+  server-only publish/subscribe layer future story systems can observe
+  (`EvidenceDiscovered`, `ObjectiveCompleted` today). The existing discovery
+  pipeline does not depend on it.
+
+See `docs/ARCHITECTURE.md` for the full breakdown, including what is
+deliberately not implemented yet.
+
 Phase 2E complete: the foundation is hardened and covered by automated tests.
 
 - **Shared interactable contract** (`Shared.Interactable`) used by both client

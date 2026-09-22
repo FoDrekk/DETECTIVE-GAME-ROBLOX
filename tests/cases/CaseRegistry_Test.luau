@@ -66,4 +66,21 @@ return function(t)
 			end
 		end
 	end)
+
+	-- register() adds a case directly, without a Config file, and does not
+	-- disturb the file-backed CASE-001.
+	t.test("register adds a case without a Config file", function()
+		CaseRegistry.register({
+			id = "CASE-REGISTRY-TEST",
+			title = "Registry Test",
+			description = "",
+			suspects = {},
+			locations = {},
+			evidence = {},
+			timeline = {},
+			objectives = {},
+		})
+		expect.truthy(CaseRegistry.get("CASE-REGISTRY-TEST"))
+		expect.truthy(CaseRegistry.get("CASE-001"))
+	end)
 end

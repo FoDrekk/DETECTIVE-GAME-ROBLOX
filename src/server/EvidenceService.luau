@@ -12,6 +12,7 @@ local Signals = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("S
 local Logger = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Logger"))
 local PlayerDataService = require(script.Parent:WaitForChild("PlayerDataService"))
 local CaseService = require(script.Parent:WaitForChild("CaseService"))
+local StoryEvents = require(script.Parent:WaitForChild("StoryEvents"))
 
 local TimelineService = require(script.Parent:WaitForChild("TimelineService"))
 
@@ -103,6 +104,7 @@ function EvidenceService.discover(player: Player, evidenceId: string): (boolean,
 		evidenceId = evidenceId,
 		total = payload.totalDiscovered,
 	})
+	StoryEvents.publish("EvidenceDiscovered", player, { evidenceId = evidenceId })
 	return true, nil
 end
 

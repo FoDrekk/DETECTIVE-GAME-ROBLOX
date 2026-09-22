@@ -75,6 +75,25 @@ return function(t)
 		inst:Destroy()
 	end)
 
+	-- SuspectId is optional and read the same way as EvidenceId (Phase 2F
+	-- preparation for future NPC interactables; no NPC behavior yet).
+	t.test("describes an optional suspect id", function()
+		local inst = makeTagged({ InteractionKind = "Talk", SuspectId = "SUS-001" })
+		local d = Interactable.describe(inst)
+		expect.truthy(d)
+		expect.equal(d and d.suspectId, "SUS-001")
+		inst:Destroy()
+	end)
+
+	-- Suspect id is optional and absent when not authored.
+	t.test("omits an absent suspect id", function()
+		local inst = makeTagged({ InteractionKind = "Talk" })
+		local d = Interactable.describe(inst)
+		expect.truthy(d)
+		expect.falsy(d and d.suspectId)
+		inst:Destroy()
+	end)
+
 	-- isKind accepts enabled kinds and rejects unknown ones.
 	t.test("isKind gates on enabled kinds", function()
 		expect.truthy(Interactable.isKind("Examine"))

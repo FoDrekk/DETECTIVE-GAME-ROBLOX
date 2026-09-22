@@ -21,6 +21,7 @@ local Signals = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("S
 local Logger = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Logger"))
 local PlayerDataService = require(script.Parent:WaitForChild("PlayerDataService"))
 local CaseService = require(script.Parent:WaitForChild("CaseService"))
+local StoryEvents = require(script.Parent:WaitForChild("StoryEvents"))
 
 local log = Logger.scoped("ObjectiveService")
 
@@ -63,7 +64,8 @@ end
 local function requirementSatisfied(
 	requirement: Types.ObjectiveRequirement,
 	kind: Types.InteractionKind?,
-	evidenceId: string?
+	evidenceId: string?,
+	targetName: string?
 ): boolean
 	if requirement.evidence and requirement.evidence ~= evidenceId then
 		return false
@@ -71,11 +73,45 @@ local function requirementSatisfied(
 	if requirement.interaction and requirement.interaction ~= kind then
 		return false
 	end
-	-- A requirement with neither constraint cannot be satisfied by interaction.
-	if not requirement.evidence and not requirement.interaction then
+	if requirement.target and requirement.target ~= targetName then
+		return false
+	end
+	-- A requirement with no constraint at all cannot be satisfied by interaction.
+	if not requirement.evidence and not requirement.interaction and not requirement.target then
 		return false
 	end
 	return true
+end
+
+-- Has every objective this one depends on already been completed? An
+-- objective with no prerequisites is available from the start (subject to
+-- its authored position). Referencing an unknown objective id fails safe:
+-- that prerequisite can never be satisfied (see CaseService's boot-time
+-- validation, which warns about this misconfiguration).
+local function prerequisitesMet(objective: Types.ObjectiveDefinition, data: Types.PlayerData): boolean
+	local prereqs = objective.prerequisites
+	if not prereqs or #prereqs == 0 then
+		return true
+	end
+	for _, prerequisiteId in ipairs(prereqs) do
+		if not data.caseState.completedObjectives[prerequisiteId] then
+			return false
+		end
+	end
+	return true
+end
+
+-- The single active objective: the first not-yet-completed objective (in
+-- authored order) whose prerequisites are satisfied. Returns nil once every
+-- objective is complete. This replaces a hardcoded "objectives[1]" and is
+-- the one place that decides what a player is currently working toward.
+local function getActiveObjective(data: Types.PlayerData): Types.ObjectiveDefinition?
+	for _, objective in ipairs(caseObjectives(data.caseState.caseId)) do
+		if not data.caseState.completedObjectives[objective.id] and prerequisitesMet(objective, data) then
+			return objective
+		end
+	end
+	return nil
 end
 
 local function objectiveIsComplete(objective: Types.ObjectiveDefinition, progress: { [string]: boolean }): boolean
@@ -111,18 +147,18 @@ local function buildPayload(
 	}
 end
 
--- Fire the current objective state to a player (used on join/sync).
+-- Fire the current active objective's state to a player (used on join/sync,
+-- and whenever completing an objective unlocks the next one). No-op once
+-- every objective is complete: there is nothing active left to present.
 function ObjectiveService.sendCurrent(player: Player)
 	local data = PlayerDataService.get(player)
 	if not data then
 		return
 	end
-	local objectives = caseObjectives(data.caseState.caseId)
-	if #objectives == 0 then
+	local objective = getActiveObjective(data)
+	if not objective then
 		return
 	end
-	-- Phase 2A presents the first objective as the active one.
-	local objective = objectives[1]
 	local progress = ensureProgress(data, objective.id)
 	local payload = buildPayload(objective, progress)
 	payload.allComplete = objectiveIsComplete(objective, progress)
@@ -135,15 +171,18 @@ end
 
 	kind        : the interaction performed
 	evidenceId  : the evidence tied to the interaction, if any
-	interacted  : true when a valid interaction actually occurred (so evidence-less
-	              requirements can still advance)
+	targetName  : the interacted instance's Name, for requirements gated on a
+	              specific named interactable rather than evidence/kind alone
 
-	Returns true if any requirement advanced.
+	Only objectives that are unlocked (prerequisites met) and not yet
+	complete are evaluated, so progress can never be credited to a locked
+	objective. Returns true if any requirement advanced.
 ]]
 function ObjectiveService.recordInteraction(
 	player: Player,
 	kind: Types.InteractionKind,
-	evidenceId: string?
+	evidenceId: string?,
+	targetName: string?
 ): boolean
 	local data = PlayerDataService.get(player)
 	if not data then
@@ -155,35 +194,63 @@ function ObjectiveService.recordInteraction(
 		return false
 	end
 
+	local activeBefore = getActiveObjective(data)
+	local activeBeforeId = activeBefore and activeBefore.id
+
 	local advanced = false
 	for _, objective in ipairs(objectives) do
-		local progress = ensureProgress(data, objective.id)
-		local objectiveAdvanced = false
-		for _, requirement in ipairs(objective.requirements) do
-			if not progress[requirement.id] and requirementSatisfied(requirement, kind, evidenceId) then
-				progress[requirement.id] = true
-				objectiveAdvanced = true
-				advanced = true
+		if not data.caseState.completedObjectives[objective.id] and prerequisitesMet(objective, data) then
+			local progress = ensureProgress(data, objective.id)
+			local objectiveAdvanced = false
+			for _, requirement in ipairs(objective.requirements) do
+				if not progress[requirement.id] and requirementSatisfied(requirement, kind, evidenceId, targetName) then
+					progress[requirement.id] = true
+					objectiveAdvanced = true
+					advanced = true
+				end
+			end
+
+			if objectiveAdvanced then
+				local payload = buildPayload(objective, progress)
+				payload.allComplete = objectiveIsComplete(objective, progress)
+				local justCompleted = payload.objective.completed
+					and not data.caseState.completedObjectives[objective.id]
+				if justCompleted then
+					data.caseState.completedObjectives[objective.id] = true
+					log:info("objective completed", {
+						player = player.Name,
+						objectiveId = objective.id,
+					})
+					StoryEvents.publish("ObjectiveCompleted", player, { objectiveId = objective.id })
+				end
+				objectiveUpdatedEvent:Fire(player, payload, justCompleted)
 			end
 		end
+	end
 
-		if objectiveAdvanced then
-			local payload = buildPayload(objective, progress)
-			payload.allComplete = objectiveIsComplete(objective, progress)
-			local justCompleted = payload.objective.completed
-				and not data.caseState.completedObjectives[objective.id]
-			if justCompleted then
-				data.caseState.completedObjectives[objective.id] = true
-				log:info("objective completed", {
-					player = player.Name,
-					objectiveId = objective.id,
-				})
-			end
-			objectiveUpdatedEvent:Fire(player, payload, justCompleted)
+	if advanced then
+		local activeAfter = getActiveObjective(data)
+		if activeAfter and (activeAfter :: Types.ObjectiveDefinition).id ~= activeBeforeId then
+			-- Completion unlocked a different active objective; push its
+			-- initial state now instead of waiting for the next interaction.
+			ObjectiveService.sendCurrent(player)
 		end
 	end
 
 	return advanced
+end
+
+-- The id of the player's current active objective (see getActiveObjective),
+-- or nil once every objective is complete. A synchronous read of the same
+-- decision sendCurrent broadcasts, for callers (including tests) that need
+-- the answer without listening for an event.
+function ObjectiveService.getActiveObjectiveId(player: Player): string?
+	local data = PlayerDataService.get(player)
+	if not data then
+		return nil
+	end
+	local objective = getActiveObjective(data)
+	return objective and objective.id
 end
 
 -- Ordered objective definitions for a player's active case.

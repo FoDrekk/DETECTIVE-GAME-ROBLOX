@@ -2,15 +2,21 @@
 --[[
 	Tests for ServerScriptService.Server.ObjectiveService.
 	Covers requirement progress from evidence/interaction, completion exactly
-	once, and that replaying the same interaction adds no progress.
+	once, that replaying the same interaction adds no progress, and (Phase
+	2F) data-driven multi-objective sequencing via `prerequisites` and the
+	`target` requirement gate.
 
-	Each case uses a unique mock UserId for isolation.
+	Each case uses a unique mock UserId for isolation. The sequencing tests
+	register a small synthetic case purely for this test run (CaseRegistry.
+	register), so CASE-001's real story data is never touched or duplicated.
 ]]
 return function(t)
 	local ServerScriptService = game:GetService("ServerScriptService")
+	local ReplicatedStorage = game:GetService("ReplicatedStorage")
 	local Server = ServerScriptService:WaitForChild("Server")
 	local ObjectiveService = require(Server:WaitForChild("ObjectiveService"))
 	local PlayerDataService = require(Server:WaitForChild("PlayerDataService"))
+	local CaseRegistry = require(ReplicatedStorage:WaitForChild("Config"):WaitForChild("CaseRegistry"))
 	local expect = t.expect
 
 	local nextUserId = 920000
@@ -100,5 +106,116 @@ return function(t)
 		local player = makePlayer()
 		local advanced = ObjectiveService.recordInteraction(player, "Examine", "EV-999")
 		expect.falsy(advanced)
+	end)
+
+	-- CASE-001 still has exactly one objective with no prerequisites, so it
+	-- must remain the active objective from the start (Phase 2E behavior,
+	-- now derived from the data-driven active-objective lookup instead of a
+	-- hardcoded objectives[1]).
+	t.test("OBJ-001 remains active with no prerequisites (regression)", function()
+		local player = makePlayer()
+		expect.equal(ObjectiveService.getActiveObjectiveId(player), "OBJ-001")
+	end)
+
+	-- -----------------------------------------------------------------
+	-- Multi-objective sequencing (Phase 2F). Synthetic case, registered
+	-- once for this test run only.
+	-- -----------------------------------------------------------------
+
+	CaseRegistry.register({
+		id = "CASE-TEST-SEQ",
+		title = "Sequencing Fixture",
+		description = "Synthetic case for objective sequencing tests only.",
+		suspects = {},
+		locations = {},
+		evidence = {},
+		timeline = {},
+		objectives = {
+			{
+				id = "OBJ-A",
+				title = "First",
+				description = "First objective; no prerequisites.",
+				requiredEvidence = {},
+				requiredInteractions = { "Examine" },
+				requirements = {
+					{ id = "A-REQ-1", label = "Do the first thing", interaction = "Examine", target = "Fixture" },
+				},
+			},
+			{
+				id = "OBJ-B",
+				title = "Second",
+				description = "Second objective; requires OBJ-A.",
+				requiredEvidence = {},
+				requiredInteractions = { "Read" },
+				requirements = {
+					{ id = "B-REQ-1", label = "Do the second thing", interaction = "Read" },
+				},
+				prerequisites = { "OBJ-A" },
+			},
+		},
+	})
+
+	local function makeSeqPlayer(): any
+		nextUserId += 1
+		local player = { UserId = nextUserId, Name = `SEQ{nextUserId}` }
+		PlayerDataService.initialize(player, "CASE-TEST-SEQ")
+		return player
+	end
+
+	-- OBJ-B's requirement is never even evaluated while OBJ-A is incomplete.
+	t.test("a locked objective's requirement does not advance", function()
+		local player = makeSeqPlayer()
+		local advanced = ObjectiveService.recordInteraction(player, "Read", nil, nil)
+		expect.falsy(advanced)
+	end)
+
+	-- The `target` gate only matches the exact authored instance name.
+	t.test("target requirement rejects a non-matching instance name", function()
+		local player = makeSeqPlayer()
+		local advanced = ObjectiveService.recordInteraction(player, "Examine", nil, "WrongName")
+		expect.falsy(advanced)
+		local data = PlayerDataService.get(player)
+		expect.falsy(data and data.caseState.completedObjectives["OBJ-A"])
+	end)
+
+	-- Completing OBJ-A (matching kind + target) unlocks OBJ-B, which can then
+	-- advance and complete on a later interaction.
+	t.test("completing OBJ-A unlocks OBJ-B", function()
+		local player = makeSeqPlayer()
+		ObjectiveService.recordInteraction(player, "Examine", nil, "Fixture")
+		local data = PlayerDataService.get(player)
+		expect.truthy(data and data.caseState.completedObjectives["OBJ-A"])
+
+		local advanced = ObjectiveService.recordInteraction(player, "Read", nil, nil)
+		expect.truthy(advanced)
+		expect.truthy(data and data.caseState.completedObjectives["OBJ-B"])
+	end)
+
+	-- getActiveObjectiveId reports OBJ-A as active for a fresh sequencing
+	-- player (no prerequisites, not yet completed).
+	t.test("OBJ-A is the active objective for a fresh player", function()
+		local player = makeSeqPlayer()
+		expect.equal(ObjectiveService.getActiveObjectiveId(player), "OBJ-A")
+	end)
+
+	-- Once OBJ-A completes, OBJ-B becomes the active objective immediately
+	-- (no further interaction required to unlock it).
+	t.test("OBJ-B becomes the active objective once OBJ-A is complete", function()
+		local player = makeSeqPlayer()
+		ObjectiveService.recordInteraction(player, "Examine", nil, "Fixture")
+		expect.equal(ObjectiveService.getActiveObjectiveId(player), "OBJ-B")
+	end)
+
+	-- Duplicate completion is idempotent: replaying the interaction that
+	-- already completed OBJ-A reports no further advancement.
+	t.test("duplicate completion of OBJ-A advances nothing further", function()
+		local player = makeSeqPlayer()
+		local advancedFirst = ObjectiveService.recordInteraction(player, "Examine", nil, "Fixture")
+		expect.truthy(advancedFirst)
+		local data = PlayerDataService.get(player)
+		expect.truthy(data and data.caseState.completedObjectives["OBJ-A"])
+
+		local advancedSecond = ObjectiveService.recordInteraction(player, "Examine", nil, "Fixture")
+		expect.falsy(advancedSecond)
 	end)
 end

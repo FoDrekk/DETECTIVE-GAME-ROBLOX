@@ -13,6 +13,11 @@
 	  PromptLabel     : string  (e.g. "Examine Phone")
 	  EvidenceId      : string  (optional, e.g. "EV-001")
 	  ReadableText    : string  (optional, reserved for Read presentation)
+	  SuspectId       : string  (optional, e.g. "SUS-001"; identifies which
+	                    suspect a Talk-kind interactable represents. Read the
+	                    same way as EvidenceId. No NPC behaviour consumes this
+	                    yet -- it exists so future NPC interactables can use
+	                    this same contract instead of a parallel one.)
 ]]
 
 local CollectionService = game:GetService("CollectionService")
@@ -29,6 +34,7 @@ Interactable.AttributeName = table.freeze({
 	PromptLabel = "PromptLabel",
 	EvidenceId = "EvidenceId",
 	ReadableText = "ReadableText",
+	SuspectId = "SuspectId",
 })
 
 -- Interaction kinds that are enabled in the current phase.
@@ -46,6 +52,7 @@ export type Descriptor = {
 	kind: Types.InteractionKind,
 	label: string,
 	evidenceId: string?,
+	suspectId: string?,
 }
 
 local function readString(instance: Instance, attribute: string): string?
@@ -78,6 +85,7 @@ function Interactable.describe(instance: Instance): Descriptor?
 		kind = kindName :: Types.InteractionKind,
 		label = readString(instance, Interactable.AttributeName.PromptLabel) or kindName,
 		evidenceId = readString(instance, Interactable.AttributeName.EvidenceId),
+		suspectId = readString(instance, Interactable.AttributeName.SuspectId),
 	}
 end
 

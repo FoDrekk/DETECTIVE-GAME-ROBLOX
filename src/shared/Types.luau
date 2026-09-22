@@ -65,11 +65,16 @@ export type TimelineEventDefinition = {
 	sourceEvidenceIds: { string },
 }
 
--- A single requirement attached to an objective.
+-- A single requirement attached to an objective. Every non-nil field is a
+-- gate that must match the observed interaction for the requirement to
+-- advance (see ObjectiveService.requirementSatisfied):
 --   evidence     : the objective advances when this evidence id is discovered.
---   interaction  : the objective advances when any interaction of this kind
---                  is performed against the named interactable (by its Name in
---                  the workspace) OR on the instance carrying this evidence id.
+--   interaction  : the objective advances only when an interaction of this
+--                  kind was performed.
+--   target       : the objective advances only when the interacted
+--                  instance's Name matches this value. For requirements that
+--                  are not evidence-specific (e.g. "talk to the named
+--                  interactable").
 export type ObjectiveRequirement = {
 	id: string,
 	label: string,
@@ -87,6 +92,10 @@ export type ObjectiveDefinition = {
 	requiredEvidence: { string },
 	requiredInteractions: { string },
 	requirements: { ObjectiveRequirement },
+	-- Objective ids that must already be completed before this objective can
+	-- become active. Absent/empty means no prerequisite (available from the
+	-- start, subject to authored order).
+	prerequisites: { string }?,
 }
 
 export type ObjectiveRequirementProgress = {
