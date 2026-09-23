@@ -82,6 +82,21 @@ print `[PASS]` / `[FAIL]` / `[TIMEOUT]` plus a `[SUMMARY]` line.
 
 ## Status
 
+Phase 2L: the player can formally conclude the investigation.
+
+- **`[Q]` Conclude Investigation**: once every objective is complete, the
+  player can choose to end the session — never automatic on `OBJ-003`
+  completing. Transitions to the long-dormant `CaseClosed` phase (allowed by
+  the state machine since Phase 2E, never used until now).
+- **Server-authoritative, per-player**: `GameStateService.requestConclude`
+  never trusts a client-supplied completion claim — it reads only the
+  requesting player's own server-side objective state. Audit found the
+  `Investigation → CaseClosed` edge was previously ungated (graph-legal, but
+  never gameplay-checked); this closes that gap.
+- **`CaseClosedView`**: a factual closing screen (objectives/evidence/
+  contradictions — real counts, computed server-side). No verdict, no
+  accusation, no narrative resolution.
+
 Phase 2K: the investigation tells you when it's done.
 
 - **"Investigation Complete" acknowledgment**: once every currently-authored

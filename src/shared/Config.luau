@@ -38,6 +38,10 @@ Config.Interaction = {
 	TimelineKey = "T",
 	-- Key to open/close the case file (unlocked statements/reasoning).
 	CaseFileKey = "C",
+	-- Key to formally conclude the investigation once every objective is
+	-- complete (Phase 2L). Only does anything once the server has told the
+	-- client every objective is done; the server re-validates regardless.
+	ConcludeKey = "Q",
 }
 
 Config.Camera = {

@@ -17,11 +17,13 @@ local ACTION_INTERACT = "MysteryCase_Interact"
 local ACTION_CLOSE = "MysteryCase_ClosePanel"
 local ACTION_TIMELINE = "MysteryCase_ToggleTimeline"
 local ACTION_CASE_FILE = "MysteryCase_ToggleCaseFile"
+local ACTION_CONCLUDE = "MysteryCase_ConcludeInvestigation"
 
 local interactCallback: (() -> ())? = nil
 local closeCallback: (() -> ())? = nil
 local timelineCallback: (() -> ())? = nil
 local caseFileCallback: (() -> ())? = nil
+local concludeCallback: (() -> ())? = nil
 local interactEnabled = false
 
 function InputController.onInteract(fn: () -> ())
@@ -38,6 +40,14 @@ end
 
 function InputController.onToggleCaseFile(fn: () -> ())
 	caseFileCallback = fn
+end
+
+-- Phase 2L: requests concluding the investigation. Always bound during
+-- Investigation; whether it does anything is decided by the callback (gated
+-- on the server having already told the client every objective is done) and
+-- re-validated server-side regardless.
+function InputController.onConcludeInvestigation(fn: () -> ())
+	concludeCallback = fn
 end
 
 function InputController.start()
@@ -71,6 +81,13 @@ function InputController.start()
 		end
 		return Enum.ContextActionResult.Sink
 	end, false, Enum.KeyCode[Config.Interaction.CaseFileKey])
+
+	ContextActionService:BindAction(ACTION_CONCLUDE, function(_, state)
+		if state == Enum.UserInputState.Begin and concludeCallback then
+			concludeCallback()
+		end
+		return Enum.ContextActionResult.Sink
+	end, false, Enum.KeyCode[Config.Interaction.ConcludeKey])
 
 	-- Explicitly ignore game-processed input in Phase 1.
 	UserInputService.InputBegan:Connect(function(_, processed)

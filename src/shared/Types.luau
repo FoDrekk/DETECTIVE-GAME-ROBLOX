@@ -382,4 +382,17 @@ export type ReasoningPayload = {
 	deductions: { DeductionPayload },
 }
 
+-- A factual, spoiler-safe summary of what the player did, sent once when
+-- the server accepts their conclusion of the investigation (Phase 2L).
+-- Purely a count of already-authorized facts the player already has -- never
+-- a verdict, an accusation result, or any claim about who did what. Every
+-- count is a real total, not a hardcoded CASE-001 number.
+export type CaseClosedSummary = {
+	objectivesCompleted: number,
+	objectivesTotal: number,
+	evidenceExamined: number,
+	evidenceTotal: number,
+	contradictionsIdentified: number,
+}
+
 return {}

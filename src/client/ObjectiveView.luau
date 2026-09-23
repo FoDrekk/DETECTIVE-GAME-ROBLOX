@@ -29,6 +29,7 @@ local titleLabel: TextLabel? = nil
 local listFrame: Frame? = nil
 local completedBanner: Frame? = nil
 local completedTitleLabel: TextLabel? = nil
+local concludeHintLabel: TextLabel? = nil
 
 local requirementRows: { [string]: TextLabel } = {}
 local targetAlpha = 0
@@ -84,6 +85,9 @@ local function showCompletedBanner(show: boolean)
 		if completedTitleLabel then
 			completedTitleLabel.Visible = false
 		end
+		if concludeHintLabel then
+			concludeHintLabel.Visible = false
+		end
 	end
 end
 
@@ -133,6 +137,12 @@ function ObjectiveView.showCompleted(payload: Types.ObjectivePayload)
 		completedTitleLabel.Text = `INVESTIGATION COMPLETE\n{payload.objective.title}`
 	else
 		completedTitleLabel.Text = `OBJECTIVE COMPLETE\n{payload.objective.title}`
+	end
+	-- Phase 2L: only once every objective is done does concluding become a
+	-- real, player-initiated option -- never shown, let alone offered,
+	-- before then. The server re-validates this regardless of the hint.
+	if concludeHintLabel then
+		concludeHintLabel.Visible = payload.allComplete
 	end
 	setVisible(true)
 end
@@ -224,6 +234,18 @@ function ObjectiveView.start()
 		parent = completedBanner,
 	})
 	completedTitleLabel.TextWrapped = true
+
+	concludeHintLabel = Components.text({
+		name = "ConcludeHint",
+		text = `[{Config.Interaction.ConcludeKey}] Conclude Investigation`,
+		size = UDim2.new(1, 0, 0, 16),
+		position = UDim2.fromOffset(0, 100),
+		textSize = 11,
+		color = Theme.TextSecondary,
+		xAlign = Enum.TextXAlignment.Center,
+		parent = root,
+	})
+	concludeHintLabel.Visible = false
 
 	RunService.RenderStepped:Connect(function()
 		currentAlpha += (targetAlpha - currentAlpha) * 0.15

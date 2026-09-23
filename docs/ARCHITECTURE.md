@@ -116,7 +116,10 @@ validates that the authored interactables satisfy the gameplay contract.
   per-kind handlers (Examine/Read/PickUp/Talk). Talk starts a conversation via
   `ConversationService`.
 - **GameStateService** — shared phase machine (MainMenu/CaseBriefing/
-  Investigation/CaseClosed), broadcasts phase changes.
+  Investigation/CaseClosed), broadcasts phase changes. `requestConclude`
+  (Phase 2L) gates the Investigation -> CaseClosed edge with a player-specific
+  gameplay authorization check on top of the state machine's own graph
+  validation (see below).
 - **OfficeRoom** — runtime lighting/spawn cleanup and authored-content validation
   for the Studio-built `Workspace.Office` environment.
 - **SuspectSpawner** (Phase 2G) — runtime placement of a physical NPC for each
@@ -126,7 +129,8 @@ validates that the authored interactables satisfy the gameplay contract.
 
 ## Client modules
 
-- **InputController** — centralised input (E = interact, ESC = close).
+- **InputController** — centralised input (E = interact, ESC = close, T =
+  timeline, C = case file, Q = conclude investigation once offered).
 - **InteractionController** — proximity scan, prompt data, request dispatch.
 - **InteractionPromptView** — small `[E] Examine` prompt.
 - **EvidencePanel** — dark investigative evidence panel.
@@ -137,6 +141,8 @@ validates that the authored interactables satisfy the gameplay contract.
   only the single server-authorized dialogue step it is given.
 - **CaseFileView** (Phase 2H) — persistent investigation notes panel
   (unlocked statements/contradictions/deductions), C to open.
+- **CaseClosedView** (Phase 2L) — cinematic closing overlay, shown during the
+  `CaseClosed` phase; renders exactly the server's `Types.CaseClosedSummary`.
 - **CameraController** — third-person explore + smooth examine framing.
 
 ## Data contracts
@@ -524,19 +530,66 @@ deduction exists for CASE-001 yet; the `deduction` gate exists so a future
 one needs no second requirement system, and is proven today only by a
 synthetic fixture (`ObjectiveService_Test`'s `CASE-TEST-OBJ-REASONING`).
 
-## Deliberately not implemented (Phase 2G/2H/2I/2J boundary)
+## Case Closed: formal conclusion (Phase 2L)
+
+`GameStateMachine` has allowed `Investigation -> CaseClosed` since Phase 2E,
+but nothing ever used it — graph legality was never gameplay authorization.
+Audit for this phase found the edge was, until now, genuinely ungated: any
+client could request it at any time and the server would honor it, since
+`GameStateMachine.transition` only ever validates *that the edge exists*, not
+*whether this player may use it right now*. That distinction is now explicit
+and enforced:
+
+- **Graph validity** (`GameStateMachine`) — is this transition structurally
+  allowed at all. Unchanged.
+- **Gameplay authorization** (`GameStateService.requestConclude`, new) — is
+  *this specific player* currently allowed to use it. Reads only
+  `ObjectiveService.getActiveObjectiveId(player)` (server-side player state);
+  a player with no active objective left — and with real case data, so a
+  data-less player can't pass this check for the wrong reason — may conclude.
+  Never trusts a client-supplied completion claim of any kind.
+
+`requestConclude` is a plain, public, directly-testable function (matching
+`ObjectiveService.recordInteraction`/`ConversationService.begin`'s pattern) —
+the `RequestPhaseChange` handler dispatches to it for `"CaseClosed"` requests
+instead of inlining the check, so the authorization logic isn't buried inside
+an untestable `RemoteEvent.OnServerEvent` closure. It fires a `BindableEvent`
+(`GameStateService.onCaseClosed()`), not the `CaseClosedSummary` RemoteEvent
+directly — the same indirection `ReasoningService`/`ObjectiveService` already
+use, since a real RemoteEvent's `FireClient` requires an actual `Player`
+Instance and would reject a test's mock player table. `init.server.luau`'s
+bridge is the only thing that touches the real RemoteEvent.
+
+Concluding is entirely player-initiated (`[Q]`, only offered once
+`ObjectivePayload.allComplete` is true) — `OBJ-003` completing never
+auto-transitions the phase. `CaseClosedView` (mirrors `CaseBriefingView`'s
+exact cinematic pattern) shows `Types.CaseClosedSummary`: real, computed
+counts (objectives/evidence/contradictions) built from server-side state at
+the moment of conclusion — never a verdict, never a claim about who did what.
+
+**Known limitation, deliberately not addressed this phase**: `GameStateService`'s
+phase machine is a single, server-wide singleton, not per-player — matching
+this game's real single-player-session scope everywhere else. `requestConclude`'s
+authorization check is correctly per-player, but the transition it gates, once
+authorized, is still the same global broadcast every other phase change already
+uses. This is consistent with the rest of the codebase's explicit no-multiplayer
+scope and was not something this phase's authorization fix needed to solve.
+
+## Deliberately not implemented (Phase 2G/2H/2I/2J/2L boundary)
 
 Phase 2G shipped a one-suspect vertical slice; Phase 2H added the reasoning
 architecture with no content to run it on; Phase 2I brought SUS-002 online
 and authored CASE-001's first real contradiction; Phase 2J gave that
-contradiction a gameplay consequence via objective sequencing. Explicitly out
-of scope until their own phase: any suspect beyond SUS-001/SUS-002, branching
+contradiction a gameplay consequence via objective sequencing; Phase 2L let
+the player formally conclude once everything is done. Explicitly out of
+scope until their own phase: any suspect beyond SUS-001/SUS-002, branching
 dialogue/choices, interrogation, confrontation, accusation/case resolution, a
 deduction for CASE-001, a second contradiction, NPC AI/movement/animation, voice acting,
 cinematic cutscenes, additional locations, persistence, and
 multiplayer/per-session state. `Types.DialogueNodeDefinition.next` still
 supports a linear chain only — a real choice/branch contract remains future
-work, added only once a case's content actually needs it.
+work, added only once a case's content actually needs it. `CaseClosed` shows
+only a factual summary — no verdict, no accusation, no narrative resolution.
 
 ## Extension points (future phases)
 

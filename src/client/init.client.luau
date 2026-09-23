@@ -26,6 +26,7 @@ local ObjectiveView = require(Modules:WaitForChild("ObjectiveView"))
 local TimelineView = require(Modules:WaitForChild("TimelineView"))
 local DialogueView = require(Modules:WaitForChild("DialogueView"))
 local CaseFileView = require(Modules:WaitForChild("CaseFileView"))
+local CaseClosedView = require(Modules:WaitForChild("CaseClosedView"))
 local CameraController = require(Modules:WaitForChild("CameraController"))
 
 local player = Players.LocalPlayer
@@ -38,6 +39,7 @@ local objectiveCompleted = Signals.wait(Signals.Names.ObjectiveCompleted)
 local caseBriefingLoaded = Signals.wait(Signals.Names.CaseBriefingLoaded)
 local dialogueUpdated = Signals.wait(Signals.Names.DialogueUpdated)
 local reasoningUpdated = Signals.wait(Signals.Names.ReasoningUpdated)
+local caseClosedSummary = Signals.wait(Signals.Names.CaseClosedSummary)
 local requestPhaseChange = Signals.wait(Signals.Names.RequestPhaseChange)
 local requestCase = Signals.wait(Signals.Names.RequestCase)
 local requestObjectives = Signals.wait(Signals.Names.RequestObjectives)
@@ -48,6 +50,11 @@ local requestReasoning = Signals.wait(Signals.Names.RequestReasoning)
 
 local currentPhase: Types.GamePhase = "MainMenu"
 local lastBriefing: Types.CaseBriefing? = nil
+local lastCaseClosedSummary: Types.CaseClosedSummary? = nil
+-- Set once the server has told us every objective is complete (Phase 2L).
+-- Purely a UX gate for offering the conclude action -- the server
+-- re-validates the actual request regardless of this flag.
+local investigationComplete = false
 
 local function applyPhase(phase: Types.GamePhase)
 	currentPhase = phase
@@ -62,6 +69,14 @@ local function applyPhase(phase: Types.GamePhase)
 		end
 	else
 		CaseBriefingView.hide()
+	end
+
+	if phase == "CaseClosed" then
+		if lastCaseClosedSummary then
+			CaseClosedView.show(lastCaseClosedSummary)
+		end
+	else
+		CaseClosedView.hide()
 	end
 
 	if phase == "Investigation" then
@@ -92,6 +107,7 @@ local function bootstrap()
 	TimelineView.start()
 	DialogueView.start()
 	CaseFileView.start()
+	CaseClosedView.start()
 	CameraController.start()
 
 	-- Interaction scanning.
@@ -138,6 +154,17 @@ local function bootstrap()
 			return
 		end
 		CaseFileView.toggle()
+	end)
+
+	-- Phase 2L: player-initiated conclusion. Only meaningful once the server
+	-- has already told us every objective is complete; the server
+	-- re-validates this player's own completion state regardless of what
+	-- this client sends or believes.
+	InputController.onConcludeInvestigation(function()
+		if currentPhase ~= "Investigation" or not investigationComplete then
+			return
+		end
+		requestPhaseChange:FireServer("CaseClosed")
 	end)
 
 	InputController.onClose(function()
@@ -197,6 +224,7 @@ local function bootstrap()
 	end)
 
 	objectiveCompleted.OnClientEvent:Connect(function(payload: Types.ObjectivePayload)
+		investigationComplete = payload.allComplete
 		ObjectiveView.showCompleted(payload)
 	end)
 
@@ -221,6 +249,13 @@ local function bootstrap()
 
 	reasoningUpdated.OnClientEvent:Connect(function(payload: Types.ReasoningPayload)
 		CaseFileView.update(payload)
+	end)
+
+	caseClosedSummary.OnClientEvent:Connect(function(summary: Types.CaseClosedSummary)
+		lastCaseClosedSummary = summary
+		if currentPhase == "CaseClosed" then
+			CaseClosedView.show(summary)
+		end
 	end)
 
 	-- Join race guard: the server fires the phase/case on PlayerAdded, which can

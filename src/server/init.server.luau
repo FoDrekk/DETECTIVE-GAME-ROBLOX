@@ -58,6 +58,7 @@ local function bootstrap()
 	local objectiveCompletedEvent = Signals.get(Signals.Names.ObjectiveCompleted)
 	local dialogueEvent = Signals.get(Signals.Names.DialogueUpdated)
 	local reasoningEvent = Signals.get(Signals.Names.ReasoningUpdated)
+	local caseClosedSummaryEvent = Signals.get(Signals.Names.CaseClosedSummary)
 	local requestObjectives = Signals.get(Signals.Names.RequestObjectives)
 	local requestTimeline = Signals.get(Signals.Names.RequestTimeline)
 
@@ -93,6 +94,10 @@ local function bootstrap()
 
 	ReasoningService.onUpdated().Event:Connect(function(player: Player, payload)
 		reasoningEvent:FireClient(player, payload)
+	end)
+
+	GameStateService.onCaseClosed().Event:Connect(function(player: Player, summary)
+		caseClosedSummaryEvent:FireClient(player, summary)
 	end)
 
 	-- 4. Phase machine (depends on cases + player data).
