@@ -126,7 +126,14 @@ function ObjectiveView.showCompleted(payload: Types.ObjectivePayload)
 	if not completedTitleLabel then
 		return
 	end
-	completedTitleLabel.Text = `OBJECTIVE COMPLETE\n{payload.objective.title}`
+	-- Phase 2K: when this was the last objective, say so -- otherwise the
+	-- panel silently stops updating with no acknowledgment that there is
+	-- nothing further to do yet.
+	if payload.allComplete then
+		completedTitleLabel.Text = `INVESTIGATION COMPLETE\n{payload.objective.title}`
+	else
+		completedTitleLabel.Text = `OBJECTIVE COMPLETE\n{payload.objective.title}`
+	end
 	setVisible(true)
 end
 

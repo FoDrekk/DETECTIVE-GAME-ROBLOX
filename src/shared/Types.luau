@@ -206,6 +206,10 @@ export type ObjectiveProgress = {
 
 export type ObjectivePayload = {
 	objective: ObjectiveProgress,
+	-- True only when the player has no active objective left after this
+	-- update -- every currently-authored objective in the case is complete
+	-- (Phase 2K). Distinct from `objective.completed`, which is about this
+	-- one objective only.
 	allComplete: boolean,
 }
 

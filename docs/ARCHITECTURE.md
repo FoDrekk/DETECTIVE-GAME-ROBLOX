@@ -186,6 +186,19 @@ interacted instance's `Name`. It exists for requirements that should advance
 on interacting with a specific named object regardless of evidence — CASE-001
 does not currently use it.
 
+### "Investigation complete" (Phase 2K)
+
+`Types.ObjectivePayload.allComplete` existed since Phase 2F's multi-objective
+work but was computed wrong (`objectiveIsComplete(objective, progress)` —
+identical to `payload.objective.completed`, one field over) and had no
+client-side reader. Phase 2K fixes the computation to what the field always
+claimed: `getActiveObjective(data) == nil`, true only once no objective
+remains active for the player. `ObjectiveView.showCompleted` now reads it —
+when true, the existing per-objective completion banner reads "INVESTIGATION
+COMPLETE" instead of "OBJECTIVE COMPLETE". No `GamePhase` transition is
+triggered by this; the player keeps playing exactly as before, just with an
+honest acknowledgment that every currently-authored objective is done.
+
 ## Suspects and locations (Phase 2F)
 
 `Types.SuspectDefinition` and `Types.LocationDefinition` are unchanged and

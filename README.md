@@ -82,6 +82,18 @@ print `[PASS]` / `[FAIL]` / `[TIMEOUT]` plus a `[SUMMARY]` line.
 
 ## Status
 
+Phase 2K: the investigation tells you when it's done.
+
+- **"Investigation Complete" acknowledgment**: once every currently-authored
+  objective (`OBJ-001` → `OBJ-002` → `OBJ-003`) is complete, the objective
+  panel says so explicitly instead of silently going quiet.
+- **Bug fix**: `ObjectivePayload.allComplete` had existed since Phase 2F but
+  was computed wrong (it duplicated `objective.completed` instead of meaning
+  "no objective remains active") and had no reader. Now correct and
+  consumed by `ObjectiveView`.
+- No new content, no `GamePhase` transition, no accusation/resolution — the
+  player keeps playing exactly as before.
+
 Phase 2J: the first contradiction now has a gameplay consequence.
 
 - **`OBJ-003`** ("Review Victor Lane's Statement") completes the moment

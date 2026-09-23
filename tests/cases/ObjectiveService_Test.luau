@@ -4,8 +4,16 @@
 	Covers requirement progress from evidence/interaction, completion exactly
 	once, that replaying the same interaction adds no progress, (Phase 2F)
 	data-driven multi-objective sequencing via `prerequisites` and the
-	`target` requirement gate, and (Phase 2J) the contradiction/deduction
-	requirement gates driven by ReasoningService's StoryEvents.
+	`target` requirement gate, (Phase 2J) the contradiction/deduction
+	requirement gates driven by ReasoningService's StoryEvents, and (Phase 2K)
+	that no objective remains active once every one is complete -- the
+	condition `ObjectivePayload.allComplete` is computed from. The wire
+	payload's `allComplete` field itself is verified via the real Studio
+	walkthrough, not here: `ObjectiveService.onUpdated()`'s BindableEvent
+	fires deferred, so capturing a fired payload from inside this harness is
+	unreliable (see Phase 2H's notes) -- `getActiveObjectiveId` is the exact
+	synchronous condition `allComplete` is derived from
+	(`getActiveObjective(data) == nil`), so testing it here is equivalent.
 
 	Each case uses a unique mock UserId for isolation. The sequencing tests
 	register a small synthetic case purely for this test run (CaseRegistry.
@@ -575,5 +583,65 @@ return function(t)
 		expect.truthy(progress["REQ-001"])
 		expect.falsy(progress["REQ-002"])
 		expect.falsy(progress["REQ-003"])
+	end)
+
+	----------------------------------------------------------------------
+	-- "All objectives complete" condition (Phase 2K). `allComplete` on the
+	-- wire payload is `getActiveObjective(data) == nil` -- exactly what
+	-- `getActiveObjectiveId` already reports synchronously, so verifying it
+	-- here verifies the same logic without depending on deferred
+	-- BindableEvent delivery. See the file header for why.
+	----------------------------------------------------------------------
+
+	t.test("an active objective remains after only OBJ-001 completes", function()
+		local player = makePlayer()
+		ObjectiveService.recordInteraction(player, "Examine", "EV-001")
+		ObjectiveService.recordInteraction(player, "Examine", "EV-002")
+		ObjectiveService.recordInteraction(player, "Read", "EV-003")
+		expect.equal(ObjectiveService.getActiveObjectiveId(player), "OBJ-002")
+	end)
+
+	t.test("an active objective remains after only OBJ-002 completes", function()
+		local player = makePlayer()
+		ObjectiveService.recordInteraction(player, "Examine", "EV-001")
+		ObjectiveService.recordInteraction(player, "Examine", "EV-002")
+		ObjectiveService.recordInteraction(player, "Read", "EV-003")
+		ConversationService.begin(player, "SUS-002")
+		ObjectiveService.recordInteraction(player, "Talk", nil, "SUS-002")
+		expect.equal(ObjectiveService.getActiveObjectiveId(player), "OBJ-003")
+	end)
+
+	t.test("no active objective remains once OBJ-003 (the last objective) completes", function()
+		local player = makePlayer()
+		local data = PlayerDataService.get(player)
+
+		ObjectiveService.recordInteraction(player, "Examine", "EV-001")
+		ObjectiveService.recordInteraction(player, "Examine", "EV-002")
+		ObjectiveService.recordInteraction(player, "Read", "EV-003")
+		ConversationService.begin(player, "SUS-002")
+		ObjectiveService.recordInteraction(player, "Talk", nil, "SUS-002")
+		ConversationService.advance(player) -- unlocks STMT-SUS-002-ALIBI
+		expect.truthy(ObjectiveService.getActiveObjectiveId(player)) -- OBJ-003 still open
+
+		EvidenceService.discover(player, "EV-004")
+		ReasoningService.evaluate(player)
+		ObjectiveService.recordFact(player, "Contradiction", "CONTRA-001")
+
+		expect.truthy(data.caseState.completedObjectives["OBJ-003"])
+		expect.falsy(ObjectiveService.getActiveObjectiveId(player))
+	end)
+
+	t.test("no active objective remains only once every fixture objective (OBJ-A/B/C) is complete", function()
+		local player = makeSeqPlayer()
+		expect.truthy(ObjectiveService.getActiveObjectiveId(player)) -- OBJ-A
+
+		ObjectiveService.recordInteraction(player, "Examine", nil, "Fixture") -- completes OBJ-A
+		expect.equal(ObjectiveService.getActiveObjectiveId(player), "OBJ-B")
+
+		ObjectiveService.recordInteraction(player, "Read", nil, nil) -- completes OBJ-B
+		expect.equal(ObjectiveService.getActiveObjectiveId(player), "OBJ-C")
+
+		ObjectiveService.recordInteraction(player, "Talk", nil, "SuspectFixture") -- completes OBJ-C
+		expect.falsy(ObjectiveService.getActiveObjectiveId(player))
 	end)
 end

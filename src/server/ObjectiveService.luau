@@ -191,7 +191,8 @@ function ObjectiveService.sendCurrent(player: Player)
 	end
 	local progress = ensureProgress(data, objective.id)
 	local payload = buildPayload(objective, progress)
-	payload.allComplete = objectiveIsComplete(objective, progress)
+	-- `objective` is the active one, so there is always a further objective
+	-- left; `allComplete` keeps buildPayload's default of `false` here.
 	objectiveUpdatedEvent:Fire(player, payload)
 end
 
@@ -240,7 +241,6 @@ local function evaluateObjectives(
 
 			if objectiveAdvanced then
 				local payload = buildPayload(objective, progress)
-				payload.allComplete = objectiveIsComplete(objective, progress)
 				local justCompleted = payload.objective.completed
 					and not data.caseState.completedObjectives[objective.id]
 				if justCompleted then
@@ -251,6 +251,10 @@ local function evaluateObjectives(
 					})
 					StoryEvents.publish("ObjectiveCompleted", player, { objectiveId = objective.id })
 				end
+				-- Computed after completedObjectives is updated above, so a
+				-- just-completed final objective is correctly reflected here
+				-- (Phase 2K): true only once no objective remains active.
+				payload.allComplete = getActiveObjective(data) == nil
 				objectiveUpdatedEvent:Fire(player, payload, justCompleted)
 			end
 		end
