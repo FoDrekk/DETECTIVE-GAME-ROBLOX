@@ -102,9 +102,12 @@ local Case001: Types.CaseDefinition = {
 			category = "Security",
 			-- No hand-placed counterpart exists in the Studio-authored office
 			-- asset; OfficeRoom spawns a minimal physical prop for it (see
-			-- OfficeRoom.luau's evidence-prop spawner).
+			-- OfficeRoom.luau's evidence-prop spawner). Positioned close
+			-- against the reception desk/panel cluster (Phase 2L-A office
+			-- redesign) so it reads as an access-control terminal at the
+			-- point of entry, without any change to what it means.
 			propPlacement = {
-				position = Vector3.new(24, 3, 15.5),
+				position = Vector3.new(24, 3, 16.5),
 				lookAt = Vector3.new(24, 3, 20),
 			},
 		},

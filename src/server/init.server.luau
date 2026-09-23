@@ -27,6 +27,7 @@ local ReasoningService = require(Services:WaitForChild("ReasoningService"))
 local InteractionService = require(Services:WaitForChild("InteractionService"))
 local GameStateService = require(Services:WaitForChild("GameStateService"))
 local OfficeRoom = require(Services:WaitForChild("OfficeRoom"))
+local OfficeDetailing = require(Services:WaitForChild("OfficeDetailing"))
 local SuspectSpawner = require(Services:WaitForChild("SuspectSpawner"))
 
 --[[
@@ -48,6 +49,7 @@ local function bootstrap()
 
 	-- 0. Environment integration (lighting, ground, authored-content validation).
 	OfficeRoom.start()
+	OfficeDetailing.start()
 	SuspectSpawner.start()
 
 	-- 1. Create remote objects.
