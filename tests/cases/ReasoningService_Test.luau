@@ -6,10 +6,13 @@
 	payloads, and the EvidenceDiscovered/StatementUnlocked -> reasoning
 	integration (Phase 2H).
 
-	CASE-001 has no authored contradiction/deduction content (see
-	ARCHITECTURE.md for why), so this entire suite runs against a synthetic
-	case registered purely for this test run -- CASE-001's real evidence,
-	statement and suspect data are never touched or duplicated.
+	Phase 2H shipped this suite entirely against a synthetic fixture case,
+	since CASE-001 had no authored contradiction/deduction content yet (see
+	ARCHITECTURE.md for why). Phase 2I adds CASE-001's first real one
+	(CONTRA-001), so a second section below exercises the exact same
+	behaviors against real CASE-001 data instead. The synthetic fixture stays
+	-- it is what proves invalid-reference safety and other edge cases
+	CASE-001's authored content isn't shaped to exercise.
 
 	Each case uses a unique mock UserId for isolation.
 ]]
@@ -351,5 +354,144 @@ return function(t)
 		for _, deduction in ipairs(payload.deductions) do
 			expect.falsy(deduction.id == "DEDUCE-INVALID")
 		end
+	end)
+
+	----------------------------------------------------------------------
+	-- CASE-001's real contradiction (Phase 2I): CONTRA-001, linking Victor
+	-- Lane's own already-authored alibi statement to the keycard log
+	-- evidence's own already-authored `details` text. Same ReasoningService
+	-- behavior as the synthetic fixture above, now proven against real
+	-- production case data instead of only a test-only stand-in.
+	----------------------------------------------------------------------
+
+	local function makeRealPlayer(): any
+		local id = t.nextUserId()
+		local player = { UserId = id, Name = `REALREASON{id}` }
+		PlayerDataService.initialize(player, "CASE-001")
+		return player
+	end
+
+	t.test("CONTRA-001 stays locked with neither fact known", function()
+		local player = makeRealPlayer()
+		ReasoningService.evaluate(player)
+		local data = PlayerDataService.get(player)
+		expect.falsy(data.caseState.unlockedContradictions["CONTRA-001"])
+	end)
+
+	t.test("CONTRA-001 stays locked with only Victor's statement known", function()
+		local player = makeRealPlayer()
+		ConversationService.begin(player, "SUS-002")
+		ConversationService.advance(player) -- unlocks STMT-SUS-002-ALIBI
+		ReasoningService.evaluate(player)
+		local data = PlayerDataService.get(player)
+		expect.falsy(data.caseState.unlockedContradictions["CONTRA-001"])
+	end)
+
+	t.test("CONTRA-001 stays locked with only the keycard log known", function()
+		local player = makeRealPlayer()
+		EvidenceService.discover(player, "EV-004")
+		ReasoningService.evaluate(player)
+		local data = PlayerDataService.get(player)
+		expect.falsy(data.caseState.unlockedContradictions["CONTRA-001"])
+	end)
+
+	t.test("CONTRA-001 unlocks once both Victor's statement and the keycard log are known", function()
+		local player = makeRealPlayer()
+		ConversationService.begin(player, "SUS-002")
+		ConversationService.advance(player)
+		EvidenceService.discover(player, "EV-004")
+		ReasoningService.evaluate(player)
+		local data = PlayerDataService.get(player)
+		expect.truthy(data.caseState.unlockedContradictions["CONTRA-001"])
+	end)
+
+	t.test("CONTRA-001 unlock is idempotent: ContradictionUnlocked publishes exactly once", function()
+		local player = makeRealPlayer()
+		withPublishSpy(function(calls)
+			ConversationService.begin(player, "SUS-002")
+			ConversationService.advance(player)
+			EvidenceService.discover(player, "EV-004")
+			ReasoningService.evaluate(player)
+			ReasoningService.evaluate(player) -- redundant re-evaluation, must be a no-op
+
+			local unlocks = 0
+			for _, call in ipairs(calls) do
+				if call.kind == "ContradictionUnlocked" and call.player == player then
+					unlocks += 1
+				end
+			end
+			expect.equal(unlocks, 1)
+		end)
+	end)
+
+	t.test("CONTRA-001's payload carries correct, spoiler-safe summaries", function()
+		local player = makeRealPlayer()
+		ConversationService.begin(player, "SUS-002")
+		ConversationService.advance(player)
+		EvidenceService.discover(player, "EV-004")
+		ReasoningService.evaluate(player)
+
+		local payload = ReasoningService.getPayload(player)
+		expect.equal(#payload.contradictions, 1)
+		local contradiction = payload.contradictions[1]
+		expect.equal(contradiction.id, "CONTRA-001")
+		expect.equal(contradiction.leftSummary, "Alibi")
+		expect.equal(contradiction.rightSummary, "Keycard Log")
+
+		-- No locked/undiscovered fact from any other suspect leaks in.
+		expect.equal(#payload.statements, 1)
+		expect.equal(payload.statements[1].id, "STMT-SUS-002-ALIBI")
+	end)
+
+	t.test("CONTRA-001 does not appear before both facts are known (spoiler safety)", function()
+		local player = makeRealPlayer()
+		ConversationService.begin(player, "SUS-002")
+		ConversationService.advance(player) -- only the statement is known
+		ReasoningService.evaluate(player)
+
+		local payload = ReasoningService.getPayload(player)
+		expect.equal(#payload.contradictions, 0)
+	end)
+
+	-- Full pipeline, real CASE-001 data: Victor's conversation and the
+	-- keycard log discovery each independently trigger reasoning evaluation
+	-- through StoryEvents, exactly like the synthetic-fixture integration
+	-- tests above -- proven here with the production contradiction instead.
+	t.test("Victor conversation -> statement -> keycard log -> reasoning evaluation -> contradiction unlock", function()
+		local player = makeRealPlayer()
+
+		withPublishSpy(function(calls)
+			ConversationService.begin(player, "SUS-002")
+			ConversationService.advance(player)
+
+			local sawStatementUnlocked = false
+			for _, call in ipairs(calls) do
+				if call.kind == "StatementUnlocked" and call.player == player then
+					sawStatementUnlocked = true
+				end
+			end
+			expect.truthy(sawStatementUnlocked)
+		end)
+
+		withPublishSpy(function(calls)
+			EvidenceService.discover(player, "EV-004")
+
+			local sawEvidenceDiscovered = false
+			for _, call in ipairs(calls) do
+				if call.kind == "EvidenceDiscovered" and call.player == player then
+					sawEvidenceDiscovered = true
+				end
+			end
+			expect.truthy(sawEvidenceDiscovered)
+		end)
+
+		-- Same data the real StoryEvents-driven subscription would have
+		-- already applied in production; see the synthetic-fixture
+		-- integration tests above for why this is checked this way rather
+		-- than waiting on live deferred BindableEvent delivery.
+		ReasoningService.evaluate(player)
+		local payload = ReasoningService.getPayload(player)
+		expect.equal(#payload.contradictions, 1)
+		expect.equal(payload.contradictions[1].id, "CONTRA-001")
 	end)
 end

@@ -82,25 +82,41 @@ print `[PASS]` / `[FAIL]` / `[TIMEOUT]` plus a `[SUMMARY]` line.
 
 ## Status
 
-Phase 2H in progress: investigation reasoning architecture (contradictions
-and deductions), no new story content.
+Phase 2I: second suspect, first real contradiction.
+
+- **Victor Lane (SUS-002) is now playable**: same generic pattern as Mara
+  Reyes — `npcPlacement`, a `ConversationDefinition`, a `StatementDefinition`
+  — authored entirely as case data, no `SuspectSpawner`/`ConversationService`
+  code changes needed.
+- **CASE-001's first real contradiction**: `CONTRA-001` links Victor's own
+  alibi statement ("Says he left the office at 22:30. Keycard log suggests
+  otherwise.") to a new, independently discoverable `EV-004` ("Keycard Log")
+  evidence item, whose `details` states only that the record disagrees with
+  his claim — no new timestamp or event was invented. `ReasoningService`
+  evaluates it with the same generic logic Phase 2H already shipped; nothing
+  in `ReasoningService` changed.
+- **`OBJ-002`** ("Question Victor Lane") directs the player to him after
+  `OBJ-001`, using the existing Talk+target requirement for the first time
+  against a real suspect (previously only proven by a synthetic fixture).
+- **Case File** now shows both suspects' statements, clearly attributed
+  (`MARA REYES — ALIBI` / `VICTOR LANE — ALIBI`), and — once both facts are
+  discovered — the first contradiction ever shown there.
+- `EV-004` has no hand-placed counterpart in the Studio-authored office
+  asset; `OfficeRoom` spawns a minimal physical prop for it at runtime from
+  a new, optional `EvidenceDefinition.propPlacement` field (mirrors
+  `npcPlacement`). See `docs/ARCHITECTURE.md` for why.
+
+Phase 2H: investigation reasoning architecture (contradictions and
+deductions), shipped with the mechanism proven but no real content yet.
 
 - **`ReasoningService`**: evaluates contradiction/deduction unlock from
   already-discovered evidence and already-unlocked statements, driven purely
   by `StoryEvents` (`EvidenceDiscovered`, `StatementUnlocked`) — no polling,
   no per-frame scans, deterministic and config-driven (never inferred from
   text).
-- **CASE-001 has no contradiction/deduction content.** Audited first: no two
-  independently discoverable facts in the current case genuinely conflict,
-  and any "deduction" text would require authoring new narrative prose that
-  doesn't exist verbatim anywhere today. Rather than manufacture one, the
-  entire mechanism is proven with a synthetic test fixture instead. See
-  `docs/ARCHITECTURE.md` for the full reasoning.
 - **Case File UI**: a new persistent `CaseFileView` (`[C]` to open) lists
   unlocked statements — closing a real gap, since previously the only way to
   see the alibi statement was the transient notice during dialogue.
-  Contradiction/Deduction sections exist and are tested, but render empty
-  for CASE-001 today, honestly, rather than showing placeholder content.
 
 Phase 2G: first playable story layer — a one-suspect
 encounter/talk/dialogue/completion vertical slice.
@@ -183,9 +199,10 @@ briefing presentation data.
 As of Phase 2C: no NPCs, dialogue, interrogation, suspect AI, deduction board,
 contradiction system, accusation, persistence, multiplayer, monetisation,
 final character models or full exterior city yet. (Phase 2G added one static,
-talkable suspect NPC with a linear conversation — see Status above; NPC
-AI/movement, interrogation, a second suspect, contradiction/deduction and
-accusation are still not implemented.)
+talkable suspect NPC with a linear conversation; Phase 2I added a second and
+CASE-001's first real contradiction — see Status above. NPC AI/movement,
+interrogation, a deduction, a second contradiction, and accusation are still
+not implemented.)
 
 ### Core loop
 

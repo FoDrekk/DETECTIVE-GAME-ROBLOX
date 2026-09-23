@@ -70,11 +70,30 @@ return function(t)
 		expect.equal(reason, "unknown-suspect")
 	end)
 
-	-- SUS-002 exists in Case001 but has no authored conversation (Phase 2G
-	-- ships exactly one playable suspect).
+	-- Both of CASE-001's suspects now author a conversation (Phase 2I), so
+	-- this rejection path is proven against a synthetic fixture suspect
+	-- instead -- the underlying "known suspect, no conversation" case the
+	-- service must still handle safely, without touching real case data.
 	t.test("begin rejects a suspect with no authored conversation", function()
-		local player = makePlayer()
-		local ok, reason = ConversationService.begin(player, "SUS-002")
+		local ReplicatedStorage = game:GetService("ReplicatedStorage")
+		local CaseRegistry = require(ReplicatedStorage:WaitForChild("Config"):WaitForChild("CaseRegistry"))
+		CaseRegistry.register({
+			id = "CASE-TEST-NO-CONVERSATION",
+			title = "No-Conversation Fixture",
+			description = "",
+			suspects = { { id = "SUS-FIXTURE", name = "Fixture Suspect", role = "Fixture", alibi = "" } },
+			locations = {},
+			evidence = {},
+			timeline = {},
+			objectives = {},
+			conversations = {},
+			statements = {},
+		})
+		local id = t.nextUserId()
+		local player = { UserId = id, Name = `CONV{id}` }
+		PlayerDataService.initialize(player, "CASE-TEST-NO-CONVERSATION")
+
+		local ok, reason = ConversationService.begin(player, "SUS-FIXTURE")
 		expect.falsy(ok)
 		expect.equal(reason, "no-conversation")
 	end)
@@ -349,6 +368,7 @@ return function(t)
 		expect.truthy(payload)
 		expect.equal(payload.id, "STMT-SUS-001-ALIBI")
 		expect.equal(payload.suspectId, "SUS-001")
+		expect.equal(payload.suspectName, "Mara Reyes")
 		expect.equal(payload.label, "Alibi")
 	end)
 
@@ -373,5 +393,63 @@ return function(t)
 		ConversationService.begin(player, "SUS-001")
 		ConversationService.advance(player)
 		expect.falsy(ConversationService.getUnlockedStatement(player, "STMT-DOES-NOT-EXIST"))
+	end)
+
+	-- -----------------------------------------------------------------
+	-- SUS-002 / Victor Lane (Phase 2I): the same conversation mechanics
+	-- proven above for Mara, now exercised against Victor's own real,
+	-- already-authored data -- not a duplicate contract, the same service
+	-- and the same case's second suspect.
+	-- -----------------------------------------------------------------
+
+	t.test("begin starts SUS-002's conversation at its start node", function()
+		local player = makePlayer()
+		local ok = ConversationService.begin(player, "SUS-002")
+		expect.truthy(ok)
+		local data = PlayerDataService.get(player)
+		expect.truthy(data and data.caseState.activeConversation)
+		expect.equal(data.caseState.activeConversation.suspectId, "SUS-002")
+		expect.equal(data.caseState.activeConversation.nodeId, "SUS-002-1")
+	end)
+
+	t.test("advancing SUS-002's conversation unlocks his alibi statement and completes", function()
+		local player = makePlayer()
+		ConversationService.begin(player, "SUS-002")
+		ConversationService.advance(player) -- -> alibi node (SUS-002-2), unlocks the statement
+		expect.truthy(ConversationService.isStatementUnlocked(player, "STMT-SUS-002-ALIBI"))
+
+		ConversationService.advance(player) -- -> closing node (SUS-002-3, final)
+		ConversationService.advance(player) -- -> completes
+		local data = PlayerDataService.get(player)
+		expect.falsy(data.caseState.activeConversation)
+		expect.truthy(data.caseState.completedConversations["SUS-002"])
+	end)
+
+	t.test("SUS-002's unlocked statement text matches his authored alibi exactly", function()
+		local ServerScriptService = game:GetService("ServerScriptService")
+		local CaseService = require(ServerScriptService:WaitForChild("Server"):WaitForChild("CaseService"))
+		local player = makePlayer()
+		ConversationService.begin(player, "SUS-002")
+		ConversationService.advance(player)
+
+		local payload = ConversationService.getUnlockedStatement(player, "STMT-SUS-002-ALIBI")
+		local suspect = CaseService.getSuspect("CASE-001", "SUS-002")
+		expect.truthy(payload)
+		expect.truthy(suspect)
+		expect.equal(payload.text, suspect.alibi)
+		expect.equal(payload.suspectName, "Victor Lane")
+	end)
+
+	t.test("SUS-001 and SUS-002 conversations do not interfere with each other", function()
+		local player = makePlayer()
+		ConversationService.begin(player, "SUS-001")
+		local ok = ConversationService.begin(player, "SUS-002")
+		expect.falsy(ok) -- already talking to Mara; matches the existing single-active-conversation rule
+
+		ConversationService.leave(player)
+		local startedVictor = ConversationService.begin(player, "SUS-002")
+		expect.truthy(startedVictor)
+		local data = PlayerDataService.get(player)
+		expect.equal(data.caseState.activeConversation.suspectId, "SUS-002")
 	end)
 end

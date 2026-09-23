@@ -71,7 +71,7 @@ local function addStatementRow(y: number, statement: Types.StatementPayload): nu
 
 	Components.text({
 		name = "Label",
-		text = string.upper(statement.label),
+		text = `{string.upper(statement.suspectName)} — {string.upper(statement.label)}`,
 		size = UDim2.new(1, 0, 0, 14),
 		position = UDim2.fromOffset(0, 0),
 		font = Theme.FontBold,

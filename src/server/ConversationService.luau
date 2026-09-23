@@ -126,6 +126,7 @@ local function buildStatementPayload(caseId: string, statement: Types.StatementD
 	return {
 		id = statement.id,
 		suspectId = statement.suspectId,
+		suspectName = suspect.name,
 		label = statement.label,
 		text = suspect.alibi,
 	}

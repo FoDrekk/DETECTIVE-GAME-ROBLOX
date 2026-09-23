@@ -4,8 +4,8 @@
 	Runtime placement of physical NPC representations for suspects that
 	author an `npcPlacement` (Types.SuspectDefinition). Purely staging: no
 	suspect id is hardcoded here -- every suspect with npcPlacement gets an
-	NPC; a suspect without it simply has none yet (Phase 2G ships exactly
-	one, per SUS-001's authored data).
+	NPC; a suspect without it simply has none (Phase 2G shipped SUS-001;
+	Phase 2I adds SUS-002 -- no code change was needed for the second one).
 
 	Builds a minimal, static (unanimated) humanoid rig and tags it with the
 	shared Interactable contract (Talk kind, SuspectId attribute), so
@@ -54,7 +54,12 @@ local function buildNpc(suspect: Types.SuspectDefinition): Model?
 	local model = Instance.new("Model")
 	model.Name = suspect.name
 
-	local rootPart = part("HumanoidRootPart", Vector3.new(2, 2, 1), Color3.new(0, 0, 0), Enum.Material.Plastic)
+	-- Named after the suspect's id (not the literal "HumanoidRootPart") so an
+	-- ObjectiveRequirement.target can address one specific suspect's NPC --
+	-- every spawned rig would otherwise share the same instance name. Safe:
+	-- these rigs are fully anchored/static (no animation, no MoveTo, no
+	-- physics), so nothing depends on the literal name "HumanoidRootPart".
+	local rootPart = part(suspect.id, Vector3.new(2, 2, 1), Color3.new(0, 0, 0), Enum.Material.Plastic)
 	rootPart.Transparency = 1
 	rootPart.Parent = model
 	model.PrimaryPart = rootPart

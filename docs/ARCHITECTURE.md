@@ -246,6 +246,16 @@ distance) treat it exactly like any other interactable; the only new logic is
 `InteractionService`'s `talkHandler`, which calls
 `ConversationService.begin(player, descriptor.suspectId)`.
 
+The root part is named after the suspect's `id` (not the literal
+"HumanoidRootPart") so an `ObjectiveRequirement.target` can address one
+specific suspect's NPC — every spawned rig would otherwise share the same
+instance name. Safe: these rigs are fully anchored, static, and never
+animated or moved, so nothing depends on the literal name
+"HumanoidRootPart" (that name is still used for the *player's own* character
+root part elsewhere, an unrelated lookup). Only `SUS-001` had `npcPlacement`
+through Phase 2H; Phase 2I adds `SUS-002` — no `SuspectSpawner` code changed
+for the second suspect, exactly as this module's docstring anticipated.
+
 ## Conversations (Phase 2G)
 
 `ConversationService` is the sole authority over conversation state. Per
@@ -330,6 +340,11 @@ inventing storyline content that doesn't exist in the case data. The
 mechanism is proven end-to-end instead by a synthetic test case (see
 `ObjectiveService_Test`'s `CASE-TEST-SEQ` fixture, `OBJ-C`).
 
+Phase 2I gives the mechanism its first real use: `OBJ-002` ("Question Victor
+Lane") requires `interaction = "Talk", target = "SUS-002"`, gated behind
+`OBJ-001` via `prerequisites`. `OBJ-001` itself is untouched — its
+requirements and behavior are exactly what they were in Phase 2C.
+
 ## Investigation reasoning (Phase 2H)
 
 `ReasoningService` evaluates two kinds of relationship between already-known
@@ -410,36 +425,62 @@ afterward. The Contradictions/Deductions sections are real, tested
 architecture with a real consumer (the UI itself); they simply render empty
 for CASE-001 today, honestly, rather than showing placeholder content.
 
-### CASE-001 contradiction/deduction content: deliberately absent
+### CASE-001's first real contradiction (Phase 2I)
 
-Audited before writing any code (Phase 2H's first requirement): CASE-001 does
-not contain two independently discoverable facts that actually conflict, nor
-a conclusion expressible without authoring new narrative prose that doesn't
-exist verbatim anywhere in the case data today. SUS-002's alibi
-("Says he left the office at 22:30. Keycard log suggests otherwise.") hints
-at a contradiction in its prose, but the "keycard log" is only a phrase
-inside that one alibi string — not a separate, ID-referenceable fact — and
-SUS-002 has no conversation to unlock anything from at all (Phase 2G shipped
-exactly one playable suspect). Rather than manufacture a contradiction or
-deduction to demonstrate the feature, `CASE-001.contradictions` and
-`.deductions` are both empty arrays, and the entire mechanism — unlock
-gating, idempotency, invalid-reference fail-safety, spoiler-safe payloads,
-the `EvidenceDiscovered`/`StatementUnlocked` integration — is proven instead
-by a synthetic fixture (`ReasoningService_Test`'s `CASE-TEST-REASONING`).
+Phase 2H audited CASE-001 and found no two independently discoverable facts
+that actually conflicted, and left `contradictions`/`deductions` empty rather
+than manufacture one — the mechanism was proven only by a synthetic fixture
+(`ReasoningService_Test`'s `CASE-TEST-REASONING`, which still exists and still
+covers edge cases CASE-001 itself doesn't, like invalid fact references).
 
-## Deliberately not implemented (Phase 2G/2H boundary)
+Phase 2I brings SUS-002 (Victor Lane) online as CASE-001's second playable
+suspect — `npcPlacement`, a `ConversationDefinition`, and a
+`StatementDefinition`, authored exactly the way `SuspectSpawner`/
+`ConversationService` already expected, no service code changed for it. His
+statement's text is still resolved live from his own already-authored
+`alibi` field, never duplicated.
 
-Phase 2G is a one-suspect vertical slice: encounter → talk → linear dialogue
-→ completion → one statement unlocked. Phase 2H adds the reasoning
-architecture on top without new story content. Explicitly out of scope until
-their own phase: a second suspect or any suspect beyond SUS-001, branching
-dialogue/choices, interrogation, accusation/case resolution, contradiction/
-deduction *content* for CASE-001 (the architecture is real; the case data is
-not), NPC AI/movement/animation, voice acting, cinematic cutscenes,
-additional locations, persistence, and multiplayer/per-session state.
-`Types.DialogueNodeDefinition.next` still supports a linear chain only — a
-real choice/branch contract remains future work, added only once a case's
-content actually needs it.
+That alibi ("Says he left the office at 22:30. Keycard log suggests
+otherwise.") already implied an independently discoverable access record;
+`EV-004` ("Keycard Log") is that record, made real. Its `details` text
+states only that the record disagrees with his own stated departure time —
+it does not invent a new timestamp, location, or event anywhere the case
+data doesn't already support one. `EV-004` authors `propPlacement` (see
+below) but no `timelineEventId`, since a chronological timeline entry would
+need a precise clock time this case never specifies.
+
+`CASE-001.contradictions` now declares one entry, `CONTRA-001`, linking
+`{ kind = "Statement", id = "STMT-SUS-002-ALIBI" }` to
+`{ kind = "Evidence", id = "EV-004" }` — `ReasoningService` evaluates it with
+the exact same generic logic proven in Phase 2H; nothing in `ReasoningService`
+changed. `deductions` stays empty; Phase 2I adds no deduction.
+
+#### Evidence without a Studio-authored prop
+
+`EV-001`/`EV-002`/`EV-003` are all hand-placed in the Studio-authored
+`assets/Office.rbxm`. `EV-004` has no such counterpart: there was no reliable
+way from this development environment to persist a live Studio-side edit of
+that binary asset back into the tracked file. Instead, `Types.EvidenceDefinition`
+gained an optional `propPlacement` field (`{ position, lookAt? }`, mirroring
+`SuspectDefinition.npcPlacement` exactly), and `OfficeRoom` — already the
+module responsible for runtime office setup, not a new service — spawns a
+minimal static prop for any evidence that authors one, tags it with the same
+`Interactable` contract as every hand-placed prop, and parents it under a new
+`Workspace.Office.EvidenceProps` folder. Evidence without `propPlacement`
+(`EV-001`–`EV-003`) is completely unaffected — this is purely additive.
+
+## Deliberately not implemented (Phase 2G/2H/2I boundary)
+
+Phase 2G shipped a one-suspect vertical slice; Phase 2H added the reasoning
+architecture with no content to run it on; Phase 2I brought SUS-002 online
+and authored CASE-001's first real contradiction. Explicitly out of scope
+until their own phase: any suspect beyond SUS-001/SUS-002, branching
+dialogue/choices, interrogation, accusation/case resolution, a deduction for
+CASE-001, a second contradiction, NPC AI/movement/animation, voice acting,
+cinematic cutscenes, additional locations, persistence, and
+multiplayer/per-session state. `Types.DialogueNodeDefinition.next` still
+supports a linear chain only — a real choice/branch contract remains future
+work, added only once a case's content actually needs it.
 
 ## Extension points (future phases)
 

@@ -107,13 +107,61 @@ return function(t)
 		expect.falsy(advanced)
 	end)
 
-	-- CASE-001 still has exactly one objective with no prerequisites, so it
-	-- must remain the active objective from the start (Phase 2E behavior,
-	-- now derived from the data-driven active-objective lookup instead of a
+	-- CASE-001's first objective still has no prerequisites, so it must
+	-- remain the active objective from the start (Phase 2E behavior, now
+	-- derived from the data-driven active-objective lookup instead of a
 	-- hardcoded objectives[1]).
 	t.test("OBJ-001 remains active with no prerequisites (regression)", function()
 		local player = makePlayer()
 		expect.equal(ObjectiveService.getActiveObjectiveId(player), "OBJ-001")
+	end)
+
+	-- -----------------------------------------------------------------
+	-- OBJ-002 (Phase 2I): CASE-001's real second objective, gated behind
+	-- OBJ-001 via `prerequisites`, requiring a real Talk+target interaction
+	-- with SUS-002's spawned NPC. Exercises the exact same mechanism the
+	-- CASE-TEST-SEQ fixture below already proves generically -- this proves
+	-- it against CASE-001's own real data instead.
+	-- -----------------------------------------------------------------
+
+	t.test("OBJ-002 is locked while OBJ-001 is incomplete", function()
+		local player = makePlayer()
+		local advanced = ObjectiveService.recordInteraction(player, "Talk", nil, "SUS-002")
+		expect.falsy(advanced)
+		local data = PlayerDataService.get(player)
+		expect.falsy(data and data.caseState.completedObjectives["OBJ-002"])
+	end)
+
+	t.test("completing OBJ-001 activates OBJ-002", function()
+		local player = makePlayer()
+		ObjectiveService.recordInteraction(player, "Examine", "EV-001")
+		ObjectiveService.recordInteraction(player, "Examine", "EV-002")
+		ObjectiveService.recordInteraction(player, "Read", "EV-003")
+		local data = PlayerDataService.get(player)
+		expect.truthy(data and data.caseState.completedObjectives["OBJ-001"])
+		expect.equal(ObjectiveService.getActiveObjectiveId(player), "OBJ-002")
+	end)
+
+	t.test("talking to Mara (SUS-001) does not satisfy OBJ-002's target", function()
+		local player = makePlayer()
+		ObjectiveService.recordInteraction(player, "Examine", "EV-001")
+		ObjectiveService.recordInteraction(player, "Examine", "EV-002")
+		ObjectiveService.recordInteraction(player, "Read", "EV-003")
+		local advanced = ObjectiveService.recordInteraction(player, "Talk", nil, "SUS-001")
+		expect.falsy(advanced)
+		local data = PlayerDataService.get(player)
+		expect.falsy(data and data.caseState.completedObjectives["OBJ-002"])
+	end)
+
+	t.test("talking to Victor (SUS-002) completes OBJ-002 once OBJ-001 is done", function()
+		local player = makePlayer()
+		ObjectiveService.recordInteraction(player, "Examine", "EV-001")
+		ObjectiveService.recordInteraction(player, "Examine", "EV-002")
+		ObjectiveService.recordInteraction(player, "Read", "EV-003")
+		local advanced = ObjectiveService.recordInteraction(player, "Talk", nil, "SUS-002")
+		expect.truthy(advanced)
+		local data = PlayerDataService.get(player)
+		expect.truthy(data and data.caseState.completedObjectives["OBJ-002"])
 	end)
 
 	-- -----------------------------------------------------------------

@@ -83,4 +83,24 @@ return function(t)
 		expect.falsy(state["EV-001"])
 		expect.falsy(state["EV-003"])
 	end)
+
+	-- Phase 2I: EV-004 (the keycard log) discovers through the same generic
+	-- pipeline as EV-001/002/003, with no special-casing anywhere.
+	t.test("discovers the keycard log (EV-004)", function()
+		local player = makePlayer()
+		local ok = EvidenceService.discover(player, "EV-004")
+		expect.truthy(ok)
+		local state = EvidenceService.getState(player)
+		expect.truthy(state["EV-004"])
+		expect.equal(state["EV-004"].name, "Keycard Log")
+	end)
+
+	-- Duplicate discovery of EV-004 remains safe, same as any other evidence.
+	t.test("rejects a duplicate discovery of EV-004", function()
+		local player = makePlayer()
+		EvidenceService.discover(player, "EV-004")
+		local ok, reason = EvidenceService.discover(player, "EV-004")
+		expect.falsy(ok)
+		expect.equal(reason, "already-discovered")
+	end)
 end

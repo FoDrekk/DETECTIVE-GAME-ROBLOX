@@ -24,11 +24,14 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Logger = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Logger"))
 local Interactable = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Interactable"))
+local Types = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Types"))
 local CaseRegistry = require(ReplicatedStorage:WaitForChild("Config"):WaitForChild("CaseRegistry"))
 
 local log = Logger.scoped("OfficeRoom")
 
 local OfficeRoom = {}
+
+local EVIDENCE_PROPS_FOLDER_NAME = "EvidenceProps"
 
 local function clearDefaultGround()
 	for _, name in ipairs(Config.Environment.DefaultGroundNames) do
@@ -115,6 +118,73 @@ local function validateInteractables()
 	end
 end
 
+--[[
+	Builds a minimal, static, wall-panel-style prop for evidence that authors
+	`propPlacement` -- for evidence with no hand-placed counterpart in the
+	Studio-authored `assets/Office.rbxm`. Mirrors `SuspectSpawner.buildNpc`'s
+	npcPlacement-driven pattern exactly, kept here (not a new service) since
+	this is the module already responsible for runtime office setup. No
+	evidence id is hardcoded: any evidence with `propPlacement` gets a prop;
+	evidence without it simply has none (must already exist as a Studio prop,
+	as EV-001/002/003 do).
+]]
+local function buildEvidenceProp(evidence: Types.EvidenceDefinition): BasePart?
+	local placement = evidence.propPlacement
+	if not placement then
+		return nil
+	end
+
+	local part = Instance.new("Part")
+	part.Name = evidence.id
+	part.Size = Vector3.new(2, 3, 0.3)
+	part.Color = Color3.fromRGB(52, 58, 74)
+	part.Material = Enum.Material.Metal
+	part.Anchored = true
+	part.CanCollide = false
+
+	local target = if placement.lookAt
+		then CFrame.lookAt(placement.position, Vector3.new(placement.lookAt.X, placement.position.Y, placement.lookAt.Z))
+		else CFrame.new(placement.position)
+	part.CFrame = target
+
+	CollectionService:AddTag(part, Interactable.TAG)
+	part:SetAttribute(Interactable.AttributeName.Kind, "Read")
+	part:SetAttribute(Interactable.AttributeName.PromptLabel, `Read {evidence.name}`)
+	part:SetAttribute(Interactable.AttributeName.EvidenceId, evidence.id)
+
+	return part
+end
+
+local function spawnEvidenceProps()
+	local office = workspace:FindFirstChild(Config.Environment.OfficeModelName)
+	local parent = office or workspace
+
+	local folder = parent:FindFirstChild(EVIDENCE_PROPS_FOLDER_NAME)
+	if not folder then
+		folder = Instance.new("Folder")
+		folder.Name = EVIDENCE_PROPS_FOLDER_NAME
+		folder.Parent = parent
+	end
+
+	local caseDef = CaseRegistry.get(Config.Game.AutoStartCase)
+	if not caseDef then
+		return
+	end
+
+	local spawned = 0
+	for _, evidence in ipairs(caseDef.evidence) do
+		local prop = buildEvidenceProp(evidence)
+		if prop then
+			prop.Parent = folder
+			spawned += 1
+		end
+	end
+
+	if spawned > 0 then
+		log:info("evidence props spawned", { count = spawned })
+	end
+end
+
 function OfficeRoom.start()
 	clearDefaultGround()
 
@@ -124,6 +194,7 @@ function OfficeRoom.start()
 	end
 
 	applyEveningLighting()
+	spawnEvidenceProps()
 	validateInteractables()
 	log:info("environment ready", { office = office ~= nil })
 end

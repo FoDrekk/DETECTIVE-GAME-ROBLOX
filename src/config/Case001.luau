@@ -32,8 +32,13 @@ local Case001: Types.CaseDefinition = {
 			name = "Victor Lane",
 			role = "Business Partner",
 			alibi = "Says he left the office at 22:30. Keycard log suggests otherwise.",
-			-- No npcPlacement: not a playable suspect yet (Phase 2G is a
-			-- one-suspect vertical slice).
+			-- Standing at the opposite side of the meeting table from Mara,
+			-- facing its center. Technical staging only, in the same room --
+			-- no new location or story fact (Phase 2I).
+			npcPlacement = {
+				position = Vector3.new(24, 3, -17.5),
+				lookAt = Vector3.new(20, 3, -14),
+			},
 		},
 	},
 
@@ -79,6 +84,30 @@ local Case001: Types.CaseDefinition = {
 			timestamp = "12:00 AM",
 			timelineEventId = "TIMELINE-003",
 		},
+		{
+			-- Phase 2I: the independently discoverable access record already
+			-- implied by SUS-002's own authored alibi ("Keycard log suggests
+			-- otherwise"). No new timestamp is invented for it: `details`
+			-- states only that the record disagrees with Victor's own
+			-- already-authored claim, and stays silent on what it actually
+			-- shows. No timelineEventId/timestamp: a chronological timeline
+			-- entry would require inventing a precise clock time this case
+			-- does not specify anywhere.
+			id = "EV-004",
+			name = "Keycard Log",
+			description = "A printed keycard access record for the office door.",
+			details = "The recorded exit time does not match Victor Lane's stated departure of 22:30.",
+			location = "Reception",
+			importance = "High",
+			category = "Security",
+			-- No hand-placed counterpart exists in the Studio-authored office
+			-- asset; OfficeRoom spawns a minimal physical prop for it (see
+			-- OfficeRoom.luau's evidence-prop spawner).
+			propPlacement = {
+				position = Vector3.new(24, 3, 15.5),
+				lookAt = Vector3.new(24, 3, 20),
+			},
+		},
 	},
 
 	timeline = {
@@ -121,13 +150,30 @@ local Case001: Types.CaseDefinition = {
 				{ id = "REQ-003", label = "Read the document", interaction = "Read", evidence = "EV-003" },
 			},
 		},
+		{
+			-- Phase 2I: directs the player to the second suspect once the
+			-- scene has been surveyed. Talk+target was already proven generic
+			-- by a synthetic fixture in Phase 2F/2G; this is its first real
+			-- use. `target` matches SUS-002's spawned NPC root part, which
+			-- SuspectSpawner names after the suspect id.
+			id = "OBJ-002",
+			title = "Question Victor Lane",
+			description = "Find and speak with Daniel's business partner.",
+			requiredEvidence = {},
+			requiredInteractions = { "Talk" },
+			requirements = {
+				{ id = "REQ-004", label = "Talk to Victor Lane", interaction = "Talk", target = "SUS-002" },
+			},
+			prerequisites = { "OBJ-001" },
+		},
 	},
 
-	-- Phase 2G vertical slice: one suspect, one deterministic linear
-	-- conversation. Every line either uses SUS-001's already-authored name
-	-- (speaker attribution) or its already-authored alibi (the only real
-	-- informational content revealed). The opening and closing lines are
-	-- minimal procedural framing carrying no case facts of their own.
+	-- Phase 2G/2I: one deterministic linear conversation per playable suspect.
+	-- Every line either uses the suspect's already-authored name (speaker
+	-- attribution) or its already-authored alibi (the only real informational
+	-- content revealed). The opening and closing lines are minimal procedural
+	-- framing carrying no case facts of their own, reused verbatim across
+	-- both suspects for exactly that reason.
 	conversations = {
 		{
 			suspectId = "SUS-001",
@@ -154,30 +200,65 @@ local Case001: Types.CaseDefinition = {
 				},
 			},
 		},
+		{
+			suspectId = "SUS-002",
+			startNodeId = "SUS-002-1",
+			nodes = {
+				["SUS-002-1"] = {
+					id = "SUS-002-1",
+					speaker = "Victor Lane",
+					text = "What do you want to know?",
+					next = "SUS-002-2",
+				},
+				["SUS-002-2"] = {
+					id = "SUS-002-2",
+					speaker = "Victor Lane",
+					text = "Says he left the office at 22:30. Keycard log suggests otherwise.",
+					next = "SUS-002-3",
+					statementId = "STMT-SUS-002-ALIBI",
+				},
+				["SUS-002-3"] = {
+					id = "SUS-002-3",
+					speaker = "Victor Lane",
+					text = "That's all I have to say.",
+					next = nil,
+				},
+			},
+		},
 	},
 
-	-- STMT-SUS-001-ALIBI has no separate text of its own: ConversationService
-	-- resolves its content from SUS-001's authored `alibi` field at unlock
-	-- time, so the statement can never drift from the suspect data.
+	-- Neither statement has separate text of its own: ConversationService
+	-- resolves each one's content from its suspect's authored `alibi` field
+	-- at unlock time, so a statement can never drift from the suspect data.
 	statements = {
 		{
 			id = "STMT-SUS-001-ALIBI",
 			suspectId = "SUS-001",
 			label = "Alibi",
 		},
+		{
+			id = "STMT-SUS-002-ALIBI",
+			suspectId = "SUS-002",
+			label = "Alibi",
+		},
 	},
 
-	-- Phase 2H audit: CASE-001 does not yet contain two independently
-	-- discoverable facts that genuinely conflict, nor a conclusion
-	-- expressible without authoring new narrative prose. SUS-002's alibi
-	-- text ("Keycard log suggests otherwise") hints at a contradiction, but
-	-- the "keycard log" is only a phrase inside that one alibi string -- not
-	-- a separate, independently discoverable, ID-referenceable fact -- and
-	-- SUS-002 has no conversation to unlock anything from at all. Left
-	-- empty deliberately rather than manufactured; see ARCHITECTURE.md and
-	-- ReasoningService_Test.luau's synthetic fixture for the proven
-	-- contract.
-	contradictions = {},
+	-- Phase 2I: the first real contradiction. Both referenced facts are
+	-- already-authored content -- Victor's own alibi statement and the
+	-- keycard log evidence's own `details` text -- neither is duplicated
+	-- here, only referenced by id. See ARCHITECTURE.md for why CASE-001
+	-- shipped zero of these through Phase 2H, and ReasoningService_Test.luau
+	-- for the synthetic fixture that originally proved the mechanism before
+	-- any real content existed.
+	contradictions = {
+		{
+			id = "CONTRA-001",
+			label = "Victor's Departure Time",
+			left = { kind = "Statement", id = "STMT-SUS-002-ALIBI" },
+			right = { kind = "Evidence", id = "EV-004" },
+			reason = "Victor claims he left at 22:30; the keycard log does not match.",
+		},
+	},
 	deductions = {},
 }
 

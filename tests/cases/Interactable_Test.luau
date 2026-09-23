@@ -124,5 +124,6 @@ return function(t)
 		expect.truthy(found["EV-001"])
 		expect.truthy(found["EV-002"])
 		expect.truthy(found["EV-003"])
+		expect.truthy(found["EV-004"])
 	end)
 end

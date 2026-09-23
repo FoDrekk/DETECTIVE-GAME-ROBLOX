@@ -37,6 +37,7 @@ return function(t)
 		expect.truthy(ids["EV-001"])
 		expect.truthy(ids["EV-002"])
 		expect.truthy(ids["EV-003"])
+		expect.truthy(ids["EV-004"])
 	end)
 
 	-- Every timeline event references evidence that exists in the same case.
@@ -86,24 +87,50 @@ return function(t)
 		expect.truthy(CaseRegistry.get("CASE-001"))
 	end)
 
-	-- Phase 2G audit: exactly one suspect is a playable NPC this phase.
-	t.test("only SUS-001 has an npcPlacement", function()
+	-- Phase 2I: both suspects are playable NPCs as of this phase.
+	t.test("both suspects have an npcPlacement", function()
 		local caseDef = CaseRegistry.get("CASE-001")
 		local byId = {}
 		for _, suspect in ipairs(caseDef.suspects) do
 			byId[suspect.id] = suspect
 		end
 		expect.truthy(byId["SUS-001"].npcPlacement)
-		expect.falsy(byId["SUS-002"].npcPlacement)
+		expect.truthy(byId["SUS-002"].npcPlacement)
 	end)
 
-	-- CASE-001 declares exactly the one conversation/statement Phase 2G ships.
-	t.test("declares SUS-001's conversation and statement", function()
+	-- CASE-001 declares one conversation/statement per playable suspect.
+	t.test("declares both suspects' conversations and statements", function()
 		local caseDef = CaseRegistry.get("CASE-001")
-		expect.equal(#caseDef.conversations, 1)
-		expect.equal(caseDef.conversations[1].suspectId, "SUS-001")
-		expect.equal(#caseDef.statements, 1)
-		expect.equal(caseDef.statements[1].id, "STMT-SUS-001-ALIBI")
-		expect.equal(caseDef.statements[1].suspectId, "SUS-001")
+		expect.equal(#caseDef.conversations, 2)
+		local suspectIds = {}
+		for _, conversation in ipairs(caseDef.conversations) do
+			suspectIds[conversation.suspectId] = true
+		end
+		expect.truthy(suspectIds["SUS-001"])
+		expect.truthy(suspectIds["SUS-002"])
+
+		expect.equal(#caseDef.statements, 2)
+		local statementIds = {}
+		for _, statement in ipairs(caseDef.statements) do
+			statementIds[statement.id] = statement
+		end
+		expect.truthy(statementIds["STMT-SUS-001-ALIBI"])
+		expect.equal(statementIds["STMT-SUS-001-ALIBI"].suspectId, "SUS-001")
+		expect.truthy(statementIds["STMT-SUS-002-ALIBI"])
+		expect.equal(statementIds["STMT-SUS-002-ALIBI"].suspectId, "SUS-002")
+	end)
+
+	-- Phase 2I: CASE-001 declares exactly one contradiction, referencing real
+	-- facts by id rather than duplicating their content.
+	t.test("declares exactly one contradiction, referencing real facts", function()
+		local caseDef = CaseRegistry.get("CASE-001")
+		expect.equal(#caseDef.contradictions, 1)
+		expect.equal(#caseDef.deductions, 0)
+		local contradiction = caseDef.contradictions[1]
+		expect.equal(contradiction.id, "CONTRA-001")
+		expect.equal(contradiction.left.kind, "Statement")
+		expect.equal(contradiction.left.id, "STMT-SUS-002-ALIBI")
+		expect.equal(contradiction.right.kind, "Evidence")
+		expect.equal(contradiction.right.id, "EV-004")
 	end)
 end

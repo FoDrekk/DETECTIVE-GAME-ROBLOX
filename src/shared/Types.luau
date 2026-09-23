@@ -36,6 +36,16 @@ export type EvidenceDefinition = {
 	timelineEventId: string?,
 	-- Other evidence ids this clue relates to (foundation only; no deductions).
 	relatedEvidenceIds: { string }?,
+	-- Optional: where to place a physical, code-spawned interactable prop for
+	-- this evidence in the current office environment, for evidence that has
+	-- no hand-placed counterpart in the Studio-authored `assets/Office.rbxm`.
+	-- Mirrors `SuspectDefinition.npcPlacement` exactly. Absent means the
+	-- evidence must already exist as a Studio-authored interactable (as
+	-- EV-001/002/003 do). Purely technical staging, not story content.
+	propPlacement: {
+		position: Vector3,
+		lookAt: Vector3?,
+	}?,
 }
 
 export type SuspectDefinition = {
@@ -303,6 +313,11 @@ export type EvidencePayload = {
 export type StatementPayload = {
 	id: string,
 	suspectId: string,
+	-- Resolved live from the source suspect's own authored `name`, same as
+	-- `text` is resolved from `alibi` -- never a second copy of it. Lets a
+	-- client with more than one unlocked statement (Phase 2I) show which
+	-- suspect each one belongs to.
+	suspectName: string,
 	label: string,
 	text: string,
 }
