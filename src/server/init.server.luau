@@ -24,6 +24,7 @@ local TimelineService = require(Services:WaitForChild("TimelineService"))
 local ObjectiveService = require(Services:WaitForChild("ObjectiveService"))
 local ConversationService = require(Services:WaitForChild("ConversationService"))
 local ReasoningService = require(Services:WaitForChild("ReasoningService"))
+local AccusationService = require(Services:WaitForChild("AccusationService"))
 local InteractionService = require(Services:WaitForChild("InteractionService"))
 local GameStateService = require(Services:WaitForChild("GameStateService"))
 local OfficeRoom = require(Services:WaitForChild("OfficeRoom"))
@@ -60,6 +61,7 @@ local function bootstrap()
 	local objectiveCompletedEvent = Signals.get(Signals.Names.ObjectiveCompleted)
 	local dialogueEvent = Signals.get(Signals.Names.DialogueUpdated)
 	local reasoningEvent = Signals.get(Signals.Names.ReasoningUpdated)
+	local accusationEvent = Signals.get(Signals.Names.AccusationUpdated)
 	local caseClosedSummaryEvent = Signals.get(Signals.Names.CaseClosedSummary)
 	local requestObjectives = Signals.get(Signals.Names.RequestObjectives)
 	local requestTimeline = Signals.get(Signals.Names.RequestTimeline)
@@ -72,6 +74,7 @@ local function bootstrap()
 	ObjectiveService.start()
 	ConversationService.start()
 	ReasoningService.start()
+	AccusationService.start()
 	InteractionService.start()
 
 	-- 3. Bridge service events to clients.
@@ -98,6 +101,10 @@ local function bootstrap()
 		reasoningEvent:FireClient(player, payload)
 	end)
 
+	AccusationService.onUpdated().Event:Connect(function(player: Player, payload)
+		accusationEvent:FireClient(player, payload)
+	end)
+
 	GameStateService.onCaseClosed().Event:Connect(function(player: Player, summary)
 		caseClosedSummaryEvent:FireClient(player, summary)
 	end)
@@ -118,6 +125,7 @@ local function bootstrap()
 		ObjectiveService.sendCurrent(player)
 		TimelineService.sendCurrent(player)
 		ReasoningService.sendCurrent(player)
+		AccusationService.sendCurrent(player)
 	end
 
 	Players.PlayerAdded:Connect(onPlayerAdded)
@@ -166,6 +174,32 @@ local function bootstrap()
 	requestReasoning.OnServerEvent:Connect(function(player: Player)
 		if PlayerDataService.get(player) then
 			ReasoningService.sendCurrent(player)
+		end
+	end)
+
+	-- 11. Accusation (Phase 2N). `RequestAccusation` is the join-race sync
+	-- guard, mirroring RequestReasoning; `SubmitAccusation` carries only the
+	-- accusation id the player chose. AccusationService re-validates
+	-- eligibility (all objectives complete) and the id server-side. A
+	-- successfully recorded accusation is what authorizes the conclusion:
+	-- GameStateService.requestConclude re-checks that authorization from
+	-- server state, so this is a thin dispatch, never a client-driven verdict.
+	local requestAccusation = Signals.get(Signals.Names.RequestAccusation)
+	requestAccusation.OnServerEvent:Connect(function(player: Player)
+		if PlayerDataService.get(player) then
+			AccusationService.sendCurrent(player)
+		end
+	end)
+
+	local submitAccusation = Signals.get(Signals.Names.SubmitAccusation)
+	submitAccusation.OnServerEvent:Connect(function(player: Player, accusationId)
+		if type(accusationId) ~= "string" then
+			return
+		end
+		if AccusationService.accuse(player, accusationId) then
+			-- The accusation was accepted (all objectives complete, valid id).
+			-- Now — and only now — the case may conclude.
+			GameStateService.requestConclude(player)
 		end
 	end)
 

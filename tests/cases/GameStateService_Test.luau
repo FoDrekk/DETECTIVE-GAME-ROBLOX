@@ -25,6 +25,7 @@ return function(t)
 	local ConversationService = require(Server:WaitForChild("ConversationService"))
 	local EvidenceService = require(Server:WaitForChild("EvidenceService"))
 	local ReasoningService = require(Server:WaitForChild("ReasoningService"))
+	local AccusationService = require(Server:WaitForChild("AccusationService"))
 	local PlayerDataService = require(Server:WaitForChild("PlayerDataService"))
 	local expect = t.expect
 
@@ -92,6 +93,13 @@ return function(t)
 		ObjectiveService.recordFact(player, "Deduction", "DEDUCT-001") -- completes OBJ-004
 	end
 
+	-- Phase 2N: completes every objective AND makes a formal accusation, the
+	-- full precondition for concluding.
+	local function completeAndAccuse(player: any)
+		completeEverything(player)
+		AccusationService.accuse(player, "ACC-001")
+	end
+
 	t.test("a fresh/incomplete player cannot conclude", function()
 		resetToInvestigation()
 		local player = makePlayer()
@@ -132,9 +140,10 @@ return function(t)
 		expect.equal(GameStateService.getPhase(), "Investigation")
 	end)
 
-	-- OBJ-003 completing on its own must never auto-transition the phase --
-	-- only an explicit requestConclude call may.
-	t.test("OBJ-003 completion alone does not transition to CaseClosed", function()
+	-- Completing objectives (even all of them) must never auto-transition the
+	-- phase -- only an explicit requestConclude call may, and only with an
+	-- accusation.
+	t.test("objective completion alone does not transition to CaseClosed", function()
 		resetToInvestigation()
 		local player = makePlayer()
 		completeEverything(player)
@@ -143,23 +152,36 @@ return function(t)
 		expect.equal(GameStateService.getPhase(), "Investigation")
 	end)
 
-	t.test("a player with every objective complete can conclude", function()
+	-- Phase 2N: every objective complete but no accusation made -- the player
+	-- has not committed to anything, so the case must not be conclusion-able.
+	t.test("a player with every objective complete but no accusation cannot conclude", function()
 		resetToInvestigation()
 		local player = makePlayer()
 		completeEverything(player)
+		expect.falsy(AccusationService.hasAccusation(player))
+		local concluded = GameStateService.requestConclude(player)
+		expect.falsy(concluded)
+		expect.equal(GameStateService.getPhase(), "Investigation")
+	end)
+
+	t.test("a player with every objective complete can conclude once they accuse", function()
+		resetToInvestigation()
+		local player = makePlayer()
+		completeEverything(player)
+		expect.truthy(AccusationService.accuse(player, "ACC-001"))
 		local concluded = GameStateService.requestConclude(player)
 		expect.truthy(concluded)
 		expect.equal(GameStateService.getPhase(), "CaseClosed")
 	end)
 
 	-- Proves the check is genuinely per-requesting-player, not some other
-	-- global or shared flag: player B's full completion cannot let player A
-	-- (freshly initialized, nothing done) conclude.
+	-- global or shared flag: player B's full completion + accusation cannot
+	-- let player A (freshly initialized, nothing done) conclude.
 	t.test("one player's completion cannot be used to conclude for another player", function()
 		resetToInvestigation()
 		local playerA = makePlayer()
 		local playerB = makePlayer()
-		completeEverything(playerB)
+		completeAndAccuse(playerB)
 
 		local concludedA = GameStateService.requestConclude(playerA)
 		expect.falsy(concludedA)
@@ -180,7 +202,7 @@ return function(t)
 	t.test("a valid conclusion is idempotent: requesting again is safely rejected", function()
 		resetToInvestigation()
 		local player = makePlayer()
-		completeEverything(player)
+		completeAndAccuse(player)
 		expect.truthy(GameStateService.requestConclude(player))
 		expect.equal(GameStateService.getPhase(), "CaseClosed")
 

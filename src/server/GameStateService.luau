@@ -13,6 +13,7 @@ local Signals = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("S
 local PlayerDataService = require(script.Parent:WaitForChild("PlayerDataService"))
 local CaseService = require(script.Parent:WaitForChild("CaseService"))
 local ObjectiveService = require(script.Parent:WaitForChild("ObjectiveService"))
+local AccusationService = require(script.Parent:WaitForChild("AccusationService"))
 
 local GameStateService = {}
 
@@ -48,15 +49,21 @@ local function broadcast(phase: Types.GamePhase)
 end
 
 --[[
-	Phase 2L gameplay authorization for the Investigation -> CaseClosed edge.
+	Phase 2L gameplay authorization for the Investigation -> CaseClosed edge,
+	extended in Phase 2N to require a formal accusation.
 
 	The state machine (GameStateMachine) only ever validates graph legality --
 	whether this edge exists at all -- never whether a specific player is
 	currently allowed to use it. That's a different question, answered here,
 	at the same server boundary that already owns "is this phase change
 	request valid": never from a client-supplied claim, always from this
-	player's own server-side objective state (ObjectiveService, which reads
-	PlayerDataService -- the client never supplies or influences it).
+	player's own server-side state (ObjectiveService / AccusationService,
+	which read PlayerDataService -- the client never supplies or influences
+	it).
+
+	Two conditions, both server-side:
+	  1. no active objective remains (every objective complete), and
+	  2. the player has made a formal accusation (AccusationService).
 ]]
 local function canConclude(player: Player): boolean
 	-- A player with no case state at all trivially has "no active
@@ -66,7 +73,12 @@ local function canConclude(player: Player): boolean
 	if not PlayerDataService.get(player) then
 		return false
 	end
-	return ObjectiveService.getActiveObjectiveId(player) == nil
+	if ObjectiveService.getActiveObjectiveId(player) ~= nil then
+		return false
+	end
+	-- Phase 2N: an investigation is only concluded on the player's own
+	-- accusation, never automatically and never on the mere absence of work.
+	return AccusationService.hasAccusation(player)
 end
 
 -- A factual summary of this player's own case progress, computed entirely
@@ -87,6 +99,9 @@ local function buildClosingSummary(player: Player): Types.CaseClosedSummary?
 		evidenceExamined = Util.count(data.caseState.discovered),
 		evidenceTotal = #caseDef.evidence,
 		contradictionsIdentified = Util.count(data.caseState.unlockedContradictions),
+		-- Phase 2N: the player's own accusation and whether the evidence they
+		-- actually unlocked is consistent with it. Never a verdict.
+		accusation = AccusationService.getResolution(player),
 	}
 end
 

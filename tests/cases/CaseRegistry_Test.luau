@@ -148,4 +148,44 @@ return function(t)
 		expect.equal(deduction.requiredFacts[3].kind, "Evidence")
 		expect.equal(deduction.requiredFacts[3].id, "EV-004")
 	end)
+
+	-- Phase 2N: CASE-001 declares one accusation per suspect, and every
+	-- accusation's `supportedBy` (when present) names real, authored
+	-- contradiction/deduction ids -- never invented ones.
+	t.test("declares one accusation per suspect, referencing real facts", function()
+		local caseDef = CaseRegistry.get("CASE-001")
+		expect.truthy(caseDef.accusations)
+		expect.equal(#caseDef.accusations, 2)
+
+		local accusationIds = {}
+		local suspectIds = {}
+		for _, accusation in ipairs(caseDef.accusations) do
+			accusationIds[accusation.id] = true
+			suspectIds[accusation.suspectId] = true
+		end
+		expect.truthy(accusationIds["ACC-001"])
+		expect.truthy(accusationIds["ACC-002"])
+		expect.truthy(suspectIds["SUS-001"])
+		expect.truthy(suspectIds["SUS-002"])
+
+		local contradictionIds = {}
+		for _, contradiction in ipairs(caseDef.contradictions) do
+			contradictionIds[contradiction.id] = true
+		end
+		local deductionIds = {}
+		for _, deduction in ipairs(caseDef.deductions) do
+			deductionIds[deduction.id] = true
+		end
+		for _, accusation in ipairs(caseDef.accusations) do
+			local supportedBy = accusation.supportedBy
+			if supportedBy then
+				for _, id in ipairs(supportedBy.contradictions or {}) do
+					expect.truthy(contradictionIds[id])
+				end
+				for _, id in ipairs(supportedBy.deductions or {}) do
+					expect.truthy(deductionIds[id])
+				end
+			end
+		end
+	end)
 end

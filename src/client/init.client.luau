@@ -26,6 +26,7 @@ local ObjectiveView = require(Modules:WaitForChild("ObjectiveView"))
 local TimelineView = require(Modules:WaitForChild("TimelineView"))
 local DialogueView = require(Modules:WaitForChild("DialogueView"))
 local CaseFileView = require(Modules:WaitForChild("CaseFileView"))
+local AccusationView = require(Modules:WaitForChild("AccusationView"))
 local CaseClosedView = require(Modules:WaitForChild("CaseClosedView"))
 local CameraController = require(Modules:WaitForChild("CameraController"))
 
@@ -39,6 +40,7 @@ local objectiveCompleted = Signals.wait(Signals.Names.ObjectiveCompleted)
 local caseBriefingLoaded = Signals.wait(Signals.Names.CaseBriefingLoaded)
 local dialogueUpdated = Signals.wait(Signals.Names.DialogueUpdated)
 local reasoningUpdated = Signals.wait(Signals.Names.ReasoningUpdated)
+local accusationUpdated = Signals.wait(Signals.Names.AccusationUpdated)
 local caseClosedSummary = Signals.wait(Signals.Names.CaseClosedSummary)
 local requestPhaseChange = Signals.wait(Signals.Names.RequestPhaseChange)
 local requestCase = Signals.wait(Signals.Names.RequestCase)
@@ -47,6 +49,8 @@ local requestTimeline = Signals.wait(Signals.Names.RequestTimeline)
 local requestDialogueAdvance = Signals.wait(Signals.Names.DialogueAdvance)
 local requestDialogueClose = Signals.wait(Signals.Names.DialogueClose)
 local requestReasoning = Signals.wait(Signals.Names.RequestReasoning)
+local requestAccusation = Signals.wait(Signals.Names.RequestAccusation)
+local submitAccusation = Signals.wait(Signals.Names.SubmitAccusation)
 
 local currentPhase: Types.GamePhase = "MainMenu"
 local lastBriefing: Types.CaseBriefing? = nil
@@ -84,12 +88,14 @@ local function applyPhase(phase: Types.GamePhase)
 		TimelineView.close()
 		DialogueView.close()
 		CaseFileView.close()
+		AccusationView.close()
 		CameraController.stopExamining()
 	elseif phase == "CaseClosed" or phase == "MainMenu" then
 		EvidencePanel.close()
 		TimelineView.close()
 		DialogueView.close()
 		CaseFileView.close()
+		AccusationView.close()
 	end
 end
 
@@ -107,6 +113,7 @@ local function bootstrap()
 	TimelineView.start()
 	DialogueView.start()
 	CaseFileView.start()
+	AccusationView.start()
 	CaseClosedView.start()
 	CameraController.start()
 
@@ -143,28 +150,38 @@ local function bootstrap()
 	-- (both are full-screen centered panels; showing both at once would
 	-- overlap).
 	InputController.onToggleTimeline(function()
-		if currentPhase ~= "Investigation" or DialogueView.isOpen() or CaseFileView.isOpen() then
+		if currentPhase ~= "Investigation" or DialogueView.isOpen() or CaseFileView.isOpen() or AccusationView.isOpen() then
 			return
 		end
 		TimelineView.toggle()
 	end)
 
 	InputController.onToggleCaseFile(function()
-		if currentPhase ~= "Investigation" or DialogueView.isOpen() or TimelineView.isOpen() then
+		if currentPhase ~= "Investigation" or DialogueView.isOpen() or TimelineView.isOpen() or AccusationView.isOpen() then
 			return
 		end
 		CaseFileView.toggle()
 	end)
 
-	-- Phase 2L: player-initiated conclusion. Only meaningful once the server
-	-- has already told us every objective is complete; the server
-	-- re-validates this player's own completion state regardless of what
-	-- this client sends or believes.
+	-- Phase 2L/2N: player-initiated conclusion. [Q] only does anything once
+	-- the server has told us every objective is complete; it now opens the
+	-- accusation picker rather than concluding directly, and the server
+	-- re-validates both eligibility and the chosen accusation regardless of
+	-- what this client believes.
 	InputController.onConcludeInvestigation(function()
 		if currentPhase ~= "Investigation" or not investigationComplete then
 			return
 		end
-		requestPhaseChange:FireServer("CaseClosed")
+		if DialogueView.isOpen() or TimelineView.isOpen() or CaseFileView.isOpen() then
+			return
+		end
+		AccusationView.toggle()
+	end)
+
+	-- The player's chosen accusation. Only the id is sent; the server decides
+	-- whether the player is eligible and records the accusation.
+	AccusationView.onSelectionRequested().Event:Connect(function(accusationId: string)
+		submitAccusation:FireServer(accusationId)
 	end)
 
 	InputController.onClose(function()
@@ -180,6 +197,7 @@ local function bootstrap()
 		end
 		TimelineView.close()
 		CaseFileView.close()
+		AccusationView.close()
 		CameraController.stopExamining()
 		InteractionController.resumeScan()
 	end)
@@ -251,6 +269,10 @@ local function bootstrap()
 		CaseFileView.update(payload)
 	end)
 
+	accusationUpdated.OnClientEvent:Connect(function(payload: Types.AccusationPayload)
+		AccusationView.update(payload)
+	end)
+
 	caseClosedSummary.OnClientEvent:Connect(function(summary: Types.CaseClosedSummary)
 		lastCaseClosedSummary = summary
 		if currentPhase == "CaseClosed" then
@@ -265,6 +287,7 @@ local function bootstrap()
 	requestObjectives:FireServer()
 	requestTimeline:FireServer()
 	requestReasoning:FireServer()
+	requestAccusation:FireServer()
 
 	log:info("client ready", { player = player.Name })
 end

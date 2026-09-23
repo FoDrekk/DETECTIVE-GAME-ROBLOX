@@ -1,0 +1,206 @@
+--!strict
+--[[
+	Tests for ServerScriptService.Server.AccusationService (Phase 2N).
+
+	Covers: the spoiler-safe option picker, eligibility (only after every
+	objective is complete), unknown-id rejection, permanence/idempotency, the
+	supported/unsupported resolution derived from the facts the player
+	actually unlocked, per-player isolation, and that PlayerDataService.clear
+	wipes an accusation.
+
+	Each case uses a unique mock UserId for isolation.
+]]
+return function(t)
+	local ServerScriptService = game:GetService("ServerScriptService")
+	local Server = ServerScriptService:WaitForChild("Server")
+	local AccusationService = require(Server:WaitForChild("AccusationService"))
+	local ObjectiveService = require(Server:WaitForChild("ObjectiveService"))
+	local ConversationService = require(Server:WaitForChild("ConversationService"))
+	local EvidenceService = require(Server:WaitForChild("EvidenceService"))
+	local ReasoningService = require(Server:WaitForChild("ReasoningService"))
+	local PlayerDataService = require(Server:WaitForChild("PlayerDataService"))
+	local expect = t.expect
+
+	local function makePlayer(): any
+		local id = t.nextUserId()
+		local player = { UserId = id, Name = `ACC{id}` }
+		PlayerDataService.initialize(player, "CASE-001")
+		return player
+	end
+
+	-- Completes every currently-authored CASE-001 objective (OBJ-001..004).
+	local function completeEverything(player: any)
+		ObjectiveService.recordInteraction(player, "Examine", "EV-001")
+		ObjectiveService.recordInteraction(player, "Examine", "EV-002")
+		ObjectiveService.recordInteraction(player, "Read", "EV-003")
+		ConversationService.begin(player, "SUS-002")
+		ObjectiveService.recordInteraction(player, "Talk", nil, "SUS-002")
+		ConversationService.advance(player) -- unlocks STMT-SUS-002-ALIBI
+		EvidenceService.discover(player, "EV-004")
+		ReasoningService.evaluate(player) -- unlocks CONTRA-001
+		ObjectiveService.recordFact(player, "Contradiction", "CONTRA-001") -- completes OBJ-003
+		ConversationService.leave(player)
+		ConversationService.begin(player, "SUS-001")
+		ConversationService.advance(player) -- unlocks STMT-SUS-001-ALIBI
+		ReasoningService.evaluate(player) -- unlocks DEDUCT-001
+		ObjectiveService.recordFact(player, "Deduction", "DEDUCT-001") -- completes OBJ-004
+	end
+
+	-- A player who has completed everything except speaking to Mara: OBJ-001/002/003
+	-- done, DEDUCT-001/OBJ-004 still locked.
+	local function completeThroughObj003(player: any)
+		ObjectiveService.recordInteraction(player, "Examine", "EV-001")
+		ObjectiveService.recordInteraction(player, "Examine", "EV-002")
+		ObjectiveService.recordInteraction(player, "Read", "EV-003")
+		ConversationService.begin(player, "SUS-002")
+		ObjectiveService.recordInteraction(player, "Talk", nil, "SUS-002")
+		ConversationService.advance(player)
+		EvidenceService.discover(player, "EV-004")
+		ReasoningService.evaluate(player)
+		ObjectiveService.recordFact(player, "Contradiction", "CONTRA-001")
+	end
+
+	t.test("a fresh player has no accusation", function()
+		local player = makePlayer()
+		expect.falsy(AccusationService.hasAccusation(player))
+		expect.falsy(AccusationService.getResolution(player))
+	end)
+
+	-- The picker lists every authored accusation (suspects the player can
+	-- already see in the world), and nothing is selected yet.
+	t.test("the picker lists every authored accusation with nothing selected", function()
+		local player = makePlayer()
+		local payload = AccusationService.getPayload(player)
+		expect.equal(#payload.options, 2)
+		expect.falsy(payload.selected)
+
+		local byId = {}
+		for _, option in ipairs(payload.options) do
+			byId[option.id] = option
+		end
+		expect.equal(byId["ACC-001"].suspectId, "SUS-002")
+		expect.equal(byId["ACC-001"].suspectName, "Victor Lane")
+		expect.equal(byId["ACC-002"].suspectId, "SUS-001")
+		expect.equal(byId["ACC-002"].suspectName, "Mara Reyes")
+	end)
+
+	-- An accusation is only meaningful once every objective is complete.
+	t.test("cannot accuse while objectives remain", function()
+		local player = makePlayer()
+		expect.falsy(AccusationService.accuse(player, "ACC-001"))
+		expect.falsy(AccusationService.hasAccusation(player))
+	end)
+
+	t.test("cannot accuse with OBJ-001/002/003 complete but OBJ-004 still open", function()
+		local player = makePlayer()
+		completeThroughObj003(player)
+		expect.equal(ObjectiveService.getActiveObjectiveId(player), "OBJ-004")
+		expect.falsy(AccusationService.accuse(player, "ACC-001"))
+		expect.falsy(AccusationService.hasAccusation(player))
+	end)
+
+	t.test("rejects an unknown accusation id even when eligible", function()
+		local player = makePlayer()
+		completeEverything(player)
+		expect.falsy(AccusationService.accuse(player, "ACC-GHOST"))
+		expect.falsy(AccusationService.hasAccusation(player))
+	end)
+
+	t.test("rejects an empty/non-string accusation id", function()
+		local player = makePlayer()
+		completeEverything(player)
+		expect.falsy(AccusationService.accuse(player, ""))
+		expect.falsy(AccusationService.accuse(player, nil :: any))
+		expect.falsy(AccusationService.hasAccusation(player))
+	end)
+
+	-- Once eligible, accusing a suspect the evidence supports is accepted and
+	-- resolved as supported, naming the unlocked facts it is based on.
+	t.test("an eligible player can accuse Victor, resolved as supported", function()
+		local player = makePlayer()
+		completeEverything(player)
+		expect.truthy(AccusationService.accuse(player, "ACC-001"))
+		expect.truthy(AccusationService.hasAccusation(player))
+
+		local resolution = AccusationService.getResolution(player)
+		expect.truthy(resolution)
+		expect.equal(resolution.suspectId, "SUS-002")
+		expect.equal(resolution.suspectName, "Victor Lane")
+		expect.truthy(resolution.supported)
+		expect.equal(#resolution.basedOn, 2) -- CONTRA-001 + DEDUCT-001 labels
+	end)
+
+	-- Accusing the suspect no authored contradiction/deduction names is still
+	-- accepted (the player is allowed to be wrong), and honestly reported as
+	-- unsupported -- never as an error, never as established fact.
+	t.test("an eligible player can accuse Mara, resolved as unsupported", function()
+		local player = makePlayer()
+		completeEverything(player)
+		expect.truthy(AccusationService.accuse(player, "ACC-002"))
+
+		local resolution = AccusationService.getResolution(player)
+		expect.truthy(resolution)
+		expect.equal(resolution.suspectId, "SUS-001")
+		expect.falsy(resolution.supported)
+		expect.equal(#resolution.basedOn, 0)
+	end)
+
+	-- An accusation is a commitment: repeating it or trying to change it is
+	-- rejected, and the payload reflects the recorded choice.
+	t.test("an accusation is permanent: re-accusing is rejected", function()
+		local player = makePlayer()
+		completeEverything(player)
+		expect.truthy(AccusationService.accuse(player, "ACC-001"))
+		-- Same choice again, and a different choice, are both no-ops.
+		expect.falsy(AccusationService.accuse(player, "ACC-001"))
+		expect.falsy(AccusationService.accuse(player, "ACC-002"))
+
+		local payload = AccusationService.getPayload(player)
+		expect.truthy(payload.selected)
+		expect.equal(payload.selected.id, "ACC-001")
+		expect.equal(AccusationService.getResolution(player).suspectId, "SUS-002")
+	end)
+
+	-- The picker payload only ever carries the suspects, never the answer:
+	-- before accusing, `selected` is absent regardless of the player's facts.
+	t.test("the picker payload never carries the supported answer", function()
+		local player = makePlayer()
+		completeEverything(player)
+		local payload = AccusationService.getPayload(player)
+		expect.falsy(payload.selected)
+		-- No supported/unsupported field ever appears on an option.
+		for _, option in ipairs(payload.options) do
+			expect.falsy((option :: any).supported)
+		end
+	end)
+
+	-- Per-player isolation: one player's accusation never appears for another.
+	t.test("accusations do not leak across players", function()
+		local playerA = makePlayer()
+		local playerB = makePlayer()
+		completeEverything(playerA)
+		completeEverything(playerB)
+		AccusationService.accuse(playerA, "ACC-001")
+
+		expect.truthy(AccusationService.hasAccusation(playerA))
+		expect.falsy(AccusationService.hasAccusation(playerB))
+		expect.falsy(AccusationService.getPayload(playerB).selected)
+	end)
+
+	-- PlayerDataService.clear wipes the accusation along with everything else.
+	t.test("player data clear wipes the accusation", function()
+		local player = makePlayer()
+		completeEverything(player)
+		AccusationService.accuse(player, "ACC-001")
+		expect.truthy(AccusationService.hasAccusation(player))
+
+		PlayerDataService.clear(player)
+		expect.falsy(AccusationService.hasAccusation(player))
+	end)
+
+	-- A data-less player can never be treated as eligible.
+	t.test("a player with no case data cannot accuse", function()
+		local stranger = { UserId = t.nextUserId(), Name = "AccStranger" }
+		expect.falsy(AccusationService.accuse(stranger, "ACC-001"))
+	end)
+end

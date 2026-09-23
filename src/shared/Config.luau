@@ -38,9 +38,11 @@ Config.Interaction = {
 	TimelineKey = "T",
 	-- Key to open/close the case file (unlocked statements/reasoning).
 	CaseFileKey = "C",
-	-- Key to formally conclude the investigation once every objective is
-	-- complete (Phase 2L). Only does anything once the server has told the
-	-- client every objective is done; the server re-validates regardless.
+	-- Key to open the accusation picker once every objective is complete
+	-- (Phase 2L introduced concluding; Phase 2N makes [Q] open the accusation
+	-- picker rather than conclude directly). Only does anything once the
+	-- server has told the client every objective is done; the server
+	-- re-validates eligibility and the chosen accusation regardless.
 	ConcludeKey = "Q",
 }
 

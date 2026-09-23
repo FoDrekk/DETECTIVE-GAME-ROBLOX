@@ -48,9 +48,26 @@ function CaseClosedView.show(summary: Types.CaseClosedSummary)
 	if not summaryLabel then
 		return
 	end
-	summaryLabel.Text = `Objectives completed: {summary.objectivesCompleted} / {summary.objectivesTotal}\n`
+	local text = `Objectives completed: {summary.objectivesCompleted} / {summary.objectivesTotal}\n`
 		.. `Evidence examined: {summary.evidenceExamined} / {summary.evidenceTotal}\n`
-		.. `Contradictions identified: {summary.contradictionsIdentified}`
+		.. `Contradictions identified: {summary.contradictionsIdentified}\n`
+
+	-- The player's own accusation, stated factually. `supported` says only
+	-- whether the evidence they unlocked is consistent with the choice --
+	-- never that the accusation is the truth.
+	local accusation = summary.accusation
+	if accusation then
+		text ..= `\nAccusation: {accusation.suspectName}\n`
+		if accusation.supported then
+			local basedOn = if #accusation.basedOn > 0
+				then table.concat(accusation.basedOn, ", ")
+				else "the case evidence"
+			text ..= `Consistent with the evidence you found ({basedOn}).`
+		else
+			text ..= "Not supported by the evidence you found."
+		end
+	end
+	summaryLabel.Text = text
 	setVisible(true)
 end
 
@@ -110,7 +127,7 @@ function CaseClosedView.start()
 	summaryLabel = Components.text({
 		name = "Summary",
 		text = "",
-		size = UDim2.new(1, 0, 0, 100),
+		size = UDim2.new(1, 0, 0, 150),
 		position = UDim2.fromOffset(0, 92),
 		textSize = 15,
 		color = Theme.TextSecondary,

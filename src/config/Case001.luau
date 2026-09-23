@@ -314,6 +314,29 @@ local Case001: Types.CaseDefinition = {
 			},
 		},
 	},
+	-- Phase 2N: the two suspects the player may formally accuse once every
+	-- objective is complete. This is not a verdict and invents no story fact:
+	-- it only records which already-authored contradiction/deduction, if the
+	-- player has actually unlocked it, makes that accusation consistent with
+	-- the evidence they gathered. Victor is the suspect CONTRA-001 and
+	-- DEDUCT-001 both speak to; Mara is the only other person in the case, so
+	-- she is selectable but named by no authored contradiction or deduction.
+	accusations = {
+		{
+			id = "ACC-001",
+			suspectId = "SUS-002",
+			label = "Accuse Victor Lane",
+			supportedBy = {
+				contradictions = { "CONTRA-001" },
+				deductions = { "DEDUCT-001" },
+			},
+		},
+		{
+			id = "ACC-002",
+			suspectId = "SUS-001",
+			label = "Accuse Mara Reyes",
+		},
+	},
 }
 
 return Case001

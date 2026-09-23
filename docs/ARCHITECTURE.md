@@ -112,6 +112,11 @@ validates that the authored interactables satisfy the gameplay contract.
   against already-discovered evidence and already-unlocked statements. Owns
   `unlockedContradictions`/`unlockedDeductions` per player; publishes
   `StoryEvents` `"ContradictionUnlocked"`/`"DeductionUnlocked"` (see below).
+- **AccusationService** (Phase 2N) — owns the player's formal accusation: a
+  permanent, per-player choice made only once every objective is complete.
+  Records `PlayerCaseState.accusationId`; publishes `StoryEvents`
+  `"AccusationMade"`; exposes a spoiler-safe picker payload and the factual,
+  evidence-derived resolution the closing screen shows (see below).
 - **InteractionService** — validates interaction requests and dispatches to
   per-kind handlers (Examine/Read/PickUp/Talk). Talk starts a conversation via
   `ConversationService`.
@@ -141,8 +146,13 @@ validates that the authored interactables satisfy the gameplay contract.
   only the single server-authorized dialogue step it is given.
 - **CaseFileView** (Phase 2H) — persistent investigation notes panel
   (unlocked statements/contradictions/deductions), C to open.
+- **AccusationView** (Phase 2N) — the formal accusation picker, opened with
+  Q once every objective is complete; renders exactly the server's
+  `Types.AccusationPayload` (the suspects) and reports only the chosen id.
 - **CaseClosedView** (Phase 2L) — cinematic closing overlay, shown during the
-  `CaseClosed` phase; renders exactly the server's `Types.CaseClosedSummary`.
+  `CaseClosed` phase; renders exactly the server's `Types.CaseClosedSummary`
+  (Phase 2N adds the accused suspect and whether the evidence is consistent
+  with that accusation).
 - **CameraController** — third-person explore + smooth examine framing.
 
 ## Data contracts
@@ -152,7 +162,7 @@ validates that the authored interactables satisfy the gameplay contract.
   `src/shared/Interactable.luau`.
 - Cases follow `Types.CaseDefinition`: id, title, description, suspects,
   locations, evidence, timeline, objectives, conversations, statements,
-  contradictions, deductions.
+  contradictions, deductions, accusations (optional, Phase 2N).
 - Evidence follows `Types.EvidenceDefinition`: id, name, description, location,
   importance, plus optional `details`, `timestamp`, `category`,
   `timelineEventId`, `relatedEvidenceIds` (plus runtime `discovered`).
@@ -525,10 +535,11 @@ event-replay system, and no case/contradiction id hardcoded in
 
 CASE-001 declares one new objective, `OBJ-003` ("Review Victor Lane's
 Statement"), gated behind `OBJ-002`, with a single requirement:
-`{ contradiction = "CONTRA-001" }`. `OBJ-001`/`OBJ-002` are unmodified. No
-deduction exists for CASE-001 yet; the `deduction` gate exists so a future
-one needs no second requirement system, and is proven today only by a
-synthetic fixture (`ObjectiveService_Test`'s `CASE-TEST-OBJ-REASONING`).
+`{ contradiction = "CONTRA-001" }`. `OBJ-001`/`OBJ-002` are unmodified. The
+`deduction` gate was proven at the time only by a synthetic fixture
+(`ObjectiveService_Test`'s `CASE-TEST-OBJ-REASONING`); Phase 2M later gives
+it `OBJ-004`/`DEDUCT-001` as its first real content (see "First real
+deduction (Phase 2M)" above).
 
 ## Case Closed: formal conclusion (Phase 2L)
 
@@ -542,12 +553,11 @@ and enforced:
 
 - **Graph validity** (`GameStateMachine`) — is this transition structurally
   allowed at all. Unchanged.
-- **Gameplay authorization** (`GameStateService.requestConclude`, new) — is
-  *this specific player* currently allowed to use it. Reads only
-  `ObjectiveService.getActiveObjectiveId(player)` (server-side player state);
-  a player with no active objective left — and with real case data, so a
-  data-less player can't pass this check for the wrong reason — may conclude.
-  Never trusts a client-supplied completion claim of any kind.
+- **Gameplay authorization** (`GameStateService.requestConclude`) — is
+  *this specific player* currently allowed to use it. Reads only server-side
+  player state: no active objective (so a data-less player can't pass for the
+  wrong reason) **and** a recorded accusation (Phase 2N, below). Never trusts
+  a client-supplied completion claim of any kind.
 
 `requestConclude` is a plain, public, directly-testable function (matching
 `ObjectiveService.recordInteraction`/`ConversationService.begin`'s pattern) —
@@ -560,12 +570,12 @@ use, since a real RemoteEvent's `FireClient` requires an actual `Player`
 Instance and would reject a test's mock player table. `init.server.luau`'s
 bridge is the only thing that touches the real RemoteEvent.
 
-Concluding is entirely player-initiated (`[Q]`, only offered once
-`ObjectivePayload.allComplete` is true) — `OBJ-003` completing never
-auto-transitions the phase. `CaseClosedView` (mirrors `CaseBriefingView`'s
-exact cinematic pattern) shows `Types.CaseClosedSummary`: real, computed
-counts (objectives/evidence/contradictions) built from server-side state at
-the moment of conclusion — never a verdict, never a claim about who did what.
+`CaseClosedView` (mirrors `CaseBriefingView`'s exact cinematic pattern) shows
+`Types.CaseClosedSummary`: real, computed counts
+(objectives/evidence/contradictions) built from server-side state at the
+moment of conclusion, plus (Phase 2N) the player's own accusation and whether
+the evidence is consistent with it — never a verdict, never a claim about who
+did what.
 
 **Known limitation, deliberately not addressed this phase**: `GameStateService`'s
 phase machine is a single, server-wide singleton, not per-player — matching
@@ -575,21 +585,121 @@ authorized, is still the same global broadcast every other phase change already
 uses. This is consistent with the rest of the codebase's explicit no-multiplayer
 scope and was not something this phase's authorization fix needed to solve.
 
-## Deliberately not implemented (Phase 2G/2H/2I/2J/2L boundary)
+## Player accusation & case resolution (Phase 2N)
+
+Phase 2L let the player conclude, but conclusion was purely mechanical: the
+player pressed a key and the server printed counts. Nothing the player
+*decided* affected the outcome, and the case's authored reasoning
+(`CONTRA-001.reason`, `DEDUCT-001`) was only ever displayed, never acted on.
+Phase 2N makes the player name a suspect — the one act that closes an
+investigation — and reports the result factually.
+
+### Data
+
+`Types.AccusationDefinition` is `{ id, suspectId, label, supportedBy? }`,
+authored per case in `CaseDefinition.accusations` (optional). It asserts no
+new story fact: `supportedBy` is only a list of already-authored
+contradiction/deduction ids. `CaseDefinition.accusations` for CASE-001 ships
+`ACC-001` (Victor Lane, supported by `CONTRA-001` + `DEDUCT-001`) and `ACC-002`
+(Mara Reyes, named by nothing).
+
+### Service
+
+`AccusationService` is server-authoritative and owns
+`PlayerCaseState.accusationId`:
+
+- `accuse(player, accusationId)` — rejects unless the player exists, the id
+  is authored, **no objective remains active** (read from
+  `ObjectiveService.getActiveObjectiveId`, never a client claim), and the
+  player has not already accused. An accusation is permanent: repeating the
+  same choice or changing it is a safe no-op. Records the id, publishes
+  `StoryEvents` `"AccusationMade"` once, and pushes the payload.
+- `getPayload(player)` — `Types.AccusationPayload` (`{ options, selected? }`).
+  Options are the case's authored accusations; nothing on the wire ever
+  reveals which option is supported. `selected` appears only after the player
+  has accused.
+- `getResolution(player)` — resolves the player's own accusation into
+  `Types.AccusationResolution` (`supported`, `basedOn`). `supported` is true
+  only when every referenced contradiction/deduction has actually been
+  unlocked by *this* player; `basedOn` lists those unlocked display names.
+  This is a statement about the evidence the player gathered, never about who
+  committed anything.
+
+### Flow
+
+```
+[Q] (client, only once ObjectivePayload.allComplete)
+      -> AccusationView (picker: the case's suspects)
+      -> SubmitAccusation(accusationId)            [client -> server]
+      -> AccusationService.accuse   (eligibility + permanence, server-side)
+      -> GameStateService.requestConclude          (re-checks accusation)
+      -> Investigation -> CaseClosed
+      -> CaseClosedSummary.accusation -> CaseClosedView
+```
+
+The `SubmitAccusation` handler dispatches to `AccusationService.accuse`, and
+only on a first success calls `GameStateService.requestConclude` —
+`requestConclude` re-derives authorization from server state, so the
+transition is never driven by the client's belief. `[Q]` no longer concludes
+directly; `Type.ObjectiveView`'s hint reads "Name a Suspect".
+
+### Spoiler safety / non-invention
+
+The picker payload carries only suspect ids/names the player can already see
+in the world. The resolution is derived entirely from facts the player
+unlocked, and every label it prints (`basedOn`) resolves live from the case's
+authored contradiction/deduction `label`s — no new narrative, no asserted
+culprit. An unsupported accusation is a legitimate, reported outcome, not an
+error.
+
+## First real deduction (Phase 2M)
+
+Phase 2I shipped CASE-001's first real contradiction, but nothing ever
+closed the gap where a player could complete every pre-2M objective without
+ever speaking to SUS-001 (Mara Reyes) — the only suspect an early player is
+naturally drawn to question was, in fact, optional.
+
+Phase 2M brings `DEDUCT-001` ("Both Accounts, One Contradiction") online as
+CASE-001's first real deduction: `requiredFacts` are
+`STMT-SUS-001-ALIBI`, `STMT-SUS-002-ALIBI` and `EV-004` — all already-authored
+content, referenced by id only, never duplicated. Unlike a contradiction, the
+three facts do not need to conflict; the deduction unlocks once all three are
+known. `ReasoningService` evaluates it with the exact same generic logic
+Phase 2H shipped — nothing in `ReasoningService` changed.
+
+`OBJ-004` ("Close the Investigation") is gated behind `OBJ-003` and has a
+single requirement, `{ deduction = "DEDUCT-001" }`, completing the moment the
+deduction unlocks — the same pattern as `OBJ-003`/`CONTRA-001` in Phase 2J.
+`OBJ-001`/`OBJ-002`/`OBJ-003` are unmodified. No new evidence, suspect,
+dialogue, contradiction or location is added.
+
+The `deduction` requirement gate itself, and the
+`DeductionUnlocked` -> `ObjectiveService.recordFact` wiring, were already
+built and proven in Phase 2J by a synthetic fixture
+(`ObjectiveService_Test`'s `CASE-TEST-OBJ-REASONING`); Phase 2M supplies the
+first real content they run on.
+
+## Deliberately not implemented (Phase 2L/2M boundary)
 
 Phase 2G shipped a one-suspect vertical slice; Phase 2H added the reasoning
 architecture with no content to run it on; Phase 2I brought SUS-002 online
 and authored CASE-001's first real contradiction; Phase 2J gave that
 contradiction a gameplay consequence via objective sequencing; Phase 2L let
-the player formally conclude once everything is done. Explicitly out of
-scope until their own phase: any suspect beyond SUS-001/SUS-002, branching
-dialogue/choices, interrogation, confrontation, accusation/case resolution, a
-deduction for CASE-001, a second contradiction, NPC AI/movement/animation, voice acting,
-cinematic cutscenes, additional locations, persistence, and
-multiplayer/per-session state. `Types.DialogueNodeDefinition.next` still
-supports a linear chain only — a real choice/branch contract remains future
-work, added only once a case's content actually needs it. `CaseClosed` shows
-only a factual summary — no verdict, no accusation, no narrative resolution.
+the player formally conclude once everything is done; Phase 2M authored
+CASE-001's first real deduction and the objective that completes on it;
+Phase 2N made the player accuse a suspect, gating the conclusion on that
+choice and reporting a factual, evidence-derived resolution.
+Explicitly out of scope until their own phase: any suspect beyond
+SUS-001/SUS-002, branching dialogue/choices, interrogation, confrontation,
+a second contradiction or deduction, NPC
+AI/movement/animation, voice acting, cinematic cutscenes, additional
+locations, persistence, and multiplayer/per-session state.
+`Types.DialogueNodeDefinition.next` still supports a linear chain only — a
+real choice/branch contract remains future work, added only once a case's
+content actually needs it. `CaseClosed` still shows only a factual summary —
+no verdict, no claim about who committed the crime; the accusation is the
+player's own choice, reported as consistent or not with the evidence they
+found.
 
 ## Extension points (future phases)
 
@@ -605,4 +715,8 @@ a `ConversationDefinition`, and (optionally) a `StatementDefinition` in case
 data — no service code changes needed. Add a real contradiction/deduction to
 a case by authoring `ContradictionDefinition`/`DeductionDefinition` entries
 that reference real evidence/statement ids — `ReasoningService` evaluates
-them generically, no service code changes needed there either.
+them generically, no service code changes needed there either. Add an
+accusable suspect by authoring an `AccusationDefinition` (optionally with a
+`supportedBy` naming real contradiction/deduction ids) in case data —
+`AccusationService` evaluates it generically and hardcodes no case or
+accusation id.

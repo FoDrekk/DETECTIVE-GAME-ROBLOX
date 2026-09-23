@@ -237,7 +237,7 @@ function ObjectiveView.start()
 
 	concludeHintLabel = Components.text({
 		name = "ConcludeHint",
-		text = `[{Config.Interaction.ConcludeKey}] Conclude Investigation`,
+		text = `[{Config.Interaction.ConcludeKey}] Name a Suspect`,
 		size = UDim2.new(1, 0, 0, 16),
 		position = UDim2.fromOffset(0, 100),
 		textSize = 11,

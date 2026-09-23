@@ -82,6 +82,38 @@ print `[PASS]` / `[FAIL]` / `[TIMEOUT]` plus a `[SUMMARY]` line.
 
 ## Status
 
+Phase 2N: the player makes the accusation, closing the investigation loop.
+
+- **`[Q]` opens an accusation picker** once every objective is complete (no
+  longer concludes directly). The player selects a suspect; the client sends
+  only that choice.
+- **`AccusationService`** (server-authoritative): an accusation is only
+  accepted once no objective remains, is permanent (re-accusing or changing
+  is rejected), and per-player. Only an accepted accusation lets
+  `GameStateService` transition `Investigation → CaseClosed`.
+- **Factual resolution**: the closing screen states the accused suspect and
+  whether the evidence the player *actually unlocked* is consistent with that
+  accusation (derived from the case's authored contradictions/deductions) —
+  never a claim about who committed the crime. CASE-001's `ACC-001` (Victor
+  Lane) is supported by `CONTRA-001`+`DEDUCT-001`; `ACC-002` (Mara Reyes) is
+  not named by any authored contradiction/deduction, so it resolves
+  unsupported even though it is selectable.
+- No new evidence, suspect, dialogue, contradiction, deduction or location.
+
+Phase 2M: the case's first real deduction, and the objective that completes on it.
+
+- **`DEDUCT-001`** ("Both Accounts, One Contradiction"): CASE-001's first real
+  deduction, requiring both suspects' alibi statements (`STMT-SUS-001-ALIBI`,
+  `STMT-SUS-002-ALIBI`) plus the keycard log (`EV-004`) — all already-authored
+  facts, referenced by id only. Unlike a contradiction, these three facts need
+  not conflict; the deduction unlocks once all three are known.
+- **`OBJ-004`** ("Close the Investigation"), gated behind `OBJ-003`, completes
+  the moment the deduction unlocks. This closes a real gap: nothing before it
+  required the player to ever speak to Mara Reyes.
+- `ReasoningService` and `ObjectiveService` are unchanged — the deduction uses
+  the generic logic and requirement gate both shipped earlier. No new evidence,
+  suspect, dialogue, contradiction or location.
+
 Phase 2L: the player can formally conclude the investigation.
 
 - **`[Q]` Conclude Investigation**: once every objective is complete, the
@@ -241,9 +273,10 @@ As of Phase 2C: no NPCs, dialogue, interrogation, suspect AI, deduction board,
 contradiction system, accusation, persistence, multiplayer, monetisation,
 final character models or full exterior city yet. (Phase 2G added one static,
 talkable suspect NPC with a linear conversation; Phase 2I added a second and
-CASE-001's first real contradiction — see Status above. NPC AI/movement,
-interrogation, a deduction, a second contradiction, and accusation are still
-not implemented.)
+CASE-001's first real contradiction; Phase 2M added CASE-001's first real
+deduction and the objective that completes on it — see Status above. NPC
+AI/movement, interrogation, a second contradiction or deduction, and
+accusation are still not implemented.)
 
 ### Core loop
 
@@ -263,9 +296,13 @@ OBJECTIVE PROGRESS → NEXT CLUE
 4. Press **T** to review the **CASE TIMELINE** — discovered events only, in
    chronological order. **T** or **ESC** closes it.
 5. Each required action ticks its checklist row (`□` → `✓`).
-6. When all requirements are met the server completes OBJ-001 and the client
-   shows **OBJECTIVE COMPLETE**.
-7. Re-examining discovered evidence does not duplicate progress; invalid, wrong
+6. When all requirements are met the server completes the objective and the
+   client shows **OBJECTIVE COMPLETE**, then the next objective in the chain:
+   `OBJ-001` → `OBJ-002` (question Victor Lane) → `OBJ-003` (review the
+   contradiction) → `OBJ-004` (close the investigation).
+7. Press **C** to review the **CASE FILE** — unlocked statements,
+   contradictions and deductions.
+8. Re-examining discovered evidence does not duplicate progress; invalid, wrong
    kind, and too-far interactions are rejected. Not every interactable yields
    evidence.
 

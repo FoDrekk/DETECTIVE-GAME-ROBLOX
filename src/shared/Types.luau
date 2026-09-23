@@ -98,9 +98,9 @@ export type TimelineEventDefinition = {
 --                  2J) -- checked live, not against a one-shot event, so it
 --                  is satisfied correctly however the contradiction and this
 --                  objective's own unlock happen to be ordered.
---   deduction    : same as `contradiction`, for a deduction id. No CASE-001
---                  content uses this yet; it exists so a future deduction
---                  needs no second requirement system.
+--   deduction    : same as `contradiction`, for a deduction id. CASE-001's
+--                  OBJ-004 uses this (Phase 2M) via DEDUCT-001; the gate is
+--                  generic and hardcodes no case id.
 export type ObjectiveRequirement = {
 	id: string,
 	label: string,
@@ -189,6 +189,23 @@ export type DeductionDefinition = {
 	requiredFacts: { FactReference },
 }
 
+-- A suspect the player may formally accuse once every objective is complete.
+-- An accusation never asserts a new story fact: `supportedBy` only lists
+-- already-authored contradiction/deduction ids that, when the player has
+-- actually unlocked them, make accusing this suspect consistent with the
+-- evidence they gathered. An accusation with an empty/absent `supportedBy`
+-- is one the evidence does not single out -- still selectable, and honestly
+-- reported as unsupported, never presented as established fact.
+export type AccusationDefinition = {
+	id: string,
+	suspectId: string,
+	label: string,
+	supportedBy: {
+		contradictions: { string }?,
+		deductions: { string }?,
+	}?,
+}
+
 export type ObjectiveRequirementProgress = {
 	id: string,
 	label: string,
@@ -239,6 +256,10 @@ export type CaseDefinition = {
 	statements: { StatementDefinition },
 	contradictions: { ContradictionDefinition },
 	deductions: { DeductionDefinition },
+	-- Suspects the player may formally accuse once the investigation is
+	-- complete. Optional: a case without any accusation data simply cannot be
+	-- concluded by accusation (Phase 2N).
+	accusations: { AccusationDefinition }?,
 }
 
 export type DiscoveredEvidence = EvidenceDefinition & {
@@ -291,6 +312,10 @@ export type PlayerCaseState = {
 	-- and owned by ReasoningService; never set directly by any other system.
 	unlockedContradictions: { [string]: boolean },
 	unlockedDeductions: { [string]: boolean },
+	-- The accusation id this player has formally made, if any. Owned by
+	-- AccusationService (Phase 2N); never set directly by any other system.
+	-- Once set it is permanent (an accusation is a commitment).
+	accusationId: string?,
 }
 
 export type PlayerData = {
@@ -382,17 +407,57 @@ export type ReasoningPayload = {
 	deductions: { DeductionPayload },
 }
 
+-- A single suspect option in the accusation picker (Phase 2N). `suspectId`/
+-- `suspectName`/`label` are all presentation data the player already knows
+-- (the suspects are visible in the world and their names are on their
+-- nametags); nothing here reveals which accusation is supported by the
+-- evidence -- that is decided server-side only after the player chooses.
+export type AccusationOption = {
+	id: string,
+	suspectId: string,
+	suspectName: string,
+	label: string,
+}
+
+-- The accusation picker's spoiler-safe state, sent to a client only once
+-- every objective is complete. `selected` is present once this player has
+-- made an accusation. Never carries the answer (which option is supported).
+export type AccusationPayload = {
+	options: { AccusationOption },
+	selected: AccusationOption?,
+}
+
+-- How an accepted accusation relates to the facts the player actually
+-- gathered. `supported` is true only when every contradiction/deduction the
+-- accusation names has actually been unlocked by this player -- never a
+-- claim that the accusation is "correct", only that the evidence they found
+-- is consistent with it. `basedOn` lists those unlocked display names.
+export type AccusationResolution = {
+	id: string,
+	suspectId: string,
+	suspectName: string,
+	label: string,
+	supported: boolean,
+	basedOn: { string },
+}
+
 -- A factual, spoiler-safe summary of what the player did, sent once when
 -- the server accepts their conclusion of the investigation (Phase 2L).
--- Purely a count of already-authorized facts the player already has -- never
--- a verdict, an accusation result, or any claim about who did what. Every
+-- Purely a count of already-authorized facts the player already has --
+-- never a verdict, and never any claim about who committed the crime. Every
 -- count is a real total, not a hardcoded CASE-001 number.
+--
+-- Phase 2N adds `accusation`: the suspect this player formally accused and
+-- whether the evidence they actually unlocked is consistent with that
+-- accusation. It is still never a claim about who committed the crime --
+-- only whether the facts this player gathered support the choice they made.
 export type CaseClosedSummary = {
 	objectivesCompleted: number,
 	objectivesTotal: number,
 	evidenceExamined: number,
 	evidenceTotal: number,
 	contradictionsIdentified: number,
+	accusation: AccusationResolution?,
 }
 
 return {}

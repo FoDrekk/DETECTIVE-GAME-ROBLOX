@@ -32,6 +32,7 @@ local function createCaseState(caseId: string): Types.PlayerCaseState
 		unlockedStatements = {},
 		unlockedContradictions = {},
 		unlockedDeductions = {},
+		accusationId = nil,
 	}
 end
 
