@@ -107,6 +107,10 @@ validates that the authored interactables satisfy the gameplay contract.
   conversations. Owns `activeConversation`/`completedConversations`/
   `unlockedStatements` per player; publishes `StoryEvents`
   `"ConversationStarted"`/`"ConversationCompleted"` (see below).
+- **ReasoningService** (Phase 2H) — evaluates contradiction/deduction unlock
+  against already-discovered evidence and already-unlocked statements. Owns
+  `unlockedContradictions`/`unlockedDeductions` per player; publishes
+  `StoryEvents` `"ContradictionUnlocked"`/`"DeductionUnlocked"` (see below).
 - **InteractionService** — validates interaction requests and dispatches to
   per-kind handlers (Examine/Read/PickUp/Talk). Talk starts a conversation via
   `ConversationService`.
@@ -130,6 +134,8 @@ validates that the authored interactables satisfy the gameplay contract.
 - **TimelineView** — case timeline overlay (discovered events only), T to open.
 - **DialogueView** (Phase 2G) — full-screen conversation presentation; renders
   only the single server-authorized dialogue step it is given.
+- **CaseFileView** (Phase 2H) — persistent investigation notes panel
+  (unlocked statements/contradictions/deductions), C to open.
 - **CameraController** — third-person explore + smooth examine framing.
 
 ## Data contracts
@@ -138,7 +144,8 @@ validates that the authored interactables satisfy the gameplay contract.
   `InteractionKind`, `PromptLabel`, optional `EvidenceId`; parsed exclusively via
   `src/shared/Interactable.luau`.
 - Cases follow `Types.CaseDefinition`: id, title, description, suspects,
-  locations, evidence, timeline, objectives, conversations, statements.
+  locations, evidence, timeline, objectives, conversations, statements,
+  contradictions, deductions.
 - Evidence follows `Types.EvidenceDefinition`: id, name, description, location,
   importance, plus optional `details`, `timestamp`, `category`,
   `timelineEventId`, `relatedEvidenceIds` (plus runtime `discovered`).
@@ -323,17 +330,116 @@ inventing storyline content that doesn't exist in the case data. The
 mechanism is proven end-to-end instead by a synthetic test case (see
 `ObjectiveService_Test`'s `CASE-TEST-SEQ` fixture, `OBJ-C`).
 
-## Deliberately not implemented (Phase 2G boundary)
+## Investigation reasoning (Phase 2H)
+
+`ReasoningService` evaluates two kinds of relationship between already-known
+facts, entirely server-side:
+
+- **Contradiction** — two independently discovered/unlocked facts conflict.
+- **Deduction** — a conclusion unlocked once a defined set of facts are all
+  known (the facts do not need to conflict with each other).
+
+Both are expressed with one small, shared building block —
+`Types.FactReference` (`{ kind: "Evidence" | "Statement", id: string }`) —
+instead of a generic graph or a duplicate evidence/statement contract. A fact
+reference is never a copy of content: `ReasoningService` always resolves it
+live through the fact's owning service (`EvidenceService.isDiscovered`/
+`.getState` for `"Evidence"`; `ConversationService.isStatementUnlocked`/
+`.getUnlockedStatement` for `"Statement"`, both added this phase). This is
+also why contradiction/deduction unlocking can never be inferred from text or
+fuzzy-matched — it is a deterministic check against `FactReference`s an
+author explicitly wrote in case data.
+
+`Types.ContradictionDefinition` is `{ id, label, left, right, reason? }`;
+`Types.DeductionDefinition` is `{ id, label, requiredFacts }`. Neither stores
+authored conclusion prose — see "Deliberately not implemented" below for why.
+
+### Event flow
+
+`ReasoningService` never discovers evidence or unlocks statements itself, and
+`EvidenceService`/`ObjectiveService` never call into it directly. The only
+new coupling is one direction, through the existing `StoryEvents` bus:
+
+```
+EvidenceService.discover      -> StoryEvents "EvidenceDiscovered" (existing)
+ConversationService (unlock)  -> StoryEvents "StatementUnlocked"  (new)
+                                          |
+                                          v
+                              ReasoningService.evaluate(player)
+                                          |
+                                          v
+              StoryEvents "ContradictionUnlocked" / "DeductionUnlocked"
+```
+
+`ReasoningService.start()` subscribes to both event kinds; `evaluate` walks
+every authored contradiction/deduction for the player's case and unlocks any
+whose fact references are now all known. It is idempotent (guarded by
+`unlockedContradictions`/`unlockedDeductions`, so a StoryEvent firing twice
+for the same underlying fact unlocks nothing a second time) and only ever
+runs in reaction to one of those two events — never on a timer, never a
+per-frame scan.
+
+Per-player state (`PlayerCaseState.unlockedContradictions`/
+`.unlockedDeductions`) needs no new cleanup code: `PlayerDataService.clear`
+already wipes the whole `PlayerCaseState` on `PlayerRemoving`.
+
+### Payload / spoiler safety
+
+`Types.ReasoningPayload` (`{ statements, contradictions, deductions }`) is
+the only shape ever sent to a client, via `ReasoningService.getPayload`. Each
+list contains only entries the player has actually unlocked — a locked
+contradiction or deduction is never included, never partially included, and
+never distinguishable from "does not exist" on the wire. `ContradictionPayload`/
+`DeductionPayload` include resolved display names (`leftSummary`/
+`rightSummary`/`basedOn`) rather than raw fact references, which is always
+safe: those names are only ever resolved for facts that are, by construction,
+already unlocked for that player by the time the contradiction/deduction
+itself unlocks.
+
+### Case File UI
+
+`CaseFileView` (client) is a persistent investigation notes panel — opened
+with **C**, closed with **C** or **ESC**, mutually exclusive with
+`TimelineView` (both are full-screen centered panels). It renders exactly
+the `ReasoningPayload` it is given: a STATEMENTS section, a CONTRADICTIONS
+section, and a DEDUCTIONS section, each only drawn when it has at least one
+entry. It was justified this phase because it closes a real, existing gap —
+before this, the only way to see SUS-001's alibi statement was the transient
+"STATEMENT RECORDED" notice during dialogue, with no way to review it
+afterward. The Contradictions/Deductions sections are real, tested
+architecture with a real consumer (the UI itself); they simply render empty
+for CASE-001 today, honestly, rather than showing placeholder content.
+
+### CASE-001 contradiction/deduction content: deliberately absent
+
+Audited before writing any code (Phase 2H's first requirement): CASE-001 does
+not contain two independently discoverable facts that actually conflict, nor
+a conclusion expressible without authoring new narrative prose that doesn't
+exist verbatim anywhere in the case data today. SUS-002's alibi
+("Says he left the office at 22:30. Keycard log suggests otherwise.") hints
+at a contradiction in its prose, but the "keycard log" is only a phrase
+inside that one alibi string — not a separate, ID-referenceable fact — and
+SUS-002 has no conversation to unlock anything from at all (Phase 2G shipped
+exactly one playable suspect). Rather than manufacture a contradiction or
+deduction to demonstrate the feature, `CASE-001.contradictions` and
+`.deductions` are both empty arrays, and the entire mechanism — unlock
+gating, idempotency, invalid-reference fail-safety, spoiler-safe payloads,
+the `EvidenceDiscovered`/`StatementUnlocked` integration — is proven instead
+by a synthetic fixture (`ReasoningService_Test`'s `CASE-TEST-REASONING`).
+
+## Deliberately not implemented (Phase 2G/2H boundary)
 
 Phase 2G is a one-suspect vertical slice: encounter → talk → linear dialogue
-→ completion → one statement unlocked. Explicitly out of scope until their
-own phase: a second suspect or any suspect beyond SUS-001, branching
-dialogue/choices, interrogation, contradiction/deduction gameplay,
-accusation/case resolution, NPC AI/movement/animation, voice acting,
-cinematic cutscenes, additional locations, persistence, and multiplayer/
-per-session state. `Types.DialogueNodeDefinition.next` already supports a
-linear chain only — a real choice/branch contract remains future work, added
-only once a case's content actually needs it.
+→ completion → one statement unlocked. Phase 2H adds the reasoning
+architecture on top without new story content. Explicitly out of scope until
+their own phase: a second suspect or any suspect beyond SUS-001, branching
+dialogue/choices, interrogation, accusation/case resolution, contradiction/
+deduction *content* for CASE-001 (the architecture is real; the case data is
+not), NPC AI/movement/animation, voice acting, cinematic cutscenes,
+additional locations, persistence, and multiplayer/per-session state.
+`Types.DialogueNodeDefinition.next` still supports a linear chain only — a
+real choice/branch contract remains future work, added only once a case's
+content actually needs it.
 
 ## Extension points (future phases)
 
@@ -346,4 +452,7 @@ requirement — by extending case data only; services evaluate requirements
 generically. Add a new `StoryEvents` kind only once a system actually
 publishes it. Add a second playable suspect by authoring its `npcPlacement`,
 a `ConversationDefinition`, and (optionally) a `StatementDefinition` in case
-data — no service code changes needed.
+data — no service code changes needed. Add a real contradiction/deduction to
+a case by authoring `ContradictionDefinition`/`DeductionDefinition` entries
+that reference real evidence/statement ids — `ReasoningService` evaluates
+them generically, no service code changes needed there either.

@@ -1,0 +1,352 @@
+--!strict
+--[[
+	CaseFileView
+	Persistent investigation case file: unlocked statements, contradictions
+	and deductions. Presentation only -- renders exactly the spoiler-safe
+	Types.ReasoningPayload the server sends, and decides nothing about what
+	is unlocked or how facts relate to each other.
+
+	Opened and dismissed with C, and dismissed with ESC (mirrors TimelineView).
+]]
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+
+local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
+local Components = require(ReplicatedStorage:WaitForChild("UI"):WaitForChild("Components"))
+local Types = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Types"))
+
+local CaseFileView = {}
+
+local Theme = Config.UI.Theme
+
+local gui: ScreenGui? = nil
+local root: Frame? = nil
+local content: Frame? = nil
+local emptyLabel: TextLabel? = nil
+
+local rows: { Instance } = {}
+local isOpen = false
+local targetAlpha = 0
+local currentAlpha = 0
+
+function CaseFileView.isOpen(): boolean
+	return isOpen
+end
+
+local function clearRows()
+	for _, row in ipairs(rows) do
+		row:Destroy()
+	end
+	rows = {}
+end
+
+local function addHeader(y: number, text: string): number
+	local label = Components.text({
+		name = "Header",
+		text = text,
+		size = UDim2.new(1, 0, 0, 18),
+		position = UDim2.fromOffset(0, y),
+		font = Theme.FontBold,
+		textSize = 12,
+		color = Theme.Accent,
+		parent = content,
+	})
+	table.insert(rows, label)
+	return y + 24
+end
+
+local function addStatementRow(y: number, statement: Types.StatementPayload): number
+	local row = Components.frame({
+		name = "Statement_" .. statement.id,
+		size = UDim2.new(1, 0, 0, 56),
+		position = UDim2.fromOffset(0, y),
+		color = Theme.Background,
+		transparency = 0.4,
+		radius = 5,
+		parent = content,
+	})
+	Components.padding(row, 10)
+	table.insert(rows, row)
+
+	Components.text({
+		name = "Label",
+		text = string.upper(statement.label),
+		size = UDim2.new(1, 0, 0, 14),
+		position = UDim2.fromOffset(0, 0),
+		font = Theme.FontBold,
+		textSize = 11,
+		color = Theme.Accent,
+		parent = row,
+	})
+
+	local body = Components.text({
+		name = "Text",
+		text = statement.text,
+		size = UDim2.new(1, 0, 0, 30),
+		position = UDim2.fromOffset(0, 16),
+		textSize = 13,
+		color = Theme.TextPrimary,
+		parent = row,
+	})
+	body.TextWrapped = true
+	body.TextYAlignment = Enum.TextYAlignment.Top
+
+	return y + 64
+end
+
+local function addContradictionRow(y: number, contradiction: Types.ContradictionPayload): number
+	local row = Components.frame({
+		name = "Contradiction_" .. contradiction.id,
+		size = UDim2.new(1, 0, 0, 56),
+		position = UDim2.fromOffset(0, y),
+		color = Theme.Background,
+		transparency = 0.4,
+		radius = 5,
+		parent = content,
+	})
+	Components.padding(row, 10)
+	table.insert(rows, row)
+
+	Components.text({
+		name = "Label",
+		text = string.upper(contradiction.label),
+		size = UDim2.new(1, 0, 0, 14),
+		position = UDim2.fromOffset(0, 0),
+		font = Theme.FontBold,
+		textSize = 11,
+		color = Theme.Accent,
+		parent = row,
+	})
+
+	Components.text({
+		name = "Summary",
+		text = `{contradiction.leftSummary}  vs.  {contradiction.rightSummary}`,
+		size = UDim2.new(1, 0, 0, 16),
+		position = UDim2.fromOffset(0, 16),
+		textSize = 13,
+		color = Theme.TextPrimary,
+		parent = row,
+	})
+
+	if contradiction.reason then
+		local reason = Components.text({
+			name = "Reason",
+			text = contradiction.reason,
+			size = UDim2.new(1, 0, 0, 16),
+			position = UDim2.fromOffset(0, 34),
+			textSize = 11,
+			color = Theme.TextSecondary,
+			parent = row,
+		})
+		reason.TextWrapped = true
+	end
+
+	return y + 64
+end
+
+local function addDeductionRow(y: number, deduction: Types.DeductionPayload): number
+	local row = Components.frame({
+		name = "Deduction_" .. deduction.id,
+		size = UDim2.new(1, 0, 0, 56),
+		position = UDim2.fromOffset(0, y),
+		color = Theme.Background,
+		transparency = 0.4,
+		radius = 5,
+		parent = content,
+	})
+	Components.padding(row, 10)
+	table.insert(rows, row)
+
+	Components.text({
+		name = "Label",
+		text = string.upper(deduction.label),
+		size = UDim2.new(1, 0, 0, 14),
+		position = UDim2.fromOffset(0, 0),
+		font = Theme.FontBold,
+		textSize = 11,
+		color = Theme.Accent,
+		parent = row,
+	})
+
+	local basedOn = if #deduction.basedOn > 0 then table.concat(deduction.basedOn, ", ") else "—"
+	local body = Components.text({
+		name = "BasedOn",
+		text = `Based on: {basedOn}`,
+		size = UDim2.new(1, 0, 0, 30),
+		position = UDim2.fromOffset(0, 16),
+		textSize = 12,
+		color = Theme.TextSecondary,
+		parent = row,
+	})
+	body.TextWrapped = true
+
+	return y + 64
+end
+
+-- Renders exactly the server-authorized reasoning state. A section with no
+-- entries is simply not drawn (no empty placeholder rows).
+function CaseFileView.update(payload: Types.ReasoningPayload)
+	if not content or not emptyLabel then
+		return
+	end
+
+	clearRows()
+
+	local y = 0
+	local hasContent = #payload.statements > 0 or #payload.contradictions > 0 or #payload.deductions > 0
+	emptyLabel.Visible = not hasContent
+
+	if #payload.statements > 0 then
+		y = addHeader(y, "STATEMENTS")
+		for _, statement in ipairs(payload.statements) do
+			y = addStatementRow(y, statement)
+		end
+		y += 10
+	end
+
+	if #payload.contradictions > 0 then
+		y = addHeader(y, "CONTRADICTIONS")
+		for _, contradiction in ipairs(payload.contradictions) do
+			y = addContradictionRow(y, contradiction)
+		end
+		y += 10
+	end
+
+	if #payload.deductions > 0 then
+		y = addHeader(y, "DEDUCTIONS")
+		for _, deduction in ipairs(payload.deductions) do
+			y = addDeductionRow(y, deduction)
+		end
+	end
+end
+
+local function setVisible(visible: boolean)
+	isOpen = visible
+	targetAlpha = visible and 1 or 0
+	if visible and gui then
+		gui.Enabled = true
+	end
+	if not visible and gui then
+		task.delay(0.3, function()
+			if not isOpen and gui then
+				gui.Enabled = false
+			end
+		end)
+	end
+end
+
+function CaseFileView.open()
+	if not root then
+		return
+	end
+	root.Visible = true
+	setVisible(true)
+end
+
+function CaseFileView.close()
+	if not isOpen then
+		return
+	end
+	setVisible(false)
+end
+
+function CaseFileView.toggle()
+	if isOpen then
+		CaseFileView.close()
+	else
+		CaseFileView.open()
+	end
+end
+
+function CaseFileView.start()
+	gui = Components.screenGui("MysteryCase_CaseFile", 18)
+	gui.Enabled = false
+
+	root = Components.frame({
+		name = "CaseFile",
+		size = UDim2.fromOffset(560, 460),
+		position = UDim2.fromScale(0.5, 0.5),
+		anchor = Vector2.new(0.5, 0.5),
+		color = Theme.Panel,
+		transparency = 0.06,
+		radius = 10,
+		border = true,
+		parent = gui,
+	})
+	root.Visible = false
+	Components.padding(root, 26)
+
+	local accent = Components.frame({
+		name = "Accent",
+		size = UDim2.new(0, 46, 0, 2),
+		position = UDim2.fromOffset(0, 2),
+		color = Theme.Accent,
+		radius = 1,
+		parent = root,
+	})
+	accent.BackgroundTransparency = 0
+
+	Components.text({
+		name = "Header",
+		text = "CASE FILE",
+		size = UDim2.new(1, 0, 0, 14),
+		position = UDim2.fromOffset(0, 14),
+		textSize = 11,
+		color = Theme.Accent,
+		parent = root,
+	})
+
+	Components.text({
+		name = "Title",
+		text = "Investigation Notes",
+		size = UDim2.new(1, 0, 0, 30),
+		position = UDim2.fromOffset(0, 36),
+		font = Theme.FontBold,
+		textSize = 22,
+		color = Theme.TextPrimary,
+		parent = root,
+	})
+
+	content = Components.frame({
+		name = "Content",
+		size = UDim2.new(1, 0, 1, -110),
+		position = UDim2.fromOffset(0, 78),
+		transparency = 1,
+		parent = root,
+	})
+	content.BackgroundTransparency = 1
+	content.ClipsDescendants = false
+
+	emptyLabel = Components.text({
+		name = "Empty",
+		text = "No statements, contradictions or deductions recorded yet.",
+		size = UDim2.new(1, 0, 0, 40),
+		position = UDim2.fromOffset(0, 4),
+		textSize = 12,
+		color = Theme.TextSecondary,
+		parent = content,
+	})
+	emptyLabel.TextWrapped = true
+	emptyLabel.TextYAlignment = Enum.TextYAlignment.Top
+
+	Components.text({
+		name = "Hint",
+		text = "[C] Close",
+		size = UDim2.new(1, 0, 0, 16),
+		position = UDim2.new(0, 0, 1, -20),
+		textSize = 11,
+		color = Theme.TextSecondary,
+		xAlign = Enum.TextXAlignment.Right,
+		parent = root,
+	})
+
+	RunService.RenderStepped:Connect(function()
+		currentAlpha += (targetAlpha - currentAlpha) * 0.18
+		if root then
+			root.BackgroundTransparency = 1 - currentAlpha * 0.94
+		end
+	end)
+end
+
+return CaseFileView

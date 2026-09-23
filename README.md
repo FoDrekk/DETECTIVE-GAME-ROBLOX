@@ -82,7 +82,27 @@ print `[PASS]` / `[FAIL]` / `[TIMEOUT]` plus a `[SUMMARY]` line.
 
 ## Status
 
-Phase 2G in progress: first playable story layer — a one-suspect
+Phase 2H in progress: investigation reasoning architecture (contradictions
+and deductions), no new story content.
+
+- **`ReasoningService`**: evaluates contradiction/deduction unlock from
+  already-discovered evidence and already-unlocked statements, driven purely
+  by `StoryEvents` (`EvidenceDiscovered`, `StatementUnlocked`) — no polling,
+  no per-frame scans, deterministic and config-driven (never inferred from
+  text).
+- **CASE-001 has no contradiction/deduction content.** Audited first: no two
+  independently discoverable facts in the current case genuinely conflict,
+  and any "deduction" text would require authoring new narrative prose that
+  doesn't exist verbatim anywhere today. Rather than manufacture one, the
+  entire mechanism is proven with a synthetic test fixture instead. See
+  `docs/ARCHITECTURE.md` for the full reasoning.
+- **Case File UI**: a new persistent `CaseFileView` (`[C]` to open) lists
+  unlocked statements — closing a real gap, since previously the only way to
+  see the alibi statement was the transient notice during dialogue.
+  Contradiction/Deduction sections exist and are tested, but render empty
+  for CASE-001 today, honestly, rather than showing placeholder content.
+
+Phase 2G: first playable story layer — a one-suspect
 encounter/talk/dialogue/completion vertical slice.
 
 - **Suspect NPC**: Mara Reyes (SUS-001) is a static humanoid rig, spawned at

@@ -31,6 +31,9 @@ export type StoryEventKind =
 	| "ObjectiveCompleted"
 	| "ConversationStarted"
 	| "ConversationCompleted"
+	| "StatementUnlocked"
+	| "ContradictionUnlocked"
+	| "DeductionUnlocked"
 
 local bindables: { [string]: BindableEvent } = {}
 

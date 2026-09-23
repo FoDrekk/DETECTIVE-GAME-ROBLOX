@@ -25,6 +25,7 @@ local CaseBriefingView = require(Modules:WaitForChild("CaseBriefingView"))
 local ObjectiveView = require(Modules:WaitForChild("ObjectiveView"))
 local TimelineView = require(Modules:WaitForChild("TimelineView"))
 local DialogueView = require(Modules:WaitForChild("DialogueView"))
+local CaseFileView = require(Modules:WaitForChild("CaseFileView"))
 local CameraController = require(Modules:WaitForChild("CameraController"))
 
 local player = Players.LocalPlayer
@@ -36,12 +37,14 @@ local objectiveUpdated = Signals.wait(Signals.Names.ObjectiveUpdated)
 local objectiveCompleted = Signals.wait(Signals.Names.ObjectiveCompleted)
 local caseBriefingLoaded = Signals.wait(Signals.Names.CaseBriefingLoaded)
 local dialogueUpdated = Signals.wait(Signals.Names.DialogueUpdated)
+local reasoningUpdated = Signals.wait(Signals.Names.ReasoningUpdated)
 local requestPhaseChange = Signals.wait(Signals.Names.RequestPhaseChange)
 local requestCase = Signals.wait(Signals.Names.RequestCase)
 local requestObjectives = Signals.wait(Signals.Names.RequestObjectives)
 local requestTimeline = Signals.wait(Signals.Names.RequestTimeline)
 local requestDialogueAdvance = Signals.wait(Signals.Names.DialogueAdvance)
 local requestDialogueClose = Signals.wait(Signals.Names.DialogueClose)
+local requestReasoning = Signals.wait(Signals.Names.RequestReasoning)
 
 local currentPhase: Types.GamePhase = "MainMenu"
 local lastBriefing: Types.CaseBriefing? = nil
@@ -65,11 +68,13 @@ local function applyPhase(phase: Types.GamePhase)
 		EvidencePanel.close()
 		TimelineView.close()
 		DialogueView.close()
+		CaseFileView.close()
 		CameraController.stopExamining()
 	elseif phase == "CaseClosed" or phase == "MainMenu" then
 		EvidencePanel.close()
 		TimelineView.close()
 		DialogueView.close()
+		CaseFileView.close()
 	end
 end
 
@@ -86,6 +91,7 @@ local function bootstrap()
 	ObjectiveView.start()
 	TimelineView.start()
 	DialogueView.start()
+	CaseFileView.start()
 	CameraController.start()
 
 	-- Interaction scanning.
@@ -115,13 +121,23 @@ local function bootstrap()
 		end
 	end)
 
-	-- Timeline is a non-modal information overlay: it can be opened while
-	-- exploring and is dismissed with T or ESC. Not while a dialogue is open.
+	-- Timeline and Case File are non-modal information overlays: they can be
+	-- opened while exploring and are dismissed with their own key or ESC.
+	-- Not while a dialogue is open, and mutually exclusive with each other
+	-- (both are full-screen centered panels; showing both at once would
+	-- overlap).
 	InputController.onToggleTimeline(function()
-		if currentPhase ~= "Investigation" or DialogueView.isOpen() then
+		if currentPhase ~= "Investigation" or DialogueView.isOpen() or CaseFileView.isOpen() then
 			return
 		end
 		TimelineView.toggle()
+	end)
+
+	InputController.onToggleCaseFile(function()
+		if currentPhase ~= "Investigation" or DialogueView.isOpen() or TimelineView.isOpen() then
+			return
+		end
+		CaseFileView.toggle()
 	end)
 
 	InputController.onClose(function()
@@ -136,6 +152,7 @@ local function bootstrap()
 			EvidencePanel.close()
 		end
 		TimelineView.close()
+		CaseFileView.close()
 		CameraController.stopExamining()
 		InteractionController.resumeScan()
 	end)
@@ -202,12 +219,17 @@ local function bootstrap()
 		DialogueView.update(payload)
 	end)
 
+	reasoningUpdated.OnClientEvent:Connect(function(payload: Types.ReasoningPayload)
+		CaseFileView.update(payload)
+	end)
+
 	-- Join race guard: the server fires the phase/case on PlayerAdded, which can
 	-- happen before these listeners are connected. Re-request both now that the
 	-- handlers above are wired, so late-loading clients still receive state.
 	requestCase:FireServer()
 	requestObjectives:FireServer()
 	requestTimeline:FireServer()
+	requestReasoning:FireServer()
 
 	log:info("client ready", { player = player.Name })
 end

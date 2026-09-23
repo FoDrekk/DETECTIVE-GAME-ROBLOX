@@ -36,6 +36,8 @@ Config.Interaction = {
 	ClosePanelKey = "Escape",
 	-- Key to open/close the case timeline.
 	TimelineKey = "T",
+	-- Key to open/close the case file (unlocked statements/reasoning).
+	CaseFileKey = "C",
 }
 
 Config.Camera = {

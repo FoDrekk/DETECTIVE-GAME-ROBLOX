@@ -30,6 +30,8 @@ local function createCaseState(caseId: string): Types.PlayerCaseState
 		activeConversation = nil,
 		completedConversations = {},
 		unlockedStatements = {},
+		unlockedContradictions = {},
+		unlockedDeductions = {},
 	}
 end
 

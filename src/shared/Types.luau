@@ -135,6 +135,39 @@ export type StatementDefinition = {
 	label: string,
 }
 
+-- A reference to an already-discovered/unlocked fact, by kind and id.
+-- Never a copy of the fact's content -- always resolved live from the
+-- owning service (EvidenceService for "Evidence", ConversationService for
+-- "Statement") so it can never drift and can never be forged by a client.
+export type FactReference = {
+	kind: "Evidence" | "Statement",
+	id: string,
+}
+
+-- Two independently discovered/unlocked facts that conflict. Deterministic
+-- and config-driven: unlocked only once BOTH referenced facts are true for
+-- a player, never inferred from text. `reason` is an optional short label
+-- for why they conflict (not a place to author new case narrative -- this
+-- phase's real case data does not use it; see ARCHITECTURE.md).
+export type ContradictionDefinition = {
+	id: string,
+	label: string,
+	left: FactReference,
+	right: FactReference,
+	reason: string?,
+}
+
+-- A conclusion unlocked once every one of `requiredFacts` is discovered/
+-- unlocked. Distinct from a contradiction: the facts do not need to
+-- conflict, only all be known. No conclusion text is authored on the
+-- definition itself -- see ARCHITECTURE.md for why this phase ships no
+-- production deduction content.
+export type DeductionDefinition = {
+	id: string,
+	label: string,
+	requiredFacts: { FactReference },
+}
+
 export type ObjectiveRequirementProgress = {
 	id: string,
 	label: string,
@@ -179,6 +212,8 @@ export type CaseDefinition = {
 	objectives: { ObjectiveDefinition },
 	conversations: { ConversationDefinition },
 	statements: { StatementDefinition },
+	contradictions: { ContradictionDefinition },
+	deductions: { DeductionDefinition },
 }
 
 export type DiscoveredEvidence = EvidenceDefinition & {
@@ -227,6 +262,10 @@ export type PlayerCaseState = {
 	completedConversations: { [string]: boolean },
 	-- Statement ids unlocked for this player so far.
 	unlockedStatements: { [string]: boolean },
+	-- Contradiction/deduction ids unlocked for this player so far. Evaluated
+	-- and owned by ReasoningService; never set directly by any other system.
+	unlockedContradictions: { [string]: boolean },
+	unlockedDeductions: { [string]: boolean },
 }
 
 export type PlayerData = {
@@ -282,6 +321,35 @@ export type DialoguePayload = {
 	completed: boolean,
 	-- Present only on the turn a statement is newly unlocked.
 	unlockedStatement: StatementPayload?,
+}
+
+-- An unlocked contradiction as sent to the client. `leftSummary`/
+-- `rightSummary` are display names resolved server-side from the two
+-- referenced facts -- always safe to include because a contradiction is
+-- only ever unlocked once both facts are themselves already unlocked.
+export type ContradictionPayload = {
+	id: string,
+	label: string,
+	reason: string?,
+	leftSummary: string,
+	rightSummary: string,
+}
+
+-- An unlocked deduction as sent to the client. `basedOn` lists display
+-- names of the contributing facts, for the same reason as above.
+export type DeductionPayload = {
+	id: string,
+	label: string,
+	basedOn: { string },
+}
+
+-- The player's complete currently-authorized reasoning state. Never
+-- includes a locked contradiction/deduction or a statement that has not
+-- been unlocked -- this is the only shape ReasoningService ever sends.
+export type ReasoningPayload = {
+	statements: { StatementPayload },
+	contradictions: { ContradictionPayload },
+	deductions: { DeductionPayload },
 }
 
 return {}

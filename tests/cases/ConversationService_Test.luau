@@ -326,4 +326,52 @@ return function(t)
 		local ok2 = ConversationService.leave(player)
 		expect.truthy(ok2)
 	end)
+
+	-- -----------------------------------------------------------------
+	-- Read-only statement accessors (Phase 2H): what ReasoningService uses
+	-- to resolve a "Statement"-kind fact reference, without duplicating the
+	-- unlock/lookup logic above.
+	-- -----------------------------------------------------------------
+
+	t.test("isStatementUnlocked / getUnlockedStatement hide a locked statement", function()
+		local player = makePlayer()
+		expect.falsy(ConversationService.isStatementUnlocked(player, "STMT-SUS-001-ALIBI"))
+		expect.falsy(ConversationService.getUnlockedStatement(player, "STMT-SUS-001-ALIBI"))
+	end)
+
+	t.test("isStatementUnlocked / getUnlockedStatement expose an unlocked statement", function()
+		local player = makePlayer()
+		ConversationService.begin(player, "SUS-001")
+		ConversationService.advance(player) -- unlocks the alibi statement
+
+		expect.truthy(ConversationService.isStatementUnlocked(player, "STMT-SUS-001-ALIBI"))
+		local payload = ConversationService.getUnlockedStatement(player, "STMT-SUS-001-ALIBI")
+		expect.truthy(payload)
+		expect.equal(payload.id, "STMT-SUS-001-ALIBI")
+		expect.equal(payload.suspectId, "SUS-001")
+		expect.equal(payload.label, "Alibi")
+	end)
+
+	-- Source consistency: the accessor's text is never a copy -- it always
+	-- resolves live from the suspect's own authored alibi field.
+	t.test("getUnlockedStatement text matches the suspect's authored alibi exactly", function()
+		local ServerScriptService = game:GetService("ServerScriptService")
+		local CaseService = require(ServerScriptService:WaitForChild("Server"):WaitForChild("CaseService"))
+		local player = makePlayer()
+		ConversationService.begin(player, "SUS-001")
+		ConversationService.advance(player)
+
+		local payload = ConversationService.getUnlockedStatement(player, "STMT-SUS-001-ALIBI")
+		local suspect = CaseService.getSuspect("CASE-001", "SUS-001")
+		expect.truthy(payload)
+		expect.truthy(suspect)
+		expect.equal(payload.text, suspect.alibi)
+	end)
+
+	t.test("getUnlockedStatement returns nil for an unknown statement id", function()
+		local player = makePlayer()
+		ConversationService.begin(player, "SUS-001")
+		ConversationService.advance(player)
+		expect.falsy(ConversationService.getUnlockedStatement(player, "STMT-DOES-NOT-EXIST"))
+	end)
 end

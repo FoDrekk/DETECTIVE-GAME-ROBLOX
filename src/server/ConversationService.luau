@@ -151,6 +151,7 @@ local function unlockStatement(player: Player, data: Types.PlayerData, statement
 	end
 	data.caseState.unlockedStatements[statementId] = true
 	log:info("statement unlocked", { player = player.Name, statementId = statementId })
+	StoryEvents.publish("StatementUnlocked", player, { statementId = statementId })
 	return payload
 end
 
@@ -342,6 +343,27 @@ end
 function ConversationService.isTalking(player: Player): boolean
 	local data = PlayerDataService.get(player)
 	return data ~= nil and data.caseState.activeConversation ~= nil
+end
+
+-- Read-only statement accessors for other systems (ReasoningService) that
+-- need to know whether a statement is known, without duplicating the
+-- unlock/lookup logic above. Never expose a statement before it is unlocked.
+
+function ConversationService.isStatementUnlocked(player: Player, statementId: string): boolean
+	local data = PlayerDataService.get(player)
+	return data ~= nil and data.caseState.unlockedStatements[statementId] == true
+end
+
+function ConversationService.getUnlockedStatement(player: Player, statementId: string): Types.StatementPayload?
+	local data = PlayerDataService.get(player)
+	if not data or not data.caseState.unlockedStatements[statementId] then
+		return nil
+	end
+	local statement = findStatement(data.caseState.caseId, statementId)
+	if not statement then
+		return nil
+	end
+	return buildStatementPayload(data.caseState.caseId, statement)
 end
 
 function ConversationService.start()

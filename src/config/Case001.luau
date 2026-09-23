@@ -166,6 +166,19 @@ local Case001: Types.CaseDefinition = {
 			label = "Alibi",
 		},
 	},
+
+	-- Phase 2H audit: CASE-001 does not yet contain two independently
+	-- discoverable facts that genuinely conflict, nor a conclusion
+	-- expressible without authoring new narrative prose. SUS-002's alibi
+	-- text ("Keycard log suggests otherwise") hints at a contradiction, but
+	-- the "keycard log" is only a phrase inside that one alibi string -- not
+	-- a separate, independently discoverable, ID-referenceable fact -- and
+	-- SUS-002 has no conversation to unlock anything from at all. Left
+	-- empty deliberately rather than manufactured; see ARCHITECTURE.md and
+	-- ReasoningService_Test.luau's synthetic fixture for the proven
+	-- contract.
+	contradictions = {},
+	deductions = {},
 }
 
 return Case001

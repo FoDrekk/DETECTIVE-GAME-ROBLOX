@@ -23,6 +23,7 @@ local EvidenceService = require(Services:WaitForChild("EvidenceService"))
 local TimelineService = require(Services:WaitForChild("TimelineService"))
 local ObjectiveService = require(Services:WaitForChild("ObjectiveService"))
 local ConversationService = require(Services:WaitForChild("ConversationService"))
+local ReasoningService = require(Services:WaitForChild("ReasoningService"))
 local InteractionService = require(Services:WaitForChild("InteractionService"))
 local GameStateService = require(Services:WaitForChild("GameStateService"))
 local OfficeRoom = require(Services:WaitForChild("OfficeRoom"))
@@ -56,6 +57,7 @@ local function bootstrap()
 	local objectiveEvent = Signals.get(Signals.Names.ObjectiveUpdated)
 	local objectiveCompletedEvent = Signals.get(Signals.Names.ObjectiveCompleted)
 	local dialogueEvent = Signals.get(Signals.Names.DialogueUpdated)
+	local reasoningEvent = Signals.get(Signals.Names.ReasoningUpdated)
 	local requestObjectives = Signals.get(Signals.Names.RequestObjectives)
 	local requestTimeline = Signals.get(Signals.Names.RequestTimeline)
 
@@ -66,6 +68,7 @@ local function bootstrap()
 	TimelineService.start()
 	ObjectiveService.start()
 	ConversationService.start()
+	ReasoningService.start()
 	InteractionService.start()
 
 	-- 3. Bridge service events to clients.
@@ -88,6 +91,10 @@ local function bootstrap()
 		dialogueEvent:FireClient(player, payload)
 	end)
 
+	ReasoningService.onUpdated().Event:Connect(function(player: Player, payload)
+		reasoningEvent:FireClient(player, payload)
+	end)
+
 	-- 4. Phase machine (depends on cases + player data).
 	GameStateService.start()
 
@@ -103,6 +110,7 @@ local function bootstrap()
 		GameStateService.enterBriefingFor(player)
 		ObjectiveService.sendCurrent(player)
 		TimelineService.sendCurrent(player)
+		ReasoningService.sendCurrent(player)
 	end
 
 	Players.PlayerAdded:Connect(onPlayerAdded)
@@ -144,6 +152,14 @@ local function bootstrap()
 	local requestDialogueClose = Signals.get(Signals.Names.DialogueClose)
 	requestDialogueClose.OnServerEvent:Connect(function(player: Player)
 		ConversationService.leave(player)
+	end)
+
+	-- 10. Reasoning (Case File) sync requests (join-race guard).
+	local requestReasoning = Signals.get(Signals.Names.RequestReasoning)
+	requestReasoning.OnServerEvent:Connect(function(player: Player)
+		if PlayerDataService.get(player) then
+			ReasoningService.sendCurrent(player)
+		end
 	end)
 
 	log:info("server ready", {
