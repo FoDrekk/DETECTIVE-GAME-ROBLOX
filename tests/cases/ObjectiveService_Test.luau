@@ -2,9 +2,10 @@
 --[[
 	Tests for ServerScriptService.Server.ObjectiveService.
 	Covers requirement progress from evidence/interaction, completion exactly
-	once, that replaying the same interaction adds no progress, and (Phase
-	2F) data-driven multi-objective sequencing via `prerequisites` and the
-	`target` requirement gate.
+	once, that replaying the same interaction adds no progress, (Phase 2F)
+	data-driven multi-objective sequencing via `prerequisites` and the
+	`target` requirement gate, and (Phase 2J) the contradiction/deduction
+	requirement gates driven by ReasoningService's StoryEvents.
 
 	Each case uses a unique mock UserId for isolation. The sequencing tests
 	register a small synthetic case purely for this test run (CaseRegistry.
@@ -16,6 +17,10 @@ return function(t)
 	local Server = ServerScriptService:WaitForChild("Server")
 	local ObjectiveService = require(Server:WaitForChild("ObjectiveService"))
 	local PlayerDataService = require(Server:WaitForChild("PlayerDataService"))
+	local EvidenceService = require(Server:WaitForChild("EvidenceService"))
+	local ConversationService = require(Server:WaitForChild("ConversationService"))
+	local ReasoningService = require(Server:WaitForChild("ReasoningService"))
+	local StoryEvents = require(Server:WaitForChild("StoryEvents"))
 	local CaseRegistry = require(ReplicatedStorage:WaitForChild("Config"):WaitForChild("CaseRegistry"))
 	local expect = t.expect
 
@@ -24,6 +29,22 @@ return function(t)
 		local player = { UserId = id, Name = `OBJ{id}` }
 		PlayerDataService.initialize(player, "CASE-001")
 		return player
+	end
+
+	-- Swaps StoryEvents.publish for a spy for the duration of fn (see Phase
+	-- 2F/2H/2I's precedent for why: BindableEvents fire deferred, so a live
+	-- event listener from inside this harness is unreliable).
+	local function withPublishSpy(fn: (calls: { { kind: string, player: any, data: any } }) -> ())
+		local calls = {}
+		local original = StoryEvents.publish
+		StoryEvents.publish = function(kind, player, data)
+			table.insert(calls, { kind = kind, player = player, data = data })
+		end
+		local ok, err = pcall(fn, calls)
+		StoryEvents.publish = original
+		if not ok then
+			error(err, 0)
+		end
 	end
 
 	local function progressOf(player: any): { [string]: boolean }
@@ -302,5 +323,257 @@ return function(t)
 		expect.truthy(advanced)
 		local data = PlayerDataService.get(player)
 		expect.truthy(data and data.caseState.completedObjectives["OBJ-C"])
+	end)
+
+	----------------------------------------------------------------------
+	-- Contradiction/deduction requirement gates (Phase 2J). Synthetic
+	-- fixture, registered once for this test run only -- proves the
+	-- mechanism generically before the real CASE-001 integration test below.
+	-- No prerequisites on either fixture objective, so both are active
+	-- immediately for a fresh player, letting the contradiction and
+	-- deduction gates be tested independently.
+	----------------------------------------------------------------------
+
+	CaseRegistry.register({
+		id = "CASE-TEST-OBJ-REASONING",
+		title = "Objective Reasoning Fixture",
+		description = "Synthetic case for contradiction/deduction requirement tests only.",
+		suspects = {},
+		locations = {},
+		evidence = {
+			{ id = "EV-FIX-A", name = "Fixture A", description = "", location = "", importance = "Low" },
+			{ id = "EV-FIX-B", name = "Fixture B", description = "", location = "", importance = "Low" },
+		},
+		timeline = {},
+		objectives = {
+			{
+				id = "OBJ-FIX-CONTRA",
+				title = "Contradiction Fixture Objective",
+				description = "",
+				requiredEvidence = {},
+				requiredInteractions = {},
+				requirements = {
+					{ id = "FIX-REQ-CONTRA", label = "Contradiction gate", contradiction = "CONTRA-FIX" },
+				},
+			},
+			{
+				id = "OBJ-FIX-DEDUCE",
+				title = "Deduction Fixture Objective",
+				description = "",
+				requiredEvidence = {},
+				requiredInteractions = {},
+				requirements = {
+					{ id = "FIX-REQ-DEDUCE", label = "Deduction gate", deduction = "DEDUCE-FIX" },
+				},
+			},
+		},
+		conversations = {},
+		statements = {},
+		contradictions = {
+			{
+				id = "CONTRA-FIX",
+				label = "Fixture Contradiction",
+				left = { kind = "Evidence", id = "EV-FIX-A" },
+				right = { kind = "Evidence", id = "EV-FIX-B" },
+			},
+		},
+		deductions = {
+			{
+				id = "DEDUCE-FIX",
+				label = "Fixture Deduction",
+				requiredFacts = { { kind = "Evidence", id = "EV-FIX-A" } },
+			},
+		},
+	})
+
+	local function makeReasoningObjPlayer(): any
+		local id = t.nextUserId()
+		local player = { UserId = id, Name = `OBJREASON{id}` }
+		PlayerDataService.initialize(player, "CASE-TEST-OBJ-REASONING")
+		return player
+	end
+
+	t.test("a contradiction-gated requirement stays locked before the contradiction unlocks", function()
+		local player = makeReasoningObjPlayer()
+		local progress = ObjectiveService.getProgress(player, "OBJ-FIX-CONTRA")
+		expect.falsy(progress["FIX-REQ-CONTRA"])
+	end)
+
+	t.test("recordFact rejects an unknown fact kind", function()
+		local player = makeReasoningObjPlayer()
+		local advanced = (ObjectiveService :: any).recordFact(player, "NotAKind", "CONTRA-FIX")
+		expect.falsy(advanced)
+	end)
+
+	t.test("a contradiction-gated requirement satisfies once the contradiction is actually unlocked", function()
+		local player = makeReasoningObjPlayer()
+		EvidenceService.discover(player, "EV-FIX-A")
+		EvidenceService.discover(player, "EV-FIX-B")
+		ReasoningService.evaluate(player) -- genuinely unlocks CONTRA-FIX, not a poked flag
+
+		local data = PlayerDataService.get(player)
+		expect.truthy(data.caseState.unlockedContradictions["CONTRA-FIX"])
+		-- Unlocking the fact alone does not retroactively scan objectives
+		-- (no polling): recordFact is the trigger, mirroring the real
+		-- ContradictionUnlocked -> ObjectiveService StoryEvents subscription.
+		expect.falsy(data.caseState.completedObjectives["OBJ-FIX-CONTRA"])
+
+		local advanced = ObjectiveService.recordFact(player, "Contradiction", "CONTRA-FIX")
+		expect.truthy(advanced)
+		expect.truthy(data.caseState.completedObjectives["OBJ-FIX-CONTRA"])
+	end)
+
+	t.test("an unrelated contradiction id does not complete the objective", function()
+		local player = makeReasoningObjPlayer()
+		local advanced = ObjectiveService.recordFact(player, "Contradiction", "CONTRA-DOES-NOT-EXIST")
+		expect.falsy(advanced)
+		local data = PlayerDataService.get(player)
+		expect.falsy(data.caseState.completedObjectives["OBJ-FIX-CONTRA"])
+	end)
+
+	t.test("duplicate recordFact calls do not double-complete or double-publish", function()
+		local player = makeReasoningObjPlayer()
+		EvidenceService.discover(player, "EV-FIX-A")
+		EvidenceService.discover(player, "EV-FIX-B")
+		ReasoningService.evaluate(player)
+
+		withPublishSpy(function(calls)
+			ObjectiveService.recordFact(player, "Contradiction", "CONTRA-FIX")
+			ObjectiveService.recordFact(player, "Contradiction", "CONTRA-FIX") -- duplicate
+
+			local completions = 0
+			for _, call in ipairs(calls) do
+				if call.kind == "ObjectiveCompleted" and call.data.objectiveId == "OBJ-FIX-CONTRA" then
+					completions += 1
+				end
+			end
+			expect.equal(completions, 1)
+		end)
+	end)
+
+	t.test("a deduction-gated requirement stays locked before the deduction unlocks", function()
+		local player = makeReasoningObjPlayer()
+		local progress = ObjectiveService.getProgress(player, "OBJ-FIX-DEDUCE")
+		expect.falsy(progress["FIX-REQ-DEDUCE"])
+	end)
+
+	t.test("a deduction-gated requirement satisfies once the deduction is actually unlocked", function()
+		local player = makeReasoningObjPlayer()
+		EvidenceService.discover(player, "EV-FIX-A")
+		ReasoningService.evaluate(player) -- genuinely unlocks DEDUCE-FIX
+
+		local data = PlayerDataService.get(player)
+		expect.truthy(data.caseState.unlockedDeductions["DEDUCE-FIX"])
+		expect.falsy(data.caseState.completedObjectives["OBJ-FIX-DEDUCE"])
+
+		local advanced = ObjectiveService.recordFact(player, "Deduction", "DEDUCE-FIX")
+		expect.truthy(advanced)
+		expect.truthy(data.caseState.completedObjectives["OBJ-FIX-DEDUCE"])
+	end)
+
+	t.test("recordFact for a player with no data is safe and reports no advancement", function()
+		local stranger = { UserId = -999999999, Name = "Stranger" }
+		local advanced = ObjectiveService.recordFact(stranger, "Contradiction", "CONTRA-FIX")
+		expect.falsy(advanced)
+	end)
+
+	----------------------------------------------------------------------
+	-- Real CASE-001 integration (Phase 2J): OBJ-001 -> OBJ-002 -> Victor's
+	-- statement -> EV-004 -> CONTRA-001 -> OBJ-003, using production data,
+	-- not the synthetic fixture above.
+	----------------------------------------------------------------------
+
+	t.test("OBJ-003 is locked while OBJ-002 is incomplete", function()
+		local player = makePlayer()
+		ObjectiveService.recordInteraction(player, "Examine", "EV-001")
+		ObjectiveService.recordInteraction(player, "Examine", "EV-002")
+		ObjectiveService.recordInteraction(player, "Read", "EV-003")
+		local data = PlayerDataService.get(player)
+		expect.truthy(data.caseState.completedObjectives["OBJ-001"])
+		expect.falsy(data.caseState.completedObjectives["OBJ-002"])
+		expect.equal(ObjectiveService.getActiveObjectiveId(player), "OBJ-002")
+	end)
+
+	t.test(
+		"real CASE-001 path: OBJ-001 -> OBJ-002 -> Victor statement -> EV-004 -> CONTRA-001 -> OBJ-003",
+		function()
+			local player = makePlayer()
+			local data = PlayerDataService.get(player)
+
+			-- OBJ-001: survey the scene.
+			ObjectiveService.recordInteraction(player, "Examine", "EV-001")
+			ObjectiveService.recordInteraction(player, "Examine", "EV-002")
+			ObjectiveService.recordInteraction(player, "Read", "EV-003")
+			expect.truthy(data.caseState.completedObjectives["OBJ-001"])
+
+			-- OBJ-002: talk to Victor (mirrors InteractionService's real call
+			-- order -- begin() first, then the interaction is recorded).
+			ConversationService.begin(player, "SUS-002")
+			ObjectiveService.recordInteraction(player, "Talk", nil, "SUS-002")
+			expect.truthy(data.caseState.completedObjectives["OBJ-002"])
+			expect.equal(ObjectiveService.getActiveObjectiveId(player), "OBJ-003")
+			expect.falsy(data.caseState.completedObjectives["OBJ-003"])
+
+			ConversationService.advance(player) -- -> alibi node, unlocks STMT-SUS-002-ALIBI
+			expect.truthy(ConversationService.isStatementUnlocked(player, "STMT-SUS-002-ALIBI"))
+			ConversationService.advance(player) -- -> closing node
+			ConversationService.advance(player) -- -> completes
+
+			-- Discover the keycard log; CONTRA-001 needs both this and the
+			-- statement above.
+			EvidenceService.discover(player, "EV-004")
+			ReasoningService.evaluate(player)
+			expect.truthy(data.caseState.unlockedContradictions["CONTRA-001"])
+
+			-- Unlocking the contradiction alone does not complete OBJ-003
+			-- (no polling) -- the StoryEvents subscription is what triggers
+			-- re-evaluation in production; simulated here exactly as the
+			-- Phase 2H/2I precedent does for deferred BindableEvent delivery.
+			expect.falsy(data.caseState.completedObjectives["OBJ-003"])
+
+			ObjectiveService.recordFact(player, "Contradiction", "CONTRA-001")
+			expect.truthy(data.caseState.completedObjectives["OBJ-003"])
+		end
+	)
+
+	t.test("OBJ-003 completes immediately if CONTRA-001 was already unlocked before OBJ-002 finished", function()
+		-- Edge case B from the Phase 2J spec: the contradiction fact can
+		-- become known before the objective gated on it is even active.
+		-- Discover EV-004 first, then only unlock the statement (and
+		-- therefore CONTRA-001) once OBJ-002 completes.
+		local player = makePlayer()
+		local data = PlayerDataService.get(player)
+
+		ObjectiveService.recordInteraction(player, "Examine", "EV-001")
+		ObjectiveService.recordInteraction(player, "Examine", "EV-002")
+		ObjectiveService.recordInteraction(player, "Read", "EV-003")
+
+		EvidenceService.discover(player, "EV-004") -- known before Victor is ever talked to
+		ReasoningService.evaluate(player)
+		expect.falsy(data.caseState.unlockedContradictions["CONTRA-001"]) -- statement still missing
+
+		ConversationService.begin(player, "SUS-002")
+		ObjectiveService.recordInteraction(player, "Talk", nil, "SUS-002") -- completes OBJ-002, activates OBJ-003
+		ConversationService.advance(player) -- unlocks STMT-SUS-002-ALIBI
+		ReasoningService.evaluate(player) -- now both facts are known
+		expect.truthy(data.caseState.unlockedContradictions["CONTRA-001"])
+
+		-- requirementSatisfied reads live unlockedContradictions state, not
+		-- a one-shot event payload, so this still requires the StoryEvents
+		-- subscription's recordFact call to trigger re-evaluation -- but
+		-- once triggered, it must succeed regardless of this ordering.
+		expect.falsy(data.caseState.completedObjectives["OBJ-003"])
+		ObjectiveService.recordFact(player, "Contradiction", "CONTRA-001")
+		expect.truthy(data.caseState.completedObjectives["OBJ-003"])
+	end)
+
+	t.test("OBJ-001 and OBJ-002 requirements are unaffected by the new requirement fields (regression)", function()
+		local player = makePlayer()
+		local advanced = ObjectiveService.recordInteraction(player, "Examine", "EV-001")
+		expect.truthy(advanced)
+		local progress = ObjectiveService.getProgress(player, "OBJ-001")
+		expect.truthy(progress["REQ-001"])
+		expect.falsy(progress["REQ-002"])
+		expect.falsy(progress["REQ-003"])
 	end)
 end

@@ -83,8 +83,9 @@ export type TimelineEventDefinition = {
 }
 
 -- A single requirement attached to an objective. Every non-nil field is a
--- gate that must match the observed interaction for the requirement to
--- advance (see ObjectiveService.requirementSatisfied):
+-- gate that must be satisfied for the requirement to advance (see
+-- ObjectiveService.requirementSatisfied). All present gates are ANDed
+-- together against a single observed event:
 --   evidence     : the objective advances when this evidence id is discovered.
 --   interaction  : the objective advances only when an interaction of this
 --                  kind was performed.
@@ -92,12 +93,22 @@ export type TimelineEventDefinition = {
 --                  instance's Name matches this value. For requirements that
 --                  are not evidence-specific (e.g. "talk to the named
 --                  interactable").
+--   contradiction: the objective advances once this contradiction id is
+--                  unlocked in the player's own authoritative state (Phase
+--                  2J) -- checked live, not against a one-shot event, so it
+--                  is satisfied correctly however the contradiction and this
+--                  objective's own unlock happen to be ordered.
+--   deduction    : same as `contradiction`, for a deduction id. No CASE-001
+--                  content uses this yet; it exists so a future deduction
+--                  needs no second requirement system.
 export type ObjectiveRequirement = {
 	id: string,
 	label: string,
 	evidence: string?,
 	interaction: InteractionKind?,
 	target: string?,
+	contradiction: string?,
+	deduction: string?,
 }
 
 export type ObjectiveDefinition = {

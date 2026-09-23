@@ -82,6 +82,20 @@ print `[PASS]` / `[FAIL]` / `[TIMEOUT]` plus a `[SUMMARY]` line.
 
 ## Status
 
+Phase 2J: the first contradiction now has a gameplay consequence.
+
+- **`OBJ-003`** ("Review Victor Lane's Statement") completes the moment
+  `CONTRA-001` unlocks — no extra interaction required. Before this phase,
+  discovering the contradiction was purely informational.
+- **`ObjectiveService` now reacts to reasoning**: it subscribes to
+  `StoryEvents` `"ContradictionUnlocked"`/`"DeductionUnlocked"` (mirroring
+  `ReasoningService`'s own subscription pattern), and `ObjectiveRequirement`
+  gained two generic optional gates, `contradiction`/`deduction`, alongside
+  the existing `evidence`/`interaction`/`target`. No case id or contradiction
+  id is hardcoded in `ObjectiveService` — a future deduction can use the same
+  gate with no new requirement system.
+- No new evidence, suspect, dialogue, contradiction, or deduction was added.
+
 Phase 2I: second suspect, first real contradiction.
 
 - **Victor Lane (SUS-002) is now playable**: same generic pattern as Mara

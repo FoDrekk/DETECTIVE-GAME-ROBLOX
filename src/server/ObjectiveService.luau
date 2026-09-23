@@ -8,16 +8,23 @@
 	specifically — it evaluates generic requirements against per-player
 	progress and reports updates.
 
-	Progress is driven by two observable facts:
-	  * evidence discovered  (EvidenceService)
-	  * interaction performed (InteractionService)
+	Progress is driven by three observable facts:
+	  * evidence discovered    (EvidenceService, via InteractionService)
+	  * interaction performed  (InteractionService)
+	  * a reasoning fact unlocked (ReasoningService, via StoryEvents
+	    "ContradictionUnlocked"/"DeductionUnlocked" -- Phase 2J)
 
-	Both are server-authoritative. The client never supplies progress state.
+	All three are server-authoritative. The client never supplies progress
+	state. The first two reach this service through direct, synchronous calls
+	(recordInteraction); the third reaches it through StoryEvents, the same
+	way ReasoningService itself observes EvidenceService/ConversationService.
+	This service still owns no case-specific or reasoning-specific logic: it
+	evaluates whatever `ObjectiveRequirement` gates a case's objectives
+	author, generically.
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Types = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Types"))
-local Signals = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Signals"))
 local Logger = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Logger"))
 local PlayerDataService = require(script.Parent:WaitForChild("PlayerDataService"))
 local CaseService = require(script.Parent:WaitForChild("CaseService"))
@@ -60,8 +67,19 @@ local function ensureProgress(data: Types.PlayerData, objectiveId: string): { [s
 	return progress
 end
 
--- Does an observed interaction satisfy this requirement?
+-- Does the observed interaction, together with the player's own current
+-- reasoning state, satisfy this requirement? `evidence`/`interaction`/
+-- `target` are matched against the single event that triggered this
+-- evaluation (as before Phase 2J); `contradiction`/`deduction` are matched
+-- against the player's own persisted `unlockedContradictions`/
+-- `unlockedDeductions` state instead of the event itself. That distinction
+-- is deliberate: a contradiction/deduction can unlock before the objective
+-- gated on it is even active (e.g. its prerequisite completes later), so
+-- checking live state -- rather than "did this specific event carry the
+-- right id" -- means the requirement is evaluated correctly however the two
+-- happen to be ordered, with no event-replay system needed.
 local function requirementSatisfied(
+	data: Types.PlayerData,
 	requirement: Types.ObjectiveRequirement,
 	kind: Types.InteractionKind?,
 	evidenceId: string?,
@@ -76,8 +94,20 @@ local function requirementSatisfied(
 	if requirement.target and requirement.target ~= targetName then
 		return false
 	end
-	-- A requirement with no constraint at all cannot be satisfied by interaction.
-	if not requirement.evidence and not requirement.interaction and not requirement.target then
+	if requirement.contradiction and not data.caseState.unlockedContradictions[requirement.contradiction] then
+		return false
+	end
+	if requirement.deduction and not data.caseState.unlockedDeductions[requirement.deduction] then
+		return false
+	end
+	-- A requirement with no constraint at all can never be satisfied.
+	if
+		not requirement.evidence
+		and not requirement.interaction
+		and not requirement.target
+		and not requirement.contradiction
+		and not requirement.deduction
+	then
 		return false
 	end
 	return true
@@ -166,29 +196,24 @@ function ObjectiveService.sendCurrent(player: Player)
 end
 
 --[[
-	Record progress for an interaction. Called only after the interaction has
-	been validated by InteractionService.
+	Shared evaluation core for both trigger paths (an interaction, or a
+	reasoning fact unlocking). Only objectives that are unlocked
+	(prerequisites met) and not yet complete are evaluated, so progress can
+	never be credited to a locked objective. Returns true if any requirement
+	advanced.
 
-	kind        : the interaction performed
-	evidenceId  : the evidence tied to the interaction, if any
-	targetName  : the interacted instance's Name, for requirements gated on a
-	              specific named interactable rather than evidence/kind alone
-
-	Only objectives that are unlocked (prerequisites met) and not yet
-	complete are evaluated, so progress can never be credited to a locked
-	objective. Returns true if any requirement advanced.
+	`kind`/`evidenceId`/`targetName` describe an interaction event (all nil
+	when this call is reacting to a reasoning fact instead -- see
+	`requirementSatisfied` for why contradiction/deduction gates don't need
+	their own event payload here).
 ]]
-function ObjectiveService.recordInteraction(
+local function evaluateObjectives(
 	player: Player,
-	kind: Types.InteractionKind,
+	data: Types.PlayerData,
+	kind: Types.InteractionKind?,
 	evidenceId: string?,
 	targetName: string?
 ): boolean
-	local data = PlayerDataService.get(player)
-	if not data then
-		return false
-	end
-
 	local objectives = caseObjectives(data.caseState.caseId)
 	if #objectives == 0 then
 		return false
@@ -203,7 +228,10 @@ function ObjectiveService.recordInteraction(
 			local progress = ensureProgress(data, objective.id)
 			local objectiveAdvanced = false
 			for _, requirement in ipairs(objective.requirements) do
-				if not progress[requirement.id] and requirementSatisfied(requirement, kind, evidenceId, targetName) then
+				if
+					not progress[requirement.id]
+					and requirementSatisfied(data, requirement, kind, evidenceId, targetName)
+				then
 					progress[requirement.id] = true
 					objectiveAdvanced = true
 					advanced = true
@@ -240,6 +268,54 @@ function ObjectiveService.recordInteraction(
 	return advanced
 end
 
+--[[
+	Record progress for an interaction. Called only after the interaction has
+	been validated by InteractionService.
+
+	kind        : the interaction performed
+	evidenceId  : the evidence tied to the interaction, if any
+	targetName  : the interacted instance's Name, for requirements gated on a
+	              specific named interactable rather than evidence/kind alone
+]]
+function ObjectiveService.recordInteraction(
+	player: Player,
+	kind: Types.InteractionKind,
+	evidenceId: string?,
+	targetName: string?
+): boolean
+	local data = PlayerDataService.get(player)
+	if not data then
+		return false
+	end
+	return evaluateObjectives(player, data, kind, evidenceId, targetName)
+end
+
+export type FactKind = "Contradiction" | "Deduction"
+
+--[[
+	Record a reasoning fact unlocking (Phase 2J) -- the ContradictionUnlocked/
+	DeductionUnlocked StoryEvents counterpart to recordInteraction. Narrowly
+	scoped to objective requirement evaluation: it validates the player and
+	fact kind, then re-runs the same generic evaluation `recordInteraction`
+	uses. The fact `id` itself isn't threaded further in -- `requirementSatisfied`
+	reads the player's own `unlockedContradictions`/`unlockedDeductions` state
+	directly, so this is naturally idempotent (a requirement already marked
+	progressed is skipped) and safe regardless of call order.
+]]
+function ObjectiveService.recordFact(player: Player, kind: FactKind, id: string): boolean
+	if kind ~= "Contradiction" and kind ~= "Deduction" then
+		return false
+	end
+	if type(id) ~= "string" or id == "" then
+		return false
+	end
+	local data = PlayerDataService.get(player)
+	if not data then
+		return false
+	end
+	return evaluateObjectives(player, data, nil, nil, nil)
+end
+
 -- The id of the player's current active objective (see getActiveObjective),
 -- or nil once every objective is complete. A synchronous read of the same
 -- decision sendCurrent broadcasts, for callers (including tests) that need
@@ -274,7 +350,22 @@ function ObjectiveService.getProgress(player: Player, objectiveId: string): { [s
 	return ensureProgress(data, objective.id)
 end
 
+-- Subscribed once at startup, mirroring ReasoningService.start()'s own
+-- StoryEvents subscription pattern exactly -- event-driven, no polling, no
+-- per-frame scan, and no case/contradiction id hardcoded here.
 function ObjectiveService.start()
+	StoryEvents.on("ContradictionUnlocked", function(player: Player, eventData: { [string]: any })
+		local contradictionId = eventData.contradictionId
+		if type(contradictionId) == "string" then
+			ObjectiveService.recordFact(player, "Contradiction", contradictionId)
+		end
+	end)
+	StoryEvents.on("DeductionUnlocked", function(player: Player, eventData: { [string]: any })
+		local deductionId = eventData.deductionId
+		if type(deductionId) == "string" then
+			ObjectiveService.recordFact(player, "Deduction", deductionId)
+		end
+	end)
 	log:debug("started")
 end
 

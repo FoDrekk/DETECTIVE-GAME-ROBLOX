@@ -101,8 +101,9 @@ validates that the authored interactables satisfy the gameplay contract.
   of their source evidence items is discovered; ordered by `timeMinutes`.
 - **ObjectiveService** — data-driven objective tracking, including multi-
   objective sequencing (see below). Evaluates generic evidence/interaction/
-  target requirements from case data; owns completion; publishes
-  `StoryEvents` `"ObjectiveCompleted"`.
+  target/contradiction/deduction requirements from case data; owns
+  completion; publishes `StoryEvents` `"ObjectiveCompleted"`; subscribes to
+  `StoryEvents` `"ContradictionUnlocked"`/`"DeductionUnlocked"` (Phase 2J).
 - **ConversationService** (Phase 2G) — authoritative, data-driven suspect
   conversations. Owns `activeConversation`/`completedConversations`/
   `unlockedStatements` per player; publishes `StoryEvents`
@@ -469,14 +470,56 @@ minimal static prop for any evidence that authors one, tags it with the same
 `Workspace.Office.EvidenceProps` folder. Evidence without `propPlacement`
 (`EV-001`–`EV-003`) is completely unaffected — this is purely additive.
 
-## Deliberately not implemented (Phase 2G/2H/2I boundary)
+## Reasoning-gated objectives (Phase 2J)
+
+`CONTRA-001` unlocked correctly through Phase 2I but had no gameplay
+consequence — nothing reacted to it. Phase 2J connects it to progression
+without inventing any new mechanic:
+
+```
+ReasoningService  --StoryEvents "ContradictionUnlocked"/"DeductionUnlocked"-->  ObjectiveService
+```
+
+`ObjectiveService` had never subscribed to `StoryEvents` before this phase
+(`recordInteraction` is called directly and synchronously by
+`InteractionService`). It now also subscribes to `"ContradictionUnlocked"`/
+`"DeductionUnlocked"` in `start()`, mirroring `ReasoningService.start()`'s own
+subscription pattern exactly. Each callback validates the event's id is a
+string, then calls a new, narrowly-scoped `ObjectiveService.recordFact(player,
+kind, id)` — the StoryEvents counterpart to `recordInteraction`, sharing the
+exact same underlying evaluation/completion logic (extracted into a private
+`evaluateObjectives`, so neither this service's per-case-nothing behavior nor
+any of its existing evidence/interaction/target handling changed).
+
+`Types.ObjectiveRequirement` gained two optional sibling gates:
+`contradiction: string?` and `deduction: string?`, alongside the existing
+`evidence`/`interaction`/`target`. The other three are matched against the
+single event that triggered evaluation; `contradiction`/`deduction` are
+matched instead against the player's own persisted
+`unlockedContradictions`/`unlockedDeductions` state. That distinction is
+deliberate: a contradiction can unlock before the objective gated on it is
+even active (its prerequisite might complete later), and checking live state
+rather than "did this specific event carry the right id" means the
+requirement resolves correctly however the two end up ordered — with no
+event-replay system, and no case/contradiction id hardcoded in
+`ObjectiveService` anywhere.
+
+CASE-001 declares one new objective, `OBJ-003` ("Review Victor Lane's
+Statement"), gated behind `OBJ-002`, with a single requirement:
+`{ contradiction = "CONTRA-001" }`. `OBJ-001`/`OBJ-002` are unmodified. No
+deduction exists for CASE-001 yet; the `deduction` gate exists so a future
+one needs no second requirement system, and is proven today only by a
+synthetic fixture (`ObjectiveService_Test`'s `CASE-TEST-OBJ-REASONING`).
+
+## Deliberately not implemented (Phase 2G/2H/2I/2J boundary)
 
 Phase 2G shipped a one-suspect vertical slice; Phase 2H added the reasoning
 architecture with no content to run it on; Phase 2I brought SUS-002 online
-and authored CASE-001's first real contradiction. Explicitly out of scope
-until their own phase: any suspect beyond SUS-001/SUS-002, branching
-dialogue/choices, interrogation, accusation/case resolution, a deduction for
-CASE-001, a second contradiction, NPC AI/movement/animation, voice acting,
+and authored CASE-001's first real contradiction; Phase 2J gave that
+contradiction a gameplay consequence via objective sequencing. Explicitly out
+of scope until their own phase: any suspect beyond SUS-001/SUS-002, branching
+dialogue/choices, interrogation, confrontation, accusation/case resolution, a
+deduction for CASE-001, a second contradiction, NPC AI/movement/animation, voice acting,
 cinematic cutscenes, additional locations, persistence, and
 multiplayer/per-session state. `Types.DialogueNodeDefinition.next` still
 supports a linear chain only — a real choice/branch contract remains future

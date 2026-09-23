@@ -166,6 +166,20 @@ local Case001: Types.CaseDefinition = {
 			},
 			prerequisites = { "OBJ-001" },
 		},
+		{
+			-- Phase 2J: gives CONTRA-001 a real gameplay consequence.
+			-- Completes the moment the contradiction unlocks -- no further
+			-- interaction required, no new evidence, no new dialogue.
+			id = "OBJ-003",
+			title = "Review Victor Lane's Statement",
+			description = "Cross-reference what Victor said against the evidence you've found.",
+			requiredEvidence = {},
+			requiredInteractions = {},
+			requirements = {
+				{ id = "REQ-005", label = "Review the contradiction in his account", contradiction = "CONTRA-001" },
+			},
+			prerequisites = { "OBJ-002" },
+		},
 	},
 
 	-- Phase 2G/2I: one deterministic linear conversation per playable suspect.
