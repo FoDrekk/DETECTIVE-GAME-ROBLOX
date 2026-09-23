@@ -125,12 +125,27 @@ return function(t)
 	t.test("declares exactly one contradiction, referencing real facts", function()
 		local caseDef = CaseRegistry.get("CASE-001")
 		expect.equal(#caseDef.contradictions, 1)
-		expect.equal(#caseDef.deductions, 0)
 		local contradiction = caseDef.contradictions[1]
 		expect.equal(contradiction.id, "CONTRA-001")
 		expect.equal(contradiction.left.kind, "Statement")
 		expect.equal(contradiction.left.id, "STMT-SUS-002-ALIBI")
 		expect.equal(contradiction.right.kind, "Evidence")
 		expect.equal(contradiction.right.id, "EV-004")
+	end)
+
+	-- Phase 2M: CASE-001 declares exactly one deduction, referencing real
+	-- facts by id rather than duplicating their content.
+	t.test("declares exactly one deduction, referencing real facts", function()
+		local caseDef = CaseRegistry.get("CASE-001")
+		expect.equal(#caseDef.deductions, 1)
+		local deduction = caseDef.deductions[1]
+		expect.equal(deduction.id, "DEDUCT-001")
+		expect.equal(#deduction.requiredFacts, 3)
+		expect.equal(deduction.requiredFacts[1].kind, "Statement")
+		expect.equal(deduction.requiredFacts[1].id, "STMT-SUS-001-ALIBI")
+		expect.equal(deduction.requiredFacts[2].kind, "Statement")
+		expect.equal(deduction.requiredFacts[2].id, "STMT-SUS-002-ALIBI")
+		expect.equal(deduction.requiredFacts[3].kind, "Evidence")
+		expect.equal(deduction.requiredFacts[3].id, "EV-004")
 	end)
 end

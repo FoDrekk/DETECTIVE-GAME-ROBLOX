@@ -611,7 +611,7 @@ return function(t)
 		expect.equal(ObjectiveService.getActiveObjectiveId(player), "OBJ-003")
 	end)
 
-	t.test("no active objective remains once OBJ-003 (the last objective) completes", function()
+	t.test("an active objective remains after only OBJ-003 completes", function()
 		local player = makePlayer()
 		local data = PlayerDataService.get(player)
 
@@ -628,6 +628,36 @@ return function(t)
 		ObjectiveService.recordFact(player, "Contradiction", "CONTRA-001")
 
 		expect.truthy(data.caseState.completedObjectives["OBJ-003"])
+		expect.equal(ObjectiveService.getActiveObjectiveId(player), "OBJ-004")
+	end)
+
+	-- Phase 2M: DEDUCT-001/OBJ-004 requires Mara's statement too -- nothing
+	-- above this test ever speaks to her, so OBJ-004 only completes once
+	-- that's added on top of the OBJ-003 chain.
+	t.test("no active objective remains once OBJ-004 (the last objective) completes", function()
+		local player = makePlayer()
+		local data = PlayerDataService.get(player)
+
+		ObjectiveService.recordInteraction(player, "Examine", "EV-001")
+		ObjectiveService.recordInteraction(player, "Examine", "EV-002")
+		ObjectiveService.recordInteraction(player, "Read", "EV-003")
+		ConversationService.begin(player, "SUS-002")
+		ObjectiveService.recordInteraction(player, "Talk", nil, "SUS-002")
+		ConversationService.advance(player) -- unlocks STMT-SUS-002-ALIBI
+		EvidenceService.discover(player, "EV-004")
+		ReasoningService.evaluate(player)
+		ObjectiveService.recordFact(player, "Contradiction", "CONTRA-001")
+		expect.equal(ObjectiveService.getActiveObjectiveId(player), "OBJ-004") -- OBJ-004 still open
+
+		-- Victor's conversation is still active (only advanced once above) --
+		-- leave it before starting Mara's, or begin() is a silent no-op.
+		ConversationService.leave(player)
+		ConversationService.begin(player, "SUS-001")
+		ConversationService.advance(player) -- unlocks STMT-SUS-001-ALIBI
+		ReasoningService.evaluate(player)
+		ObjectiveService.recordFact(player, "Deduction", "DEDUCT-001")
+
+		expect.truthy(data.caseState.completedObjectives["OBJ-004"])
 		expect.falsy(ObjectiveService.getActiveObjectiveId(player))
 	end)
 

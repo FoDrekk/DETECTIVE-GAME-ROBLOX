@@ -70,13 +70,26 @@ return function(t)
 		ObjectiveService.recordInteraction(player, "Talk", nil, "SUS-002")
 	end
 
-	-- Completes every currently-authored CASE-001 objective (OBJ-001/002/003).
-	local function completeEverything(player: any)
+	-- Completes OBJ-001/002/003 only -- deliberately never speaks to Mara, so
+	-- DEDUCT-001/OBJ-004 stay locked. Used to test the OBJ-004 boundary.
+	local function completeThroughObj003(player: any)
 		completeObj002(player)
 		ConversationService.advance(player) -- unlocks STMT-SUS-002-ALIBI
 		EvidenceService.discover(player, "EV-004")
 		ReasoningService.evaluate(player) -- unlocks CONTRA-001
 		ObjectiveService.recordFact(player, "Contradiction", "CONTRA-001") -- completes OBJ-003
+	end
+
+	-- Completes every currently-authored CASE-001 objective (OBJ-001/002/003/004).
+	local function completeEverything(player: any)
+		completeThroughObj003(player)
+		-- Victor's conversation is still active (only advanced once above) --
+		-- leave it before starting Mara's, or begin() is a silent no-op.
+		ConversationService.leave(player)
+		ConversationService.begin(player, "SUS-001")
+		ConversationService.advance(player) -- unlocks STMT-SUS-001-ALIBI
+		ReasoningService.evaluate(player) -- unlocks DEDUCT-001
+		ObjectiveService.recordFact(player, "Deduction", "DEDUCT-001") -- completes OBJ-004
 	end
 
 	t.test("a fresh/incomplete player cannot conclude", function()
@@ -100,6 +113,20 @@ return function(t)
 		resetToInvestigation()
 		local player = makePlayer()
 		completeObj002(player)
+		local concluded = GameStateService.requestConclude(player)
+		expect.falsy(concluded)
+		expect.equal(GameStateService.getPhase(), "Investigation")
+	end)
+
+	-- Phase 2M: OBJ-001/002/003 complete but Mara never spoken to -- DEDUCT-001
+	-- and therefore OBJ-004 stay locked, so conclusion must stay blocked too.
+	t.test("a player with OBJ-001/002/003 complete but not OBJ-004 cannot conclude", function()
+		resetToInvestigation()
+		local player = makePlayer()
+		completeThroughObj003(player)
+		local data = PlayerDataService.get(player)
+		expect.truthy(data.caseState.completedObjectives["OBJ-003"])
+		expect.falsy(data.caseState.completedObjectives["OBJ-004"])
 		local concluded = GameStateService.requestConclude(player)
 		expect.falsy(concluded)
 		expect.equal(GameStateService.getPhase(), "Investigation")

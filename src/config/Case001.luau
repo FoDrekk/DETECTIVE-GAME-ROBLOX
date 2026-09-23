@@ -183,6 +183,26 @@ local Case001: Types.CaseDefinition = {
 			},
 			prerequisites = { "OBJ-002" },
 		},
+		{
+			-- Phase 2M: gives DEDUCT-001 a real gameplay consequence, and in
+			-- doing so closes a real gap -- nothing before this objective ever
+			-- required speaking to Mara. Completes the moment the deduction
+			-- unlocks, same pattern as OBJ-003 -- no further interaction
+			-- required, no new evidence, no new dialogue.
+			id = "OBJ-004",
+			title = "Close the Investigation",
+			description = "Make sure both suspects have given their account before drawing conclusions.",
+			requiredEvidence = {},
+			requiredInteractions = {},
+			requirements = {
+				{
+					id = "REQ-006",
+					label = "Weigh both suspects' statements against the evidence",
+					deduction = "DEDUCT-001",
+				},
+			},
+			prerequisites = { "OBJ-003" },
+		},
 	},
 
 	-- Phase 2G/2I: one deterministic linear conversation per playable suspect.
@@ -276,7 +296,24 @@ local Case001: Types.CaseDefinition = {
 			reason = "Victor claims he left at 22:30; the keycard log does not match.",
 		},
 	},
-	deductions = {},
+	-- Phase 2M: the first real deduction. Unlike CONTRA-001, these facts don't
+	-- need to conflict -- the deduction fires once all three are known. Every
+	-- referenced fact is already-authored content (see STMT-SUS-001-ALIBI,
+	-- STMT-SUS-002-ALIBI, EV-004 above); neither is duplicated here, only
+	-- referenced by id. Deliberately includes Mara's statement alongside
+	-- Victor's: nothing before this closes the gap where a player could
+	-- conclude the case without ever speaking to her.
+	deductions = {
+		{
+			id = "DEDUCT-001",
+			label = "Both Accounts, One Contradiction",
+			requiredFacts = {
+				{ kind = "Statement", id = "STMT-SUS-001-ALIBI" },
+				{ kind = "Statement", id = "STMT-SUS-002-ALIBI" },
+				{ kind = "Evidence", id = "EV-004" },
+			},
+		},
+	},
 }
 
 return Case001

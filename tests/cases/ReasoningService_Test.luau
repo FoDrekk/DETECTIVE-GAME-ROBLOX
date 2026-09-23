@@ -494,4 +494,108 @@ return function(t)
 		expect.equal(#payload.contradictions, 1)
 		expect.equal(payload.contradictions[1].id, "CONTRA-001")
 	end)
+
+	----------------------------------------------------------------------
+	-- CASE-001's real deduction (Phase 2M): DEDUCT-001, requiring both
+	-- suspects' alibi statements plus the keycard log -- the first real
+	-- deduction content, distinct from CONTRA-001 in that its three facts
+	-- need only all be known, not conflict. Same ReasoningService behavior
+	-- as the synthetic fixture and CONTRA-001 above, proven here against
+	-- CASE-001's own real deduction data.
+	----------------------------------------------------------------------
+
+	t.test("DEDUCT-001 stays locked with none of the three facts known", function()
+		local player = makeRealPlayer()
+		ReasoningService.evaluate(player)
+		local data = PlayerDataService.get(player)
+		expect.falsy(data.caseState.unlockedDeductions["DEDUCT-001"])
+	end)
+
+	t.test("DEDUCT-001 stays locked with only Victor's statement and the keycard log known", function()
+		-- The same two facts that unlock CONTRA-001 are not enough on their
+		-- own -- DEDUCT-001 also needs Mara's statement.
+		local player = makeRealPlayer()
+		ConversationService.begin(player, "SUS-002")
+		ConversationService.advance(player) -- unlocks STMT-SUS-002-ALIBI
+		EvidenceService.discover(player, "EV-004")
+		ReasoningService.evaluate(player)
+		local data = PlayerDataService.get(player)
+		expect.truthy(data.caseState.unlockedContradictions["CONTRA-001"]) -- unlocks on its own
+		expect.falsy(data.caseState.unlockedDeductions["DEDUCT-001"]) -- still locked
+	end)
+
+	t.test("DEDUCT-001 stays locked with only Mara's statement known", function()
+		local player = makeRealPlayer()
+		ConversationService.begin(player, "SUS-001")
+		ConversationService.advance(player) -- unlocks STMT-SUS-001-ALIBI
+		ReasoningService.evaluate(player)
+		local data = PlayerDataService.get(player)
+		expect.falsy(data.caseState.unlockedDeductions["DEDUCT-001"])
+	end)
+
+	t.test("DEDUCT-001 unlocks once both statements and the keycard log are all known", function()
+		local player = makeRealPlayer()
+		ConversationService.begin(player, "SUS-001")
+		ConversationService.advance(player) -- unlocks STMT-SUS-001-ALIBI
+		ConversationService.leave(player) -- free the conversation slot for Victor's
+		ConversationService.begin(player, "SUS-002")
+		ConversationService.advance(player) -- unlocks STMT-SUS-002-ALIBI
+		EvidenceService.discover(player, "EV-004")
+		ReasoningService.evaluate(player)
+		local data = PlayerDataService.get(player)
+		expect.truthy(data.caseState.unlockedDeductions["DEDUCT-001"])
+	end)
+
+	t.test("DEDUCT-001 unlock is idempotent: DeductionUnlocked publishes exactly once", function()
+		local player = makeRealPlayer()
+		withPublishSpy(function(calls)
+			ConversationService.begin(player, "SUS-001")
+			ConversationService.advance(player)
+			ConversationService.leave(player) -- free the conversation slot for Victor's
+			ConversationService.begin(player, "SUS-002")
+			ConversationService.advance(player)
+			EvidenceService.discover(player, "EV-004")
+			ReasoningService.evaluate(player)
+			ReasoningService.evaluate(player) -- redundant re-evaluation, must be a no-op
+
+			local unlocks = 0
+			for _, call in ipairs(calls) do
+				if call.kind == "DeductionUnlocked" and call.player == player then
+					unlocks += 1
+				end
+			end
+			expect.equal(unlocks, 1)
+		end)
+	end)
+
+	t.test("DEDUCT-001's payload carries correct, spoiler-safe basedOn summaries", function()
+		local player = makeRealPlayer()
+		ConversationService.begin(player, "SUS-001")
+		ConversationService.advance(player)
+		ConversationService.leave(player) -- free the conversation slot for Victor's
+		ConversationService.begin(player, "SUS-002")
+		ConversationService.advance(player)
+		EvidenceService.discover(player, "EV-004")
+		ReasoningService.evaluate(player)
+
+		local payload = ReasoningService.getPayload(player)
+		expect.equal(#payload.deductions, 1)
+		local deduction = payload.deductions[1]
+		expect.equal(deduction.id, "DEDUCT-001")
+		expect.equal(#deduction.basedOn, 3)
+		expect.equal(deduction.basedOn[1], "Alibi") -- Mara's statement
+		expect.equal(deduction.basedOn[2], "Alibi") -- Victor's statement
+		expect.equal(deduction.basedOn[3], "Keycard Log")
+	end)
+
+	t.test("DEDUCT-001 does not appear before all three facts are known (spoiler safety)", function()
+		local player = makeRealPlayer()
+		ConversationService.begin(player, "SUS-002")
+		ConversationService.advance(player)
+		EvidenceService.discover(player, "EV-004")
+		ReasoningService.evaluate(player) -- CONTRA-001 unlocks, DEDUCT-001 does not
+
+		local payload = ReasoningService.getPayload(player)
+		expect.equal(#payload.deductions, 0)
+	end)
 end
