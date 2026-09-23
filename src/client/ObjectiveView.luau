@@ -26,6 +26,7 @@ local gui: ScreenGui? = nil
 local root: Frame? = nil
 local headerLabel: TextLabel? = nil
 local titleLabel: TextLabel? = nil
+local hintLabel: TextLabel? = nil
 local listFrame: Frame? = nil
 local completedBanner: Frame? = nil
 local completedTitleLabel: TextLabel? = nil
@@ -75,13 +76,19 @@ local function showCompletedBanner(show: boolean)
 	end
 	completedBanner.Visible = show
 	if show then
-		-- Collapse the checklist and surface the completion state.
+		-- Collapse the checklist and hint and surface the completion state.
 		listFrame.Visible = false
+		if hintLabel then
+			hintLabel.Visible = false
+		end
 		if completedTitleLabel then
 			completedTitleLabel.Visible = true
 		end
 	else
 		listFrame.Visible = true
+		if hintLabel then
+			hintLabel.Visible = true
+		end
 		if completedTitleLabel then
 			completedTitleLabel.Visible = false
 		end
@@ -98,6 +105,9 @@ function ObjectiveView.update(payload: Types.ObjectivePayload)
 
 	local objective = payload.objective
 	titleLabel.Text = objective.title
+	if hintLabel then
+		hintLabel.Text = objective.description
+	end
 	showCompletedBanner(false)
 
 	local seen: { [string]: boolean } = {}
@@ -200,10 +210,25 @@ function ObjectiveView.start()
 		parent = root,
 	})
 
+	-- Phase 2O: a subtle discoverability hint drawn straight from the active
+	-- objective's own authored `description` -- the same text that was always
+	-- available but never surfaced. No waypoint, no marker, no hidden info.
+	hintLabel = Components.text({
+		name = "Hint",
+		text = "",
+		size = UDim2.new(1, 0, 0, 30),
+		position = UDim2.fromOffset(0, 56),
+		textSize = 12,
+		color = Theme.TextSecondary,
+		parent = root,
+	})
+	hintLabel.TextWrapped = true
+	hintLabel.TextYAlignment = Enum.TextYAlignment.Top
+
 	listFrame = Components.frame({
 		name = "Checklist",
 		size = UDim2.new(1, 0, 0, 0),
-		position = UDim2.fromOffset(0, 60),
+		position = UDim2.fromOffset(0, 90),
 		transparency = 1,
 		parent = root,
 	})
@@ -213,7 +238,7 @@ function ObjectiveView.start()
 	completedBanner = Components.frame({
 		name = "CompletedBanner",
 		size = UDim2.new(1, 0, 0, 40),
-		position = UDim2.fromOffset(0, 60),
+		position = UDim2.fromOffset(0, 90),
 		color = Theme.Panel,
 		transparency = 0.1,
 		radius = 4,

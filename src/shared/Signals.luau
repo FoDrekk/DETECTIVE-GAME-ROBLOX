@@ -74,6 +74,7 @@ Signals.Names = table.freeze({
 	DialogueUpdated = "DialogueUpdated",
 	ReasoningUpdated = "ReasoningUpdated",
 	AccusationUpdated = "AccusationUpdated",
+	ObservationShown = "ObservationShown",
 	CaseClosedSummary = "CaseClosedSummary",
 	-- Client -> Server
 	InteractionRequest = "InteractionRequest",

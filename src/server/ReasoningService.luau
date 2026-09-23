@@ -140,7 +140,7 @@ end
 -- locked -- this is the only shape ever sent to a client.
 function ReasoningService.getPayload(player: Player): Types.ReasoningPayload
 	local data = PlayerDataService.get(player)
-	local payload: Types.ReasoningPayload = { statements = {}, contradictions = {}, deductions = {} }
+	local payload: Types.ReasoningPayload = { statements = {}, contradictions = {}, deductions = {}, relatedEvidence = {} }
 	if not data then
 		return payload
 	end
@@ -171,6 +171,29 @@ function ReasoningService.getPayload(player: Player): Types.ReasoningPayload
 			local built = buildDeductionPayload(player, deduction)
 			if built then
 				table.insert(payload.deductions, built)
+			end
+		end
+	end
+
+	-- Phase 2O: cross-reference section for discovered evidence that authors
+	-- relatedEvidenceIds, listing only already-discovered related names
+	-- (spoiler-safe: an undiscovered related item never appears).
+	for _, evidence in ipairs(caseDef.evidence) do
+		local discovered = data.caseState.discovered[evidence.id]
+		if discovered and evidence.relatedEvidenceIds and #evidence.relatedEvidenceIds > 0 then
+			local relatedNames = {}
+			for _, relatedId in ipairs(evidence.relatedEvidenceIds) do
+				local relatedEvidence = data.caseState.discovered[relatedId]
+				if relatedEvidence then
+					table.insert(relatedNames, relatedEvidence.name)
+				end
+			end
+			if #relatedNames > 0 then
+				table.insert(payload.relatedEvidence, {
+					id = discovered.id,
+					name = discovered.name,
+					related = relatedNames,
+				})
 			end
 		end
 	end

@@ -21,6 +21,7 @@ local InputController = require(Modules:WaitForChild("InputController"))
 local InteractionController = require(Modules:WaitForChild("InteractionController"))
 local InteractionPromptView = require(Modules:WaitForChild("InteractionPromptView"))
 local EvidencePanel = require(Modules:WaitForChild("EvidencePanel"))
+local ObservationPanel = require(Modules:WaitForChild("ObservationPanel"))
 local CaseBriefingView = require(Modules:WaitForChild("CaseBriefingView"))
 local ObjectiveView = require(Modules:WaitForChild("ObjectiveView"))
 local TimelineView = require(Modules:WaitForChild("TimelineView"))
@@ -41,6 +42,7 @@ local caseBriefingLoaded = Signals.wait(Signals.Names.CaseBriefingLoaded)
 local dialogueUpdated = Signals.wait(Signals.Names.DialogueUpdated)
 local reasoningUpdated = Signals.wait(Signals.Names.ReasoningUpdated)
 local accusationUpdated = Signals.wait(Signals.Names.AccusationUpdated)
+local observationShown = Signals.wait(Signals.Names.ObservationShown)
 local caseClosedSummary = Signals.wait(Signals.Names.CaseClosedSummary)
 local requestPhaseChange = Signals.wait(Signals.Names.RequestPhaseChange)
 local requestCase = Signals.wait(Signals.Names.RequestCase)
@@ -85,6 +87,7 @@ local function applyPhase(phase: Types.GamePhase)
 
 	if phase == "Investigation" then
 		EvidencePanel.close()
+		ObservationPanel.close()
 		TimelineView.close()
 		DialogueView.close()
 		CaseFileView.close()
@@ -92,6 +95,7 @@ local function applyPhase(phase: Types.GamePhase)
 		CameraController.stopExamining()
 	elseif phase == "CaseClosed" or phase == "MainMenu" then
 		EvidencePanel.close()
+		ObservationPanel.close()
 		TimelineView.close()
 		DialogueView.close()
 		CaseFileView.close()
@@ -108,6 +112,7 @@ local function bootstrap()
 	-- Views first so they exist before the first phase arrives.
 	InteractionPromptView.start()
 	EvidencePanel.start()
+	ObservationPanel.start()
 	CaseBriefingView.start()
 	ObjectiveView.start()
 	TimelineView.start()
@@ -195,6 +200,7 @@ local function bootstrap()
 		if EvidencePanel.isOpen() then
 			EvidencePanel.close()
 		end
+		ObservationPanel.close()
 		TimelineView.close()
 		CaseFileView.close()
 		AccusationView.close()
@@ -235,6 +241,15 @@ local function bootstrap()
 
 	timelineUpdated.OnClientEvent:Connect(function(payload: Types.TimelinePayload)
 		TimelineView.update(payload)
+	end)
+
+	-- Phase 2O: flavour observation for a non-evidence object. Purely
+	-- presentational -- no camera framing, no scan pause, no discovery.
+	observationShown.OnClientEvent:Connect(function(payload: Types.ObservationPayload)
+		if currentPhase ~= "Investigation" then
+			return
+		end
+		ObservationPanel.show(payload)
 	end)
 
 	objectiveUpdated.OnClientEvent:Connect(function(payload: Types.ObjectivePayload)

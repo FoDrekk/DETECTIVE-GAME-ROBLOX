@@ -11,9 +11,11 @@
 return function(t)
 	local ServerScriptService = game:GetService("ServerScriptService")
 	local Server = ServerScriptService:WaitForChild("Server")
+	local ReplicatedStorage = game:GetService("ReplicatedStorage")
 	local ConversationService = require(Server:WaitForChild("ConversationService"))
 	local PlayerDataService = require(Server:WaitForChild("PlayerDataService"))
 	local StoryEvents = require(Server:WaitForChild("StoryEvents"))
+	local CaseRegistry = require(ReplicatedStorage:WaitForChild("Config"):WaitForChild("CaseRegistry"))
 	local expect = t.expect
 
 	local function makePlayer(): any
@@ -75,8 +77,6 @@ return function(t)
 	-- instead -- the underlying "known suspect, no conversation" case the
 	-- service must still handle safely, without touching real case data.
 	t.test("begin rejects a suspect with no authored conversation", function()
-		local ReplicatedStorage = game:GetService("ReplicatedStorage")
-		local CaseRegistry = require(ReplicatedStorage:WaitForChild("Config"):WaitForChild("CaseRegistry"))
 		CaseRegistry.register({
 			id = "CASE-TEST-NO-CONVERSATION",
 			title = "No-Conversation Fixture",
@@ -231,7 +231,17 @@ return function(t)
 		expect.truthy(payload.active)
 		expect.equal(payload.nodeId, "SUS-001-1")
 		expect.equal(payload.speaker, "Mara Reyes")
-		expect.equal(payload.text, "What do you want to know?")
+		-- The line matches the case's own authored start node -- never a
+		-- hardcoded prose copy, so dialogue can be authored freely.
+		local caseDef = CaseRegistry.get("CASE-001")
+		local startNode = nil
+		for _, conversation in ipairs(caseDef.conversations) do
+			if conversation.suspectId == "SUS-001" then
+				startNode = conversation.nodes[conversation.startNodeId]
+			end
+		end
+		expect.truthy(startNode)
+		expect.equal(payload.text, startNode.text)
 		expect.falsy((payload :: any).next)
 		expect.falsy((payload :: any).statementId)
 		expect.falsy((payload :: any).nodes)

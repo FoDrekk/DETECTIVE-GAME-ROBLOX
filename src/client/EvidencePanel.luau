@@ -24,6 +24,7 @@ local timeLabel: TextLabel? = nil
 local categoryLabel: TextLabel? = nil
 local bodyLabel: TextLabel? = nil
 local detailsLabel: TextLabel? = nil
+local relatedLabel: TextLabel? = nil
 local importanceLabel: TextLabel? = nil
 local counterLabel: TextLabel? = nil
 local isOpen = false
@@ -90,6 +91,17 @@ function EvidencePanel.show(payload: Types.EvidencePayload)
 	if detailsLabel then
 		detailsLabel.Text = if ev.details then `DETAILS  {ev.details}` else ""
 		detailsLabel.Visible = ev.details ~= nil
+	end
+
+	-- Phase 2O: authored cross-references to already-discovered evidence.
+	if relatedLabel then
+		if payload.related and #payload.related > 0 then
+			relatedLabel.Text = `RELATED  {table.concat(payload.related, ", ")}`
+			relatedLabel.Visible = true
+		else
+			relatedLabel.Text = ""
+			relatedLabel.Visible = false
+		end
 	end
 
 	setVisible(true)
@@ -219,6 +231,19 @@ function EvidencePanel.start()
 	})
 	detailsLabel.TextWrapped = true
 	detailsLabel.TextYAlignment = Enum.TextYAlignment.Top
+
+	relatedLabel = Components.text({
+		name = "Related",
+		text = "",
+		size = UDim2.new(1, 0, 0, 30),
+		position = UDim2.fromOffset(0, 210),
+		textSize = 11,
+		color = Theme.Accent,
+		parent = root,
+	})
+	relatedLabel.TextWrapped = true
+	relatedLabel.TextYAlignment = Enum.TextYAlignment.Top
+	relatedLabel.Visible = false
 
 	importanceLabel = Components.text({
 		name = "Importance",

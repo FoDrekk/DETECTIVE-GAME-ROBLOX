@@ -36,8 +36,10 @@ Both `InteractionService` (server validation) and `InteractionController`
 (client presentation) parse attributes through `Interactable.describe`, so the
 two sides can never disagree. Attribute contract: `InteractionKind`,
 `PromptLabel`, optional `EvidenceId`, optional `ReadableText`, optional
-`SuspectId` (identifies which suspect a Talk-kind interactable represents;
-since Phase 2G, `InteractionService`'s Talk handler consumes this to start a
+`ObservationText` (Phase 2O — authored flavour text for a non-evidence
+object; parsed into `Descriptor.observation`), optional `SuspectId`
+(identifies which suspect a Talk-kind interactable represents; since Phase
+2G, `InteractionService`'s Talk handler consumes this to start a
 conversation). Enabled kinds are declared once in `Interactable.EnabledKinds`.
 
 ### Logging
@@ -139,6 +141,9 @@ validates that the authored interactables satisfy the gameplay contract.
 - **InteractionController** — proximity scan, prompt data, request dispatch.
 - **InteractionPromptView** — small `[E] Examine` prompt.
 - **EvidencePanel** — dark investigative evidence panel.
+- **ObservationPanel** (Phase 2O) — lightweight, transient flavour-text
+  readout for non-evidence interactables; visually distinct from the evidence
+  panel, auto-dismisses, and carries no discovery.
 - **CaseBriefingView** — cinematic case briefing overlay.
 - **ObjectiveView** — minimal current-objective checklist + completion banner.
 - **TimelineView** — case timeline overlay (discovered events only), T to open.
@@ -652,6 +657,70 @@ authored contradiction/deduction `label`s — no new narrative, no asserted
 culprit. An unsupported accusation is a legitimate, reported outcome, not an
 error.
 
+## Investigation feedback & discoverability (Phase 2O)
+
+The mechanical loop was complete after Phase 2N but the experience was silent:
+7 of the office's 10 hand-placed interactables yield no evidence, so examining
+them produced no visible response at all; the required actions were unmarked;
+and the case was never stated back to the player. Phase 2O is a presentation
+and content pass — no new systems, no new case entities.
+
+### Observations
+
+`Types.ObservationDefinition` (`{ instanceName, text }`) is authored in
+`CaseDefinition.observations` (optional). `OfficeRoom.applyObservations` (the
+same module that already owns runtime office setup) sets each target
+interactable's `ObservationText` attribute **at runtime**, by instance name —
+mirroring the existing `npcPlacement`/`propPlacement` runtime-application
+precedent, and leaving `assets/Office.rbxm` untouched. An entry whose instance
+is absent is skipped; an interactable that carries `EvidenceId` is never
+given observation text.
+
+`InteractionService.examineHandler`/`readHandler` now branch: an object with
+`EvidenceId` discovers evidence exactly as before; an object with only
+`ObservationText` invokes `presentObservation`, which fires the service's
+`onObservation` `BindableEvent` (bridged in `init.server.luau` to the
+`ObservationShown` RemoteEvent). This path discovers nothing, advances no
+objective, and touches no reasoning/evidence/timeline state. The client's
+`ObservationPanel` renders it as a transient, low-key readout distinct from
+the dark `EvidencePanel`.
+
+### First-person testimony
+
+CASE-001's suspect `alibi` fields and dialogue nodes were rewritten into
+first person with distinct voices. Every line preserves exactly the
+already-authored fact it came from (Mara: asleep at home, phone records
+unverified; Victor: left at 22:30, keycard log suggests otherwise); no
+motive, action, or event was added. Statement text is still resolved from the
+suspect's own `alibi` at unlock time, so it cannot drift.
+
+### Evidence cross-references
+
+`relatedEvidenceIds` is now authored on `EV-001`↔`EV-002` — the only
+relationship CASE-001's facts support (both record activity at Daniel's
+workspace minutes apart, 11:47 PM and 11:42 PM). `EvidenceService.discover`
+includes the already-discovered partners' names in `EvidencePayload.related`;
+`ReasoningService.getPayload` adds a `relatedEvidence` section (discovered
+evidence + discovered partners) that `CaseFileView` renders as "EVIDENCE
+LINKS". An undiscovered partner is never included, so the cross-reference is
+spoiler-safe. Unlinked evidence is simply absent, never faked.
+
+### Factual case restatement
+
+`Types.CaseClosedSummary` gained `timeline` (the player's discovered events,
+already spoiler-safe via `TimelineService.getDiscovered`) and `contradiction`
+(the player's unlocked contradiction, via `ReasoningService.getPayload`).
+`CaseClosedView` now restates the sequence of events and the contradiction
+alongside the counts and the accusation — all from already-authorized facts,
+never a verdict.
+
+### Discoverability hint
+
+`ObjectiveView` now displays the active objective's own authored
+`description` in the panel (previously only the title and checklist were
+shown). The prompt is therefore always stated, using information the player
+already had — no waypoint, marker, highlight, or hidden data.
+
 ## First real deduction (Phase 2M)
 
 Phase 2I shipped CASE-001's first real contradiction, but nothing ever
@@ -688,7 +757,10 @@ contradiction a gameplay consequence via objective sequencing; Phase 2L let
 the player formally conclude once everything is done; Phase 2M authored
 CASE-001's first real deduction and the objective that completes on it;
 Phase 2N made the player accuse a suspect, gating the conclusion on that
-choice and reporting a factual, evidence-derived resolution.
+choice and reporting a factual, evidence-derived resolution; Phase 2O gave
+every interactable a response, put the suspects' accounts in their own
+voices, linked related evidence, restated the case at the close, and
+surfaced each objective's own description as a hint.
 Explicitly out of scope until their own phase: any suspect beyond
 SUS-001/SUS-002, branching dialogue/choices, interrogation, confrontation,
 a second contradiction or deduction, NPC
@@ -719,4 +791,6 @@ them generically, no service code changes needed there either. Add an
 accusable suspect by authoring an `AccusationDefinition` (optionally with a
 `supportedBy` naming real contradiction/deduction ids) in case data —
 `AccusationService` evaluates it generically and hardcodes no case or
-accusation id.
+accusation id. Add flavour text to a non-evidence interactable by authoring
+an `ObservationDefinition` in case data — `OfficeRoom` applies it by instance
+name at runtime and no service code changes are needed.

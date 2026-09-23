@@ -13,6 +13,10 @@
 	  PromptLabel     : string  (e.g. "Examine Phone")
 	  EvidenceId      : string  (optional, e.g. "EV-001")
 	  ReadableText    : string  (optional, reserved for Read presentation)
+	  ObservationText : string  (optional, Phase 2O; authored flavour text
+	                    shown when a non-evidence object is examined. Purely
+	                    presentational -- it never creates evidence, timeline,
+	                    objective or reasoning state.)
 	  SuspectId       : string  (optional, e.g. "SUS-001"; identifies which
 	                    suspect a Talk-kind interactable represents. Read the
 	                    same way as EvidenceId. No NPC behaviour consumes this
@@ -34,6 +38,7 @@ Interactable.AttributeName = table.freeze({
 	PromptLabel = "PromptLabel",
 	EvidenceId = "EvidenceId",
 	ReadableText = "ReadableText",
+	ObservationText = "ObservationText",
 	SuspectId = "SuspectId",
 })
 
@@ -53,6 +58,9 @@ export type Descriptor = {
 	label: string,
 	evidenceId: string?,
 	suspectId: string?,
+	-- Authored flavour text for a non-evidence interactable, if any (Phase
+	-- 2O). Optional; nil means the object carries no authored observation.
+	observation: string?,
 }
 
 local function readString(instance: Instance, attribute: string): string?
@@ -86,6 +94,7 @@ function Interactable.describe(instance: Instance): Descriptor?
 		label = readString(instance, Interactable.AttributeName.PromptLabel) or kindName,
 		evidenceId = readString(instance, Interactable.AttributeName.EvidenceId),
 		suspectId = readString(instance, Interactable.AttributeName.SuspectId),
+		observation = readString(instance, Interactable.AttributeName.ObservationText),
 	}
 end
 

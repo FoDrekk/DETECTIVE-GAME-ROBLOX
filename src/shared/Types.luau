@@ -34,7 +34,9 @@ export type EvidenceDefinition = {
 	category: string?,
 	-- Timeline event this evidence contributes to, if any.
 	timelineEventId: string?,
-	-- Other evidence ids this clue relates to (foundation only; no deductions).
+	-- Other evidence ids this clue relates to. Authored only where the
+	-- relationship is already implied by existing case facts; surfaced in the
+	-- evidence panel / case file as a cross-reference, never as a conclusion.
 	relatedEvidenceIds: { string }?,
 	-- Optional: where to place a physical, code-spawned interactable prop for
 	-- this evidence in the current office environment, for evidence that has
@@ -66,6 +68,17 @@ export type LocationDefinition = {
 	id: string,
 	name: string,
 	description: string,
+}
+
+-- Authored flavour text for a non-evidence interactable (Phase 2O). Keyed by
+-- the interactable instance's Name in the authored environment (e.g.
+-- "CoffeeCup"), since that is what the environment exposes. Applying one
+-- sets the object's `ObservationText` attribute at runtime; it creates no
+-- evidence, timeline, objective or reasoning state. An entry whose instance
+-- is not present is simply skipped -- purely additive.
+export type ObservationDefinition = {
+	instanceName: string,
+	text: string,
 }
 
 -- A single fact on the case timeline. Events are authored in case data and
@@ -249,6 +262,9 @@ export type CaseDefinition = {
 	description: string,
 	suspects: { SuspectDefinition },
 	locations: { LocationDefinition },
+	-- Authored flavour text for non-evidence interactables, applied at
+	-- runtime by instance name (Phase 2O). Optional and additive.
+	observations: { ObservationDefinition }?,
 	evidence: { EvidenceDefinition },
 	timeline: { TimelineEventDefinition },
 	objectives: { ObjectiveDefinition },
@@ -346,6 +362,19 @@ export type EvidencePayload = {
 	totalEvidence: number,
 	-- The timeline event revealed by this discovery, if it revealed one.
 	revealedEvent: TimelineEventProgress?,
+	-- Display names of this evidence's authored `relatedEvidenceIds` that the
+	-- player has already discovered. Presentational cross-reference only;
+	-- undiscovered related evidence is never included.
+	related: { string }?,
+}
+
+-- Authored, non-evidence description shown when the player examines a
+-- flavour object that carries no evidence (Phase 2O). Purely presentational:
+-- it creates no evidence, timeline, objective, or reasoning state, and never
+-- comes from hidden case data.
+export type ObservationPayload = {
+	title: string,
+	body: string,
 }
 
 -- A single unlocked statement as sent to the client. `text` is resolved
@@ -398,6 +427,15 @@ export type DeductionPayload = {
 	basedOn: { string },
 }
 
+-- A discovered evidence item and the display names of its already-discovered
+-- related evidence, for the case file's cross-reference section. Only ever
+-- built from already-discovered evidence, so it can never leak a hidden clue.
+export type RelatedEvidencePayload = {
+	id: string,
+	name: string,
+	related: { string },
+}
+
 -- The player's complete currently-authorized reasoning state. Never
 -- includes a locked contradiction/deduction or a statement that has not
 -- been unlocked -- this is the only shape ReasoningService ever sends.
@@ -405,6 +443,9 @@ export type ReasoningPayload = {
 	statements: { StatementPayload },
 	contradictions: { ContradictionPayload },
 	deductions: { DeductionPayload },
+	-- Discovered evidence that authors `relatedEvidenceIds`, with the names of
+	-- the related items already discovered. Cross-reference only.
+	relatedEvidence: { RelatedEvidencePayload },
 }
 
 -- A single suspect option in the accusation picker (Phase 2N). `suspectId`/
@@ -451,6 +492,12 @@ export type AccusationResolution = {
 -- whether the evidence they actually unlocked is consistent with that
 -- accusation. It is still never a claim about who committed the crime --
 -- only whether the facts this player gathered support the choice they made.
+--
+-- Phase 2O adds `timeline`/`contradiction`: the timeline events and unlocked
+-- contradiction the player actually discovered, so the closing screen can
+-- restate the case back to them. Both are already-authorized facts (only
+-- discovered events, only an unlocked contradiction), never hidden content,
+-- and never a verdict.
 export type CaseClosedSummary = {
 	objectivesCompleted: number,
 	objectivesTotal: number,
@@ -458,6 +505,8 @@ export type CaseClosedSummary = {
 	evidenceTotal: number,
 	contradictionsIdentified: number,
 	accusation: AccusationResolution?,
+	timeline: { TimelineEventProgress },
+	contradiction: ContradictionPayload?,
 }
 
 return {}

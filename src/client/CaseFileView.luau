@@ -184,6 +184,45 @@ local function addDeductionRow(y: number, deduction: Types.DeductionPayload): nu
 	return y + 64
 end
 
+local function addRelatedRow(y: number, entry: Types.RelatedEvidencePayload): number
+	local row = Components.frame({
+		name = "Related_" .. entry.id,
+		size = UDim2.new(1, 0, 0, 44),
+		position = UDim2.fromOffset(0, y),
+		color = Theme.Background,
+		transparency = 0.4,
+		radius = 5,
+		parent = content,
+	})
+	Components.padding(row, 10)
+	table.insert(rows, row)
+
+	Components.text({
+		name = "Label",
+		text = string.upper(entry.name),
+		size = UDim2.new(1, 0, 0, 14),
+		position = UDim2.fromOffset(0, 0),
+		font = Theme.FontBold,
+		textSize = 11,
+		color = Theme.TextPrimary,
+		parent = row,
+	})
+
+	local related = if #entry.related > 0 then table.concat(entry.related, ", ") else "—"
+	local body = Components.text({
+		name = "Related",
+		text = `Linked to: {related}`,
+		size = UDim2.new(1, 0, 0, 16),
+		position = UDim2.fromOffset(0, 16),
+		textSize = 12,
+		color = Theme.TextSecondary,
+		parent = row,
+	})
+	body.TextWrapped = true
+
+	return y + 52
+end
+
 -- Renders exactly the server-authorized reasoning state. A section with no
 -- entries is simply not drawn (no empty placeholder rows).
 function CaseFileView.update(payload: Types.ReasoningPayload)
@@ -194,7 +233,10 @@ function CaseFileView.update(payload: Types.ReasoningPayload)
 	clearRows()
 
 	local y = 0
-	local hasContent = #payload.statements > 0 or #payload.contradictions > 0 or #payload.deductions > 0
+	local hasContent = #payload.statements > 0
+		or #payload.contradictions > 0
+		or #payload.deductions > 0
+		or #payload.relatedEvidence > 0
 	emptyLabel.Visible = not hasContent
 
 	if #payload.statements > 0 then
@@ -217,6 +259,16 @@ function CaseFileView.update(payload: Types.ReasoningPayload)
 		y = addHeader(y, "DEDUCTIONS")
 		for _, deduction in ipairs(payload.deductions) do
 			y = addDeductionRow(y, deduction)
+		end
+		y += 10
+	end
+
+	-- Phase 2O: discovered evidence cross-references. Only pairs where both
+	-- items are already discovered ever arrive in this payload.
+	if #payload.relatedEvidence > 0 then
+		y = addHeader(y, "EVIDENCE LINKS")
+		for _, entry in ipairs(payload.relatedEvidence) do
+			y = addRelatedRow(y, entry)
 		end
 	end
 end

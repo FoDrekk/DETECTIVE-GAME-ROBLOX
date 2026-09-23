@@ -14,6 +14,8 @@ local PlayerDataService = require(script.Parent:WaitForChild("PlayerDataService"
 local CaseService = require(script.Parent:WaitForChild("CaseService"))
 local ObjectiveService = require(script.Parent:WaitForChild("ObjectiveService"))
 local AccusationService = require(script.Parent:WaitForChild("AccusationService"))
+local TimelineService = require(script.Parent:WaitForChild("TimelineService"))
+local ReasoningService = require(script.Parent:WaitForChild("ReasoningService"))
 
 local GameStateService = {}
 
@@ -84,7 +86,11 @@ end
 -- A factual summary of this player's own case progress, computed entirely
 -- from server-side state at the moment their conclusion is accepted. Never
 -- a verdict; every field is a real count, not a CASE-001-specific number.
-local function buildClosingSummary(player: Player): Types.CaseClosedSummary?
+--
+-- Public (matching ObjectiveService.getActiveObjectiveId's pattern) so the
+-- exact summary shown at the close is directly, synchronously testable --
+-- the onCaseClosed BindableEvent that also carries it fires deferred.
+function GameStateService.getClosingSummary(player: Player): Types.CaseClosedSummary?
 	local data = PlayerDataService.get(player)
 	if not data then
 		return nil
@@ -93,6 +99,11 @@ local function buildClosingSummary(player: Player): Types.CaseClosedSummary?
 	if not caseDef then
 		return nil
 	end
+	-- Phase 2O: restate the case factually at the close. Both lists are built
+	-- from already-authorized state: only discovered timeline events, and only
+	-- the player's own unlocked contradiction. Never hidden content, never a
+	-- verdict.
+	local reasoning = ReasoningService.getPayload(player)
 	return {
 		objectivesCompleted = Util.count(data.caseState.completedObjectives),
 		objectivesTotal = #caseDef.objectives,
@@ -102,6 +113,8 @@ local function buildClosingSummary(player: Player): Types.CaseClosedSummary?
 		-- Phase 2N: the player's own accusation and whether the evidence they
 		-- actually unlocked is consistent with it. Never a verdict.
 		accusation = AccusationService.getResolution(player),
+		timeline = TimelineService.getDiscovered(player),
+		contradiction = if #reasoning.contradictions > 0 then reasoning.contradictions[1] else nil,
 	}
 end
 
@@ -136,7 +149,7 @@ function GameStateService.requestConclude(player: Player): boolean
 		PlayerDataService.setPhase(p, "CaseClosed")
 	end
 	broadcast("CaseClosed")
-	local summary = buildClosingSummary(player)
+	local summary = GameStateService.getClosingSummary(player)
 	if summary then
 		caseClosedEvent:Fire(player, summary)
 	end

@@ -1,7 +1,7 @@
 --!strict
 --[[
 	Case001 — THE LAST CALL
-	Placeholder investigative data for the first case.
+	Investigative data for the first case.
 	Pure data only: no gameplay logic belongs here.
 ]]
 
@@ -19,7 +19,7 @@ local Case001: Types.CaseDefinition = {
 			id = "SUS-001",
 			name = "Mara Reyes",
 			role = "Spouse",
-			alibi = "Claims she was asleep at home; phone records are unverified.",
+			alibi = "I was home and asleep. I know the phone records don't back that up.",
 			-- Standing near the meeting table, waiting to be questioned.
 			-- Technical staging only -- no new location or story fact.
 			npcPlacement = {
@@ -31,7 +31,7 @@ local Case001: Types.CaseDefinition = {
 			id = "SUS-002",
 			name = "Victor Lane",
 			role = "Business Partner",
-			alibi = "Says he left the office at 22:30. Keycard log suggests otherwise.",
+			alibi = "I left the office at half ten. Whatever the keycard log says, I was gone by then.",
 			-- Standing at the opposite side of the meeting table from Mara,
 			-- facing its center. Technical staging only, in the same room --
 			-- no new location or story fact (Phase 2I).
@@ -50,17 +50,66 @@ local Case001: Types.CaseDefinition = {
 		},
 	},
 
+	-- Phase 2O: authored flavour text for the office's non-evidence
+	-- interactables, applied at runtime by instance name (OfficeRoom).
+	-- Atmosphere only -- these objects carry no evidence, and every line
+	-- stays inside the case's already-authored facts (Daniel found dead
+	-- shortly after 23:00; an unanswered call minutes before his death).
+	-- No motive, culprit, or new event is stated or implied.
+	observations = {
+		{
+			instanceName = "ReceptionDesk",
+			text = "The reception desk is tidy, its chair pushed in. The visitor log lies closed. "
+				.. "Nothing about the front of the office suggests anything hurried or out of place.",
+		},
+		{
+			instanceName = "DeskDrawer",
+			text = "The drawer slides open easily: pens, paperclips, a half-used notepad. Ordinary. "
+				.. "Whatever mattered to this case was left in plain sight on the desk, not filed away.",
+		},
+		{
+			instanceName = "FileCabinet_1",
+			text = "Filing cabinet drawers, neatly labelled. Everything is where it should be. "
+				.. "No drawer is open, nothing has been forced; the papers of the business are undisturbed.",
+		},
+		{
+			instanceName = "Whiteboard",
+			text = "The whiteboard carries the faint ghosts of meetings past -- schedules, initials, "
+				.. "a diagram rubbed out and written over. Nothing on it points to the night in question.",
+		},
+		{
+			instanceName = "CoffeeCup",
+			text = "A coffee cup, long cold, left where it stood. Whoever last drank from it "
+				.. "did not come back to finish it or to clear it away.",
+		},
+		{
+			instanceName = "Pen",
+			text = "A pen, laid down mid-thought rather than capped and put away. "
+				.. "The small untidiness of someone interrupted, on an otherwise orderly desk.",
+		},
+		{
+			instanceName = "Shelf_Frame",
+			text = "The shelves are lined with binders and a few framed photographs of the business "
+				.. "in better days. Office history, carefully kept. None of it speaks to tonight.",
+		},
+	},
+
 	evidence = {
 		{
 			id = "EV-001",
 			name = "Phone",
 			description = "Daniel's phone was left on the desk.",
-			details = "The last outgoing call was made at 11:47 PM.",
+			details = "The last outgoing call was made at 11:47 PM. It went unanswered.",
 			location = "Daniel's Workspace",
 			importance = "Critical",
 			category = "Communication",
 			timestamp = "11:47 PM",
 			timelineEventId = "TIMELINE-002",
+			-- Phase 2O: the phone and the laptop both record activity at
+			-- Daniel's workspace minutes apart (11:47 PM and 11:42 PM), which
+			-- is the only evidence-to-evidence relationship CASE-001's authored
+			-- facts actually support. A mutual link, surfaced once both are found.
+			relatedEvidenceIds = { "EV-002" },
 		},
 		{
 			id = "EV-002",
@@ -72,6 +121,8 @@ local Case001: Types.CaseDefinition = {
 			category = "Digital Activity",
 			timestamp = "11:42 PM",
 			timelineEventId = "TIMELINE-001",
+			-- Phase 2O: see EV-001 -- the same workspace, minutes earlier.
+			relatedEvidenceIds = { "EV-001" },
 		},
 		{
 			id = "EV-003",
@@ -205,12 +256,12 @@ local Case001: Types.CaseDefinition = {
 		},
 	},
 
-	-- Phase 2G/2I: one deterministic linear conversation per playable suspect.
-	-- Every line either uses the suspect's already-authored name (speaker
-	-- attribution) or its already-authored alibi (the only real informational
-	-- content revealed). The opening and closing lines are minimal procedural
-	-- framing carrying no case facts of their own, reused verbatim across
-	-- both suspects for exactly that reason.
+	-- Phase 2G/2I/2O: one deterministic linear conversation per playable
+	-- suspect. Each suspect's one informational line is their already-authored
+	-- `alibi`, spoken in their own voice; the opening and closing lines are
+	-- minimal procedural framing carrying no case facts of their own. The two
+	-- suspects are given distinct registers, but neither says anything the
+	-- case data does not already state.
 	conversations = {
 		{
 			suspectId = "SUS-001",
@@ -219,20 +270,20 @@ local Case001: Types.CaseDefinition = {
 				["SUS-001-1"] = {
 					id = "SUS-001-1",
 					speaker = "Mara Reyes",
-					text = "What do you want to know?",
+					text = "You're the one asking the questions, then. Go on.",
 					next = "SUS-001-2",
 				},
 				["SUS-001-2"] = {
 					id = "SUS-001-2",
 					speaker = "Mara Reyes",
-					text = "Claims she was asleep at home; phone records are unverified.",
+					text = "I was home and asleep. I know the phone records don't back that up.",
 					next = "SUS-001-3",
 					statementId = "STMT-SUS-001-ALIBI",
 				},
 				["SUS-001-3"] = {
 					id = "SUS-001-3",
 					speaker = "Mara Reyes",
-					text = "That's all I have to say.",
+					text = "That's all I have to say to you.",
 					next = nil,
 				},
 			},
@@ -244,20 +295,20 @@ local Case001: Types.CaseDefinition = {
 				["SUS-002-1"] = {
 					id = "SUS-002-1",
 					speaker = "Victor Lane",
-					text = "What do you want to know?",
+					text = "Let's keep this quick. I've told the police everything already.",
 					next = "SUS-002-2",
 				},
 				["SUS-002-2"] = {
 					id = "SUS-002-2",
 					speaker = "Victor Lane",
-					text = "Says he left the office at 22:30. Keycard log suggests otherwise.",
+					text = "I left the office at half ten. Whatever the keycard log says, I was gone by then.",
 					next = "SUS-002-3",
 					statementId = "STMT-SUS-002-ALIBI",
 				},
 				["SUS-002-3"] = {
 					id = "SUS-002-3",
 					speaker = "Victor Lane",
-					text = "That's all I have to say.",
+					text = "I've said my piece. We're done here.",
 					next = nil,
 				},
 			},

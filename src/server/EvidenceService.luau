@@ -91,11 +91,25 @@ function EvidenceService.discover(player: Player, evidenceId: string): (boolean,
 	-- InteractionService pipeline once this returns.
 	local revealedEvent = TimelineService.revealForEvidence(player, definition)
 
+	-- Phase 2O: display names of this evidence's authored related items that
+	-- the player has ALREADY discovered. Undiscovered related evidence is
+	-- never included, so the cross-reference can't leak a hidden clue.
+	local related: { string } = {}
+	if definition.relatedEvidenceIds then
+		for _, relatedId in ipairs(definition.relatedEvidenceIds) do
+			local relatedEvidence = data.caseState.discovered[relatedId]
+			if relatedEvidence then
+				table.insert(related, relatedEvidence.name)
+			end
+		end
+	end
+
 	local payload: Types.EvidencePayload = {
 		evidence = discovered,
 		totalDiscovered = Util.count(data.caseState.discovered),
 		totalEvidence = #caseDef.evidence,
 		revealedEvent = revealedEvent,
+		related = if #related > 0 then related else nil,
 	}
 
 	evidenceDiscoveredEvent:Fire(player, payload)

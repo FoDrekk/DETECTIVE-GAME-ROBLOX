@@ -82,6 +82,26 @@ print `[PASS]` / `[FAIL]` / `[TIMEOUT]` plus a `[SUMMARY]` line.
 
 ## Status
 
+Phase 2O: investigation feedback & discoverability polish.
+
+- **No silent interactions**: examining a non-evidence interactable now
+  presents authored flavour text in a lightweight, transient observation
+  readout (visually distinct from the evidence panel). The 7 flavour objects
+  in the office (`ReceptionDesk`, `DeskDrawer`, `FileCabinet_1`, `Whiteboard`,
+  `CoffeeCup`, `Pen`, `Shelf_Frame`) each have an authored observation.
+  Observations create no evidence, timeline, objective or reasoning state.
+- **First-person testimony**: both suspects now speak their own alibi in
+  distinct voices; the CASE-001 dialogue uses only already-authored facts.
+- **Evidence cross-references**: `relatedEvidenceIds` is authored (Phone ↔
+  Laptop, the only relationship the facts support) and surfaced in the
+  Evidence Panel and Case File, showing only already-discovered partners.
+- **Factual case restatement**: the closing screen now recaps the case from
+  the player's own discovered timeline and unlocked contradiction, in
+  addition to the counts and accusation — never a verdict.
+- **Discoverability hint**: the objective panel shows the active objective's
+  own authored description, so the next action is always stated. No
+  waypoint, marker, or hidden information.
+
 Phase 2N: the player makes the accusation, closing the investigation loop.
 
 - **`[Q]` opens an accusation picker** once every objective is complete (no
@@ -274,9 +294,10 @@ contradiction system, accusation, persistence, multiplayer, monetisation,
 final character models or full exterior city yet. (Phase 2G added one static,
 talkable suspect NPC with a linear conversation; Phase 2I added a second and
 CASE-001's first real contradiction; Phase 2M added CASE-001's first real
-deduction and the objective that completes on it — see Status above. NPC
-AI/movement, interrogation, a second contradiction or deduction, and
-accusation are still not implemented.)
+deduction and the objective that completes on it; Phase 2O gave every
+interactable a response and put the suspects' accounts in their own voices —
+see Status above. NPC AI/movement, interrogation, a second contradiction or
+deduction, and full voice acting are still not implemented.)
 
 ### Core loop
 
@@ -301,8 +322,10 @@ OBJECTIVE PROGRESS → NEXT CLUE
    `OBJ-001` → `OBJ-002` (question Victor Lane) → `OBJ-003` (review the
    contradiction) → `OBJ-004` (close the investigation).
 7. Press **C** to review the **CASE FILE** — unlocked statements,
-   contradictions and deductions.
-8. Re-examining discovered evidence does not duplicate progress; invalid, wrong
+   contradictions, deductions and evidence links.
+8. Examining a non-evidence object (desk, cabinet, coffee cup, …) shows a
+   short authored observation; it never advances progress.
+9. Re-examining discovered evidence does not duplicate progress; invalid, wrong
    kind, and too-far interactions are rejected. Not every interactable yields
    evidence.
 

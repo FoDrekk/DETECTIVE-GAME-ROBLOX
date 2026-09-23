@@ -41,6 +41,43 @@ local InteractionService = {}
 export type Descriptor = Interactable.Descriptor
 export type InteractionHandler = (player: Player, descriptor: Descriptor) -> boolean
 
+-- Fired with (player, Types.ObservationPayload) when a non-evidence
+-- interactable with authored flavour text is examined. Presentation only:
+-- it carries no case/story state and changes nothing.
+local observationEvent: BindableEvent = Instance.new("BindableEvent")
+
+function InteractionService.onObservation(): BindableEvent
+	return observationEvent
+end
+
+--[[
+	Publish an observation to the client. Kept as a named, public function
+	(rather than firing the BindableEvent inline) so it is directly
+	observable in tests, the same way `StoryEvents.publish` is -- a live
+	BindableEvent listener from inside the test harness is unreliable because
+	delivery is deferred.
+]]
+function InteractionService.emitObservation(player: Player, payload: Types.ObservationPayload)
+	observationEvent:Fire(player, payload)
+end
+
+--[[
+	Present authored flavour text for a non-evidence interactable (Phase 2O).
+	Purely a client notification: it discovers nothing, advances no objective,
+	and touches no reasoning/evidence/timeline state. It only ever runs for an
+	interactable that authored `ObservationText` and carries no `EvidenceId`,
+	so a real clue can never be shadowed by flavour text.
+]]
+local function presentObservation(player: Player, descriptor: Descriptor)
+	if descriptor.evidenceId or not descriptor.observation then
+		return
+	end
+	InteractionService.emitObservation(player, {
+		title = descriptor.label,
+		body = descriptor.observation,
+	} :: Types.ObservationPayload)
+end
+
 --------------------------------------------------------------------------
 -- Handlers
 --------------------------------------------------------------------------
@@ -51,15 +88,24 @@ local function discover(descriptor: Descriptor, player: Player)
 	end
 end
 
--- Discover evidence if one is attached; always acknowledge the interaction.
+-- Discover evidence if one is attached; otherwise present any authored
+-- observation. Always acknowledge the interaction.
 local function examineHandler(player: Player, descriptor: Descriptor): boolean
-	discover(descriptor, player)
+	if descriptor.evidenceId then
+		discover(descriptor, player)
+	else
+		presentObservation(player, descriptor)
+	end
 	return true
 end
 
 -- Read behaves like examine but is intended for readable documents.
 local function readHandler(player: Player, descriptor: Descriptor): boolean
-	discover(descriptor, player)
+	if descriptor.evidenceId then
+		discover(descriptor, player)
+	else
+		presentObservation(player, descriptor)
+	end
 	return true
 end
 

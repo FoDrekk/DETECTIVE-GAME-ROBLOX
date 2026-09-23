@@ -213,4 +213,28 @@ return function(t)
 		expect.falsy(concludedAgain)
 		expect.equal(GameStateService.getPhase(), "CaseClosed")
 	end)
+
+	-- Phase 2O: the closing summary restates the case from already-discovered
+	-- facts -- the player's revealed timeline and unlocked contradiction --
+	-- and never invents one. Read synchronously via getClosingSummary (the
+	-- onCaseClosed BindableEvent fires deferred).
+	t.test("closing summary carries the discovered timeline and unlocked contradiction", function()
+		resetToInvestigation()
+		local player = makePlayer()
+		completeAndAccuse(player)
+		-- The objective chain above drives objectives directly; discover the
+		-- desk evidence too so a timeline event is actually revealed (EV-001
+		-- -> TIMELINE-002), matching a real playthrough.
+		EvidenceService.discover(player, "EV-001")
+
+		local summary = GameStateService.getClosingSummary(player)
+		expect.truthy(summary)
+		expect.truthy(#summary.timeline >= 1)
+		for _, event in ipairs(summary.timeline) do
+			expect.truthy(type(event.timestamp) == "string" and #event.timestamp > 0)
+		end
+		expect.truthy(summary.contradiction)
+		expect.equal(summary.contradiction.id, "CONTRA-001")
+		expect.truthy(summary.accusation)
+	end)
 end

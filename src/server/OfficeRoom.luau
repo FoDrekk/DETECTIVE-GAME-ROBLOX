@@ -185,6 +185,37 @@ local function spawnEvidenceProps()
 	end
 end
 
+--[[
+	Apply authored flavour text (Phase 2O) to no-evidence interactables by
+	instance name. Additive and runtime-only: an entry whose instance is
+	absent is skipped, and any interactable that carries evidence is never
+	touched (so a real clue can never be given flavour text). No case id is
+	hardcoded; the text comes from case data.
+]]
+local function applyObservations()
+	local caseDef = CaseRegistry.get(Config.Game.AutoStartCase)
+	if not caseDef or not caseDef.observations then
+		return
+	end
+
+	local applied = 0
+	for _, observation in ipairs(caseDef.observations) do
+		for _, instance in ipairs(Interactable.getAll()) do
+			if instance.Name == observation.instanceName then
+				local descriptor = Interactable.describe(instance)
+				if descriptor and not descriptor.evidenceId then
+					instance:SetAttribute(Interactable.AttributeName.ObservationText, observation.text)
+					applied += 1
+				end
+			end
+		end
+	end
+
+	if applied > 0 then
+		log:info("observations applied", { count = applied })
+	end
+end
+
 function OfficeRoom.start()
 	clearDefaultGround()
 
@@ -195,6 +226,7 @@ function OfficeRoom.start()
 
 	applyEveningLighting()
 	spawnEvidenceProps()
+	applyObservations()
 	validateInteractables()
 	log:info("environment ready", { office = office ~= nil })
 end

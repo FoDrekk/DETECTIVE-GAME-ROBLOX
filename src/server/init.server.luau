@@ -62,6 +62,7 @@ local function bootstrap()
 	local dialogueEvent = Signals.get(Signals.Names.DialogueUpdated)
 	local reasoningEvent = Signals.get(Signals.Names.ReasoningUpdated)
 	local accusationEvent = Signals.get(Signals.Names.AccusationUpdated)
+	local observationEvent = Signals.get(Signals.Names.ObservationShown)
 	local caseClosedSummaryEvent = Signals.get(Signals.Names.CaseClosedSummary)
 	local requestObjectives = Signals.get(Signals.Names.RequestObjectives)
 	local requestTimeline = Signals.get(Signals.Names.RequestTimeline)
@@ -103,6 +104,12 @@ local function bootstrap()
 
 	AccusationService.onUpdated().Event:Connect(function(player: Player, payload)
 		accusationEvent:FireClient(player, payload)
+	end)
+
+	-- Phase 2O: flavour observation for a non-evidence interactable. Purely
+	-- presentational; carries no story state.
+	InteractionService.onObservation().Event:Connect(function(player: Player, payload)
+		observationEvent:FireClient(player, payload)
 	end)
 
 	GameStateService.onCaseClosed().Event:Connect(function(player: Player, summary)
