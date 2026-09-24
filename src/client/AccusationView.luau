@@ -73,7 +73,7 @@ local function addOptionRow(index: number, option: Types.AccusationOption, selec
 
 	Components.text({
 		name = "Label",
-		text = string.upper(option.label),
+		text = string.upper(option.suspectName),
 		size = UDim2.new(1, 0, 0, 18),
 		position = UDim2.fromOffset(0, 0),
 		font = Theme.FontBold,
@@ -83,8 +83,8 @@ local function addOptionRow(index: number, option: Types.AccusationOption, selec
 	})
 
 	Components.text({
-		name = "Name",
-		text = option.suspectName,
+		name = "Role",
+		text = option.suspectRole or "",
 		size = UDim2.new(1, 0, 0, 16),
 		position = UDim2.fromOffset(0, 20),
 		textSize = 12,
@@ -150,7 +150,7 @@ function AccusationView.update(payload: Types.AccusationPayload)
 	if hintLabel then
 		hintLabel.Text = if payload.selected
 			then "Accusation recorded. [Q] Close"
-			else "Select a suspect to accuse, or [ESC] Cancel"
+			else `Select a suspect to accuse, or [{Config.Interaction.ConcludeKey}] Cancel`
 	end
 end
 

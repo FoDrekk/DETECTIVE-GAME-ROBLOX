@@ -123,6 +123,7 @@ local function buildOption(caseId: string, accusation: Types.AccusationDefinitio
 		id = accusation.id,
 		suspectId = accusation.suspectId,
 		suspectName = suspect and suspect.name or accusation.suspectId,
+		suspectRole = suspect and suspect.role,
 		label = accusation.label,
 	}
 end

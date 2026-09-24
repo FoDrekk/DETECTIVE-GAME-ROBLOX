@@ -305,6 +305,22 @@ end
 -- Public entry point
 --------------------------------------------------------------------------
 
+-- The authored spawn sits in the entrance doorway, which puts the default
+-- camera outside the front facade looking in through the glass doors. Moving
+-- it into the lobby (still facing into the office) makes the opening shot an
+-- interior one. The pad itself is hidden; it is not a gameplay object.
+local SPAWN_POSITION = Vector3.new(18, 0.2, 10)
+
+local function placeInvestigatorSpawn(office: Instance)
+	local spawnPad = office:FindFirstChild("InvestigatorSpawn")
+	if spawnPad and spawnPad:IsA("SpawnLocation") then
+		spawnPad.CFrame = CFrame.lookAt(SPAWN_POSITION, SPAWN_POSITION + Vector3.new(0, 0, -1))
+		spawnPad.Transparency = 1
+		-- No spawn-protection bubble: there is nothing to be protected from.
+		spawnPad.Duration = 0
+	end
+end
+
 function OfficeDetailing.start()
 	local office = workspace:FindFirstChild(Config.Environment.OfficeModelName)
 	if not office then
@@ -312,6 +328,7 @@ function OfficeDetailing.start()
 		return
 	end
 
+	placeInvestigatorSpawn(office)
 	retuneFixtures()
 
 	local folder = office:FindFirstChild(DETAIL_FOLDER_NAME)

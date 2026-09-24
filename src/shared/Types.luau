@@ -457,6 +457,8 @@ export type AccusationOption = {
 	id: string,
 	suspectId: string,
 	suspectName: string,
+	-- The suspect's authored role (e.g. "Spouse"); public case data.
+	suspectRole: string?,
 	label: string,
 }
 

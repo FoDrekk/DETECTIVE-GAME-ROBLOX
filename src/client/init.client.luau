@@ -5,6 +5,7 @@
 	the remote signal listeners.
 ]]
 
+local GuiService = game:GetService("GuiService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -62,12 +63,48 @@ local lastCaseClosedSummary: Types.CaseClosedSummary? = nil
 -- re-validates the actual request regardless of this flag.
 local investigationComplete = false
 
+-- Close whichever overlay is open and return to exploration, so the examine
+-- camera and paused interaction scan can never get stuck. A dialogue close is
+-- a server request (state lives server-side); the view itself closes once the
+-- server confirms via DialogueUpdated.
+local function closeOverlays()
+	if DialogueView.isOpen() then
+		requestDialogueClose:FireServer()
+	end
+	EvidencePanel.close()
+	ObservationPanel.close()
+	TimelineView.close()
+	CaseFileView.close()
+	AccusationView.close()
+	CameraController.stopExamining()
+	if currentPhase == "Investigation" then
+		InteractionController.resumeScan()
+	end
+end
+
+-- Dismiss an evidence readout (and its close-up) before another panel opens,
+-- so panels never stack on top of each other.
+local function dismissEvidence()
+	if EvidencePanel.isOpen() then
+		EvidencePanel.close()
+		CameraController.stopExamining()
+		InteractionController.resumeScan()
+	end
+end
+
 local function applyPhase(phase: Types.GamePhase)
 	currentPhase = phase
 	-- The E key is active during the briefing (to begin) and investigation.
 	local interactEnabled = phase == "CaseBriefing" or phase == "Investigation"
 
 	InputController.setInteractEnabled(interactEnabled)
+	ObjectiveView.setActive(phase == "Investigation")
+	if phase == "Investigation" then
+		InteractionController.resumeScan()
+	else
+		InteractionController.pauseScan()
+		InteractionPromptView.setPrompt(nil, nil)
+	end
 
 	if phase == "CaseBriefing" then
 		if lastBriefing then
@@ -142,6 +179,9 @@ local function bootstrap()
 	InputController.onInteract(function()
 		if DialogueView.isOpen() then
 			requestDialogueAdvance:FireServer()
+		elseif EvidencePanel.isOpen() then
+			-- [E] Continue: dismiss the readout and return to exploring.
+			closeOverlays()
 		elseif currentPhase == "CaseBriefing" then
 			requestPhaseChange:FireServer("Investigation")
 		elseif currentPhase == "Investigation" then
@@ -158,6 +198,7 @@ local function bootstrap()
 		if currentPhase ~= "Investigation" or DialogueView.isOpen() or CaseFileView.isOpen() or AccusationView.isOpen() then
 			return
 		end
+		dismissEvidence()
 		TimelineView.toggle()
 	end)
 
@@ -165,6 +206,7 @@ local function bootstrap()
 		if currentPhase ~= "Investigation" or DialogueView.isOpen() or TimelineView.isOpen() or AccusationView.isOpen() then
 			return
 		end
+		dismissEvidence()
 		CaseFileView.toggle()
 	end)
 
@@ -180,7 +222,14 @@ local function bootstrap()
 		if DialogueView.isOpen() or TimelineView.isOpen() or CaseFileView.isOpen() then
 			return
 		end
+		dismissEvidence()
 		AccusationView.toggle()
+		-- The accusation is a decisive choice: no interacting behind it.
+		if AccusationView.isOpen() then
+			InteractionController.pauseScan()
+		else
+			InteractionController.resumeScan()
+		end
 	end)
 
 	-- The player's chosen accusation. Only the id is sent; the server decides
@@ -189,24 +238,11 @@ local function bootstrap()
 		submitAccusation:FireServer(accusationId)
 	end)
 
-	InputController.onClose(function()
-		-- Close whichever overlay is open, then always return to exploration so
-		-- the examine camera can never get stuck. A dialogue close is a server
-		-- request (state lives server-side); the view itself closes once the
-		-- server confirms via DialogueUpdated.
-		if DialogueView.isOpen() then
-			requestDialogueClose:FireServer()
-		end
-		if EvidencePanel.isOpen() then
-			EvidencePanel.close()
-		end
-		ObservationPanel.close()
-		TimelineView.close()
-		CaseFileView.close()
-		AccusationView.close()
-		CameraController.stopExamining()
-		InteractionController.resumeScan()
-	end)
+	InputController.onClose(closeOverlays)
+	EvidencePanel.onContinueRequested().Event:Connect(closeOverlays)
+	-- Escape is reserved by the Roblox menu in live clients and never reaches
+	-- the game; treat the menu opening as the player's "close" instead.
+	GuiService.MenuOpened:Connect(closeOverlays)
 
 	-- Briefing "begin" intent.
 	CaseBriefingView.onBeginRequested().Event:Connect(function()
@@ -263,6 +299,7 @@ local function bootstrap()
 
 	dialogueUpdated.OnClientEvent:Connect(function(payload: Types.DialoguePayload)
 		if payload.active then
+			EvidencePanel.close()
 			-- Frame the suspect, same technique as examining evidence.
 			local target = InteractionController.getCurrent()
 			if target then

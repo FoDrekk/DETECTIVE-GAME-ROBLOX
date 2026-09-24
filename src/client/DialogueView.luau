@@ -6,7 +6,9 @@
 	-- this view never decides what comes next, never holds its own dialogue
 	state, and never renders anything the server has not authorized.
 
-	[E] continues (mirrors the interact key); [ESC] closes early.
+	[E] continues (mirrors the interact key) and ends the conversation on its
+	last line. Escape is not advertised: it is reserved by the Roblox menu in
+	live clients (opening the menu still closes the conversation).
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -80,7 +82,8 @@ function DialogueView.update(payload: Types.DialoguePayload)
 
 	speakerLabel.Text = string.upper(payload.suspectName or payload.speaker or "")
 	bodyLabel.Text = payload.text or ""
-	hintLabel.Text = "[E] Continue    [ESC] Close"
+	local key = Config.Interaction.PrimaryKey
+	hintLabel.Text = if payload.canContinue then `[{key}] Continue` else `[{key}] End conversation`
 
 	if payload.unlockedStatement then
 		statementLabel.Text = `STATEMENT RECORDED — {string.upper(payload.unlockedStatement.label)}`

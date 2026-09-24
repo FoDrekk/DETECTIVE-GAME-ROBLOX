@@ -136,8 +136,12 @@ validates that the authored interactables satisfy the gameplay contract.
 
 ## Client modules
 
-- **InputController** — centralised input (E = interact, ESC = close, T =
-  timeline, C = case file, Q = conclude investigation once offered).
+- **InputController** — centralised input (E = interact / continue, T =
+  timeline, C = case file, Q = accusation once offered). Escape is also bound,
+  but live Roblox clients reserve it for the system menu and never deliver it
+  to the game, so no panel relies on it: every panel closes with its own key,
+  the evidence readout with `[E] Continue` (or a click), and
+  `GuiService.MenuOpened` runs the same close-all path (M1).
 - **InteractionController** — proximity scan, prompt data, request dispatch.
 - **InteractionPromptView** — small `[E] Examine` prompt.
 - **EvidencePanel** — dark investigative evidence panel.
@@ -146,6 +150,9 @@ validates that the authored interactables satisfy the gameplay contract.
   panel, auto-dismisses, and carries no discovery.
 - **CaseBriefingView** — cinematic case briefing overlay.
 - **ObjectiveView** — minimal current-objective checklist + completion banner.
+  Only shown during `Investigation`. The server sends a completed objective
+  and its successor in the same frame, so a non-final completion is held on
+  screen for ~2 s before the next objective replaces it.
 - **TimelineView** — case timeline overlay (discovered events only), T to open.
 - **DialogueView** (Phase 2G) — full-screen conversation presentation; renders
   only the single server-authorized dialogue step it is given.
@@ -449,7 +456,7 @@ itself unlocks.
 ### Case File UI
 
 `CaseFileView` (client) is a persistent investigation notes panel — opened
-with **C**, closed with **C** or **ESC**, mutually exclusive with
+with **C**, closed with **C**, mutually exclusive with
 `TimelineView` (both are full-screen centered panels). It renders exactly
 the `ReasoningPayload` it is given: a STATEMENTS section, a CONTRADICTIONS
 section, and a DEDUCTIONS section, each only drawn when it has at least one

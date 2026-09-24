@@ -3,16 +3,20 @@
 	ObjectiveView
 	Minimal, dark, cinematic current-objective display.
 
-	Shows the active objective title and its checklist. Requirements tick from
-	`□` to `✓` as the server confirms progress. This view is presentation only:
-	it never decides completion.
+	Shows the active objective title, its authored description as a hint, and
+	its checklist. Requirements tick from `□` to `✓` as the server confirms
+	progress. This view is presentation only: it never decides completion.
 
+	The server sends a completed objective and the next objective in the same
+	frame, so a non-final completion is held on screen briefly before the next
+	objective replaces it -- otherwise the player never sees it.
+
+	Only shown while the investigation phase is active (see setActive).
 	Intentionally restrained: no XP, levels, tracker panels or RPG HUD.
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Components = require(ReplicatedStorage:WaitForChild("UI"):WaitForChild("Components"))
@@ -22,9 +26,11 @@ local ObjectiveView = {}
 
 local Theme = Config.UI.Theme
 
+local ROW_HEIGHT = 22
+local COMPLETION_HOLD_SECONDS = 2.2
+
 local gui: ScreenGui? = nil
 local root: Frame? = nil
-local headerLabel: TextLabel? = nil
 local titleLabel: TextLabel? = nil
 local hintLabel: TextLabel? = nil
 local listFrame: Frame? = nil
@@ -36,92 +42,29 @@ local requirementRows: { [string]: TextLabel } = {}
 local targetAlpha = 0
 local currentAlpha = 0
 
+local active = false
+local hasContent = false
+local holdUntil = 0
+local pendingPayload: Types.ObjectivePayload? = nil
+
 local CHECK_OPEN = "\u{25A1}" -- □
 local CHECK_DONE = "\u{2713}" -- ✓
 
-local function setVisible(visible: boolean)
-	targetAlpha = visible and 1 or 0
+local function refreshVisibility()
+	targetAlpha = if active and hasContent then 1 else 0
 end
 
-local function ensureRow(requirementId: string): TextLabel?
+local function layoutRequirements(requirements: { Types.ObjectiveRequirementProgress })
 	if not listFrame then
-		return nil
-	end
-	local existing = requirementRows[requirementId]
-	if existing then
-		return existing
-	end
-	local row = Components.text({
-		name = "Req_" .. requirementId,
-		text = "",
-		size = UDim2.new(1, 0, 0, 20),
-		position = UDim2.fromOffset(0, 0),
-		textSize = 13,
-		color = Theme.TextSecondary,
-		parent = listFrame,
-	})
-	-- Stack rows using a UIListLayout-equivalent manual order.
-	local count = 0
-	for _ in pairs(requirementRows) do
-		count += 1
-	end
-	row.Position = UDim2.fromOffset(0, count * 22)
-	requirementRows[requirementId] = row
-	return row
-end
-
-local function showCompletedBanner(show: boolean)
-	if not completedBanner or not root or not listFrame then
-		return
-	end
-	completedBanner.Visible = show
-	if show then
-		-- Collapse the checklist and hint and surface the completion state.
-		listFrame.Visible = false
-		if hintLabel then
-			hintLabel.Visible = false
-		end
-		if completedTitleLabel then
-			completedTitleLabel.Visible = true
-		end
-	else
-		listFrame.Visible = true
-		if hintLabel then
-			hintLabel.Visible = true
-		end
-		if completedTitleLabel then
-			completedTitleLabel.Visible = false
-		end
-		if concludeHintLabel then
-			concludeHintLabel.Visible = false
-		end
-	end
-end
-
-function ObjectiveView.update(payload: Types.ObjectivePayload)
-	if not titleLabel then
 		return
 	end
 
-	local objective = payload.objective
-	titleLabel.Text = objective.title
-	if hintLabel then
-		hintLabel.Text = objective.description
-	end
-	showCompletedBanner(false)
-
+	-- Drop rows from a previous objective first, so new rows are laid out
+	-- from the top rather than below the rows they replace.
 	local seen: { [string]: boolean } = {}
-	for _, requirement in ipairs(objective.requirements) do
+	for _, requirement in ipairs(requirements) do
 		seen[requirement.id] = true
-		local row = ensureRow(requirement.id)
-		if row then
-			local mark = requirement.completed and CHECK_DONE or CHECK_OPEN
-			row.Text = `{mark}  {requirement.label}`
-			row.TextColor3 = requirement.completed and Theme.Accent or Theme.TextSecondary
-		end
 	end
-
-	-- Remove rows that no longer belong to the objective.
 	for id, row in pairs(requirementRows) do
 		if not seen[id] then
 			row:Destroy()
@@ -129,36 +72,92 @@ function ObjectiveView.update(payload: Types.ObjectivePayload)
 		end
 	end
 
-	if objective.completed then
-		showCompletedBanner(true)
+	for index, requirement in ipairs(requirements) do
+		local row = requirementRows[requirement.id]
+		if not row then
+			row = Components.text({
+				name = "Req_" .. requirement.id,
+				text = "",
+				size = UDim2.new(1, 0, 0, 20),
+				position = UDim2.fromOffset(0, 0),
+				textSize = 13,
+				color = Theme.TextSecondary,
+				parent = listFrame,
+			})
+			requirementRows[requirement.id] = row
+		end
+		local mark = if requirement.completed then CHECK_DONE else CHECK_OPEN
+		row.Text = `{mark}  {requirement.label}`
+		row.TextColor3 = if requirement.completed then Theme.Accent else Theme.TextSecondary
+		row.Position = UDim2.fromOffset(0, (index - 1) * ROW_HEIGHT)
+	end
+end
+
+local function render(payload: Types.ObjectivePayload)
+	if not titleLabel or not hintLabel or not listFrame or not completedBanner then
+		return
 	end
 
-	setVisible(true)
+	local objective = payload.objective
+	titleLabel.Text = objective.title
+	hintLabel.Text = objective.description
+	layoutRequirements(objective.requirements)
+
+	local completed = objective.completed
+	completedBanner.Visible = completed
+	listFrame.Visible = not completed
+	hintLabel.Visible = not completed
+	if completedTitleLabel then
+		completedTitleLabel.Text = if payload.allComplete then "INVESTIGATION COMPLETE" else "OBJECTIVE COMPLETE"
+	end
+	-- Only once every objective is done does concluding become a real,
+	-- player-initiated option. The server re-validates this regardless.
+	if concludeHintLabel then
+		concludeHintLabel.Visible = completed and payload.allComplete
+	end
+
+	hasContent = true
+	refreshVisibility()
+end
+
+function ObjectiveView.update(payload: Types.ObjectivePayload)
+	if os.clock() < holdUntil and not payload.objective.completed then
+		-- Latest state wins; applied when the completion hold ends.
+		pendingPayload = payload
+		return
+	end
+	render(payload)
 end
 
 function ObjectiveView.showCompleted(payload: Types.ObjectivePayload)
-	if not completedTitleLabel then
+	render(payload)
+	if payload.allComplete then
+		holdUntil = 0
+		pendingPayload = nil
 		return
 	end
-	-- Phase 2K: when this was the last objective, say so -- otherwise the
-	-- panel silently stops updating with no acknowledgment that there is
-	-- nothing further to do yet.
-	if payload.allComplete then
-		completedTitleLabel.Text = `INVESTIGATION COMPLETE\n{payload.objective.title}`
-	else
-		completedTitleLabel.Text = `OBJECTIVE COMPLETE\n{payload.objective.title}`
-	end
-	-- Phase 2L: only once every objective is done does concluding become a
-	-- real, player-initiated option -- never shown, let alone offered,
-	-- before then. The server re-validates this regardless of the hint.
-	if concludeHintLabel then
-		concludeHintLabel.Visible = payload.allComplete
-	end
-	setVisible(true)
+	holdUntil = os.clock() + COMPLETION_HOLD_SECONDS
+	task.delay(COMPLETION_HOLD_SECONDS, function()
+		if os.clock() < holdUntil then
+			return -- a later completion extended the hold
+		end
+		local pending = pendingPayload
+		pendingPayload = nil
+		if pending then
+			render(pending)
+		end
+	end)
+end
+
+-- The objective panel is only shown while the investigation is in progress
+-- (not over the briefing or the closing screen).
+function ObjectiveView.setActive(isActive: boolean)
+	active = isActive
+	refreshVisibility()
 end
 
 function ObjectiveView.hide()
-	setVisible(false)
+	ObjectiveView.setActive(false)
 end
 
 function ObjectiveView.start()
@@ -176,10 +175,11 @@ function ObjectiveView.start()
 	})
 	root.BackgroundTransparency = 1
 	root.AutomaticSize = Enum.AutomaticSize.Y
+	root.Visible = false
 
 	Components.padding(root, 16)
 
-	headerLabel = Components.text({
+	Components.text({
 		name = "Header",
 		text = "CURRENT OBJECTIVE",
 		size = UDim2.new(1, 0, 0, 14),
@@ -210,9 +210,7 @@ function ObjectiveView.start()
 		parent = root,
 	})
 
-	-- Phase 2O: a subtle discoverability hint drawn straight from the active
-	-- objective's own authored `description` -- the same text that was always
-	-- available but never surfaced. No waypoint, no marker, no hidden info.
+	-- The active objective's own authored description, as a hint.
 	hintLabel = Components.text({
 		name = "Hint",
 		text = "",
@@ -237,8 +235,8 @@ function ObjectiveView.start()
 
 	completedBanner = Components.frame({
 		name = "CompletedBanner",
-		size = UDim2.new(1, 0, 0, 40),
-		position = UDim2.fromOffset(0, 90),
+		size = UDim2.new(1, 0, 0, 32),
+		position = UDim2.fromOffset(0, 62),
 		color = Theme.Panel,
 		transparency = 0.1,
 		radius = 4,
@@ -258,15 +256,15 @@ function ObjectiveView.start()
 		xAlign = Enum.TextXAlignment.Center,
 		parent = completedBanner,
 	})
-	completedTitleLabel.TextWrapped = true
 
 	concludeHintLabel = Components.text({
 		name = "ConcludeHint",
-		text = `[{Config.Interaction.ConcludeKey}] Name a Suspect`,
-		size = UDim2.new(1, 0, 0, 16),
-		position = UDim2.fromOffset(0, 100),
-		textSize = 11,
-		color = Theme.TextSecondary,
+		text = `[{Config.Interaction.ConcludeKey}]  Name the suspect`,
+		size = UDim2.new(1, 0, 0, 18),
+		position = UDim2.fromOffset(0, 104),
+		font = Theme.FontBold,
+		textSize = 13,
+		color = Theme.TextPrimary,
 		xAlign = Enum.TextXAlignment.Center,
 		parent = root,
 	})

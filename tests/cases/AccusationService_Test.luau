@@ -82,6 +82,8 @@ return function(t)
 		expect.equal(byId["ACC-001"].suspectName, "Victor Lane")
 		expect.equal(byId["ACC-002"].suspectId, "SUS-001")
 		expect.equal(byId["ACC-002"].suspectName, "Mara Reyes")
+		expect.equal(byId["ACC-001"].suspectRole, "Business Partner")
+		expect.equal(byId["ACC-002"].suspectRole, "Spouse")
 	end)
 
 	-- An accusation is only meaningful once every objective is complete.

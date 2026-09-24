@@ -36,15 +36,19 @@ local function setVisible(visible: boolean)
 	if visible then
 		gui.Enabled = true
 		root.Visible = true
-		for _, d in ipairs(root:GetDescendants()) do
-			if d:IsA("TextLabel") or d:IsA("Frame") then
-				if d.Name == "Accent" then
-					continue
-				end
-				d.Transparency = 1
+		root.BackgroundTransparency = 1
+		TweenService:Create(root, TweenInfo.new(0.4), { BackgroundTransparency = 0.15 }):Play()
+		-- Staggered text fade-in, top to bottom.
+		for index, label in ipairs({ caseIdLabel, titleLabel, bodyLabel, hintLabel }) do
+			if label then
+				label.TextTransparency = 1
+				TweenService:Create(
+					label,
+					TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 0, false, 0.15 + index * 0.12),
+					{ TextTransparency = 0 }
+				):Play()
 			end
 		end
-		TweenService:Create(root, TweenInfo.new(0.4), { BackgroundTransparency = 0.15 }):Play()
 	else
 		local tween = TweenService:Create(root, TweenInfo.new(0.25), { BackgroundTransparency = 1 })
 		tween.Completed:Once(function()

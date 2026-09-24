@@ -1,7 +1,8 @@
 --!strict
 --[[
 	EvidencePanel
-	Investigation-style evidence panel. Dark, minimal, dismissible with ESC.
+	Investigation-style evidence panel. Dark, minimal, dismissed with the
+	primary key or its continue control.
 	Displayed when evidence is discovered.
 ]]
 
@@ -31,9 +32,15 @@ local isOpen = false
 
 local openedEvent: BindableEvent = Instance.new("BindableEvent")
 local closedEvent: BindableEvent = Instance.new("BindableEvent")
+local continueRequested: BindableEvent = Instance.new("BindableEvent")
 
 function EvidencePanel.onOpened(): BindableEvent
 	return openedEvent
+end
+
+-- Fired when the player clicks the panel's continue control.
+function EvidencePanel.onContinueRequested(): BindableEvent
+	return continueRequested
 end
 
 function EvidencePanel.onClosed(): BindableEvent
@@ -255,17 +262,24 @@ function EvidencePanel.start()
 		parent = root,
 	})
 
-	local hint = Components.text({
-		name = "Hint",
-		text = "[ESC] Close",
-		size = UDim2.new(1, 0, 0, 16),
-		position = UDim2.new(0, 0, 1, -14),
-		textSize = 11,
-		color = Theme.TextSecondary,
-		xAlign = Enum.TextXAlignment.Right,
-		parent = root,
-	})
-	hint.Name = "Hint"
+	-- Escape is reserved by the Roblox menu in live clients, so the panel is
+	-- dismissed with the primary key or by clicking this hint.
+	local continueButton = Instance.new("TextButton")
+	continueButton.Name = "Hint"
+	continueButton.AnchorPoint = Vector2.new(1, 0)
+	continueButton.Size = UDim2.fromOffset(120, 18)
+	continueButton.Position = UDim2.new(1, 0, 1, -16)
+	continueButton.BackgroundTransparency = 1
+	continueButton.Font = Theme.Font
+	continueButton.TextSize = 11
+	continueButton.TextColor3 = Theme.Accent
+	continueButton.TextXAlignment = Enum.TextXAlignment.Right
+	continueButton.Text = `[{Config.Interaction.PrimaryKey}] Continue`
+	continueButton.AutoButtonColor = false
+	continueButton.Parent = root
+	continueButton.Activated:Connect(function()
+		continueRequested:Fire()
+	end)
 end
 
 return EvidencePanel

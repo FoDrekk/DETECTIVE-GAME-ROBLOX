@@ -19,11 +19,28 @@ local player = Players.LocalPlayer
 local camera: Camera? = nil
 local blendToken = 0
 
+local HIDE_AVATAR_STEP = "MysteryCase_HideAvatarWhileExamining"
+
 local mode: "Explore" | "Examine" = "Explore"
 local focusPart: BasePart? = nil
 local savedMaxZoom: number? = nil
 local savedMinZoom: number? = nil
 local savedCameraType: Enum.CameraType? = nil
+
+-- The close-up framing sits near the player, so their own avatar would fill
+-- the shot. Re-applied every frame after the camera step, because the default
+-- camera scripts also write LocalTransparencyModifier.
+local function setAvatarHidden(hidden: boolean)
+	local character = player.Character
+	if not character then
+		return
+	end
+	for _, descendant in ipairs(character:GetDescendants()) do
+		if descendant:IsA("BasePart") or descendant:IsA("Decal") then
+			descendant.LocalTransparencyModifier = if hidden then 1 else 0
+		end
+	end
+end
 
 local function getCamera(): Camera
 	if not camera then
@@ -61,6 +78,8 @@ local function setExplore()
 	end
 	mode = "Explore"
 	focusPart = nil
+	RunService:UnbindFromRenderStep(HIDE_AVATAR_STEP)
+	setAvatarHidden(false)
 
 	local cam = getCamera()
 	if savedCameraType then
@@ -89,6 +108,11 @@ function CameraController.examine(part: BasePart)
 		savedCameraType = getCamera().CameraType
 	end
 
+	if mode ~= "Examine" then
+		RunService:BindToRenderStep(HIDE_AVATAR_STEP, Enum.RenderPriority.Camera.Value + 1, function()
+			setAvatarHidden(true)
+		end)
+	end
 	mode = "Examine"
 	focusPart = part
 

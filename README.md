@@ -82,6 +82,28 @@ print `[PASS]` / `[FAIL]` / `[TIMEOUT]` plus a `[SUMMARY]` line.
 
 ## Status
 
+See [docs/ROADMAP.md](docs/ROADMAP.md) for the forward plan (M1–M4).
+
+M1: friction-free loop — fixes from a real spawn-to-Case-Closed playthrough.
+
+- **Briefing is readable**: its text now fades in (it was left fully
+  transparent, so the opening screen was blank).
+- **No soft-lock after the first clue**: the evidence readout closes with
+  `[E] Continue` or a click. Escape is reserved by the Roblox menu in live
+  clients, so no panel depends on it; opening the Roblox menu closes panels.
+  Every on-screen key hint now matches a key that works.
+- **Objective HUD**: checklist rows lay out correctly after an objective
+  changes; "OBJECTIVE COMPLETE" is held on screen before the next objective
+  appears; the final banner no longer covers `[Q] Name the suspect`; the HUD
+  only shows during the investigation.
+- **No stacked panels**: opening dialogue, the timeline, the case file or the
+  accusation picker dismisses an open evidence readout; interaction pauses
+  behind the accusation picker; no ghost prompt behind the closing screen.
+- **Accusation picker** shows each suspect's name and role.
+- **Camera**: the close-up hides the player's own avatar; the investigator now
+  spawns inside the lobby (the opening shot was outside the facade) without a
+  spawn-protection bubble.
+
 Phase 2O: investigation feedback & discoverability polish.
 
 - **No silent interactions**: examining a non-evidence interactable now
@@ -315,7 +337,7 @@ OBJECTIVE PROGRESS → NEXT CLUE
    evidence panel presents the discovery (with its time and details) and the
    matching timeline event is revealed.
 4. Press **T** to review the **CASE TIMELINE** — discovered events only, in
-   chronological order. **T** or **ESC** closes it.
+   chronological order. **T** closes it.
 5. Each required action ticks its checklist row (`□` → `✓`).
 6. When all requirements are met the server completes the objective and the
    client shows **OBJECTIVE COMPLETE**, then the next objective in the chain:
