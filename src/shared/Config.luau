@@ -55,6 +55,33 @@ Config.Interaction = {
 	},
 }
 
+-- M6: audio. Every asset is from a Roblox-licensed partner library
+-- (ProSoundEffects, APM Music) and was verified to load before being added.
+-- Volumes are per sound, before the ambience/effects group volumes.
+Config.Audio = {
+	Ambience = {
+		-- Rain On Window 3 (ProSoundEffects), 53.7s loop.
+		Rain = { id = "rbxassetid://9112856768", volume = 0.35 },
+		-- Hollow Rumble 1 (ProSoundEffects): deep, dark, steady drone, 106s.
+		Drone = { id = "rbxassetid://9112795463", volume = 0.18 },
+	},
+	Cues = {
+		-- Document Movement, Thick Papers (ProSoundEffects), 4.1s.
+		EvidenceDiscovered = { id = "rbxassetid://9125490663", volume = 0.6 },
+		-- Keyboard key press (ProSoundEffects), 0.5s: dialogue and UI ticks.
+		Tick = { id = "rbxassetid://9113145819", volume = 0.35 },
+		-- "Morbid Discovery" (APM Music), 12.7s: a contradiction or
+		-- deduction clicks into place.
+		Reasoning = { id = "rbxassetid://1838954912", volume = 0.45 },
+		-- "Case Cracker - Sting" (APM Music), 8s.
+		VerdictCorrect = { id = "rbxassetid://1842853798", volume = 0.6 },
+		-- Piano Keys Impact 7 (ProSoundEffects), 14.9s, low and ominous.
+		VerdictWrong = { id = "rbxassetid://9117315051", volume = 0.55 },
+	},
+	-- Ambience drops to this fraction behind dialogue and the closing screen.
+	DuckedAmbience = 0.35,
+}
+
 Config.Camera = {
 	DefaultDistance = 12,
 	DefaultHeight = 2.5,

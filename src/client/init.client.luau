@@ -32,6 +32,7 @@ local AccusationView = require(Modules:WaitForChild("AccusationView"))
 local CaseClosedView = require(Modules:WaitForChild("CaseClosedView"))
 local CameraController = require(Modules:WaitForChild("CameraController"))
 local InputHints = require(Modules:WaitForChild("InputHints"))
+local SoundController = require(Modules:WaitForChild("SoundController"))
 local TouchControls = require(Modules:WaitForChild("TouchControls"))
 
 local player = Players.LocalPlayer
@@ -95,6 +96,11 @@ local function dismissEvidence()
 	end
 end
 
+-- M6: remembered so a reasoning breakthrough (a new contradiction or
+-- deduction, or the timeline being established) plays its cue exactly once.
+local reasoningFactCount = 0
+local timelineEstablished = false
+
 local function applyPhase(phase: Types.GamePhase)
 	currentPhase = phase
 	-- The E key is active during the briefing (to begin), the investigation,
@@ -105,8 +111,11 @@ local function applyPhase(phase: Types.GamePhase)
 		-- A fresh case (first join or a replay): forget the last one's ending.
 		investigationComplete = false
 		lastCaseClosedSummary = nil
+		reasoningFactCount = 0
+		timelineEstablished = false
 	end
 
+	SoundController.setDucked(phase == "CaseClosed")
 	InputController.setInteractEnabled(interactEnabled)
 	ObjectiveView.setActive(phase == "Investigation")
 	if phase == "Investigation" then
@@ -155,6 +164,7 @@ local function bootstrap()
 
 	-- Input scheme detection first: views bind their key hints to it.
 	InputHints.start()
+	SoundController.start()
 	-- Input bindings (keyboard + gamepad) must exist before any phase.
 	InputController.start()
 
@@ -214,6 +224,7 @@ local function bootstrap()
 	-- begin briefing, or interact.
 	InputController.onInteract(function()
 		if DialogueView.isOpen() then
+			SoundController.play("Tick")
 			requestDialogueAdvance:FireServer()
 		elseif EvidencePanel.isOpen() then
 			-- [E] Continue: dismiss the readout and return to exploring.
@@ -239,6 +250,7 @@ local function bootstrap()
 		end
 		dismissEvidence()
 		TimelineView.toggle()
+		SoundController.play("Tick")
 	end)
 
 	InputController.onToggleCaseFile(function()
@@ -247,6 +259,7 @@ local function bootstrap()
 		end
 		dismissEvidence()
 		CaseFileView.toggle()
+		SoundController.play("Tick")
 	end)
 
 	-- Phase 2L/2N: player-initiated conclusion. [Q] only does anything once
@@ -263,6 +276,7 @@ local function bootstrap()
 		end
 		dismissEvidence()
 		AccusationView.toggle()
+		SoundController.play("Tick")
 		-- The accusation is a decisive choice: no interacting behind it.
 		if AccusationView.isOpen() then
 			InteractionController.pauseScan()
@@ -319,9 +333,15 @@ local function bootstrap()
 		end
 		InteractionController.pauseScan()
 		EvidencePanel.show(payload)
+		SoundController.play("EvidenceDiscovered")
 	end)
 
 	timelineUpdated.OnClientEvent:Connect(function(payload: Types.TimelinePayload)
+		-- M5's reconstruction confirmed: the same "it clicks" cue as reasoning.
+		if payload.established and not timelineEstablished then
+			SoundController.play("Reasoning")
+		end
+		timelineEstablished = payload.established == true
 		TimelineView.update(payload)
 	end)
 
@@ -344,6 +364,7 @@ local function bootstrap()
 	end)
 
 	dialogueUpdated.OnClientEvent:Connect(function(payload: Types.DialoguePayload)
+		SoundController.setDucked(payload.active or currentPhase == "CaseClosed")
 		if payload.active then
 			EvidencePanel.close()
 			-- Frame the suspect, same technique as examining evidence.
@@ -364,6 +385,11 @@ local function bootstrap()
 	end)
 
 	reasoningUpdated.OnClientEvent:Connect(function(payload: Types.ReasoningPayload)
+		local facts = #payload.contradictions + #payload.deductions
+		if facts > reasoningFactCount then
+			SoundController.play("Reasoning")
+		end
+		reasoningFactCount = facts
 		CaseFileView.update(payload)
 	end)
 
@@ -373,6 +399,9 @@ local function bootstrap()
 
 	caseClosedSummary.OnClientEvent:Connect(function(summary: Types.CaseClosedSummary)
 		lastCaseClosedSummary = summary
+		if summary.verdict then
+			SoundController.play(if summary.verdict.correct then "VerdictCorrect" else "VerdictWrong")
+		end
 		if currentPhase == "CaseClosed" then
 			CaseClosedView.show(summary)
 		end
