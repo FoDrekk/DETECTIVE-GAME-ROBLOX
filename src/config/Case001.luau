@@ -203,6 +203,13 @@ local Case001: Types.CaseDefinition = {
 		},
 	},
 
+	-- M5: the order a not-yet-reconstructed timeline presents its events in.
+	-- Deliberately NOT chronological (canonical: 11:42 -> 11:47 -> 11:52 ->
+	-- 12:00), so putting the night in order is a real step the player must
+	-- perform. The `timeline` array above stays readable in chronological
+	-- order; this only controls the puzzle's presentation.
+	timelineChallengeOrder = { "TIMELINE-004", "TIMELINE-001", "TIMELINE-003", "TIMELINE-002" },
+
 	objectives = {
 		{
 			id = "OBJ-001",
@@ -257,6 +264,25 @@ local Case001: Types.CaseDefinition = {
 				},
 			},
 			prerequisites = { "OBJ-003" },
+		},
+		{
+			-- M5: the timeline is a mechanic, not decoration. The player must
+			-- put the discovered events in order themselves; the server accepts
+			-- only the canonical chronological order. This is the last step
+			-- before an accusation can be made.
+			id = "OBJ-005",
+			title = "Reconstruct the Timeline",
+			description = "Open the case timeline and put the events in the order they happened.",
+			requiredEvidence = {},
+			requiredInteractions = {},
+			requirements = {
+				{
+					id = "REQ-007",
+					label = "Establish the sequence of events",
+					timelineEstablished = true,
+				},
+			},
+			prerequisites = { "OBJ-004" },
 		},
 	},
 

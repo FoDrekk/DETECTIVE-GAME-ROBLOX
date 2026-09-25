@@ -25,6 +25,7 @@ return function(t)
 	local ConversationService = require(Server:WaitForChild("ConversationService"))
 	local EvidenceService = require(Server:WaitForChild("EvidenceService"))
 	local ReasoningService = require(Server:WaitForChild("ReasoningService"))
+	local TimelineService = require(Server:WaitForChild("TimelineService"))
 	local AccusationService = require(Server:WaitForChild("AccusationService"))
 	local PlayerDataService = require(Server:WaitForChild("PlayerDataService"))
 	local expect = t.expect
@@ -81,8 +82,14 @@ return function(t)
 		ObjectiveService.recordFact(player, "Contradiction", "CONTRA-001") -- completes OBJ-003
 	end
 
-	-- Completes every currently-authored CASE-001 objective (OBJ-001/002/003/004).
+	-- Completes every currently-authored CASE-001 objective
+	-- (OBJ-001/002/003/004/005).
 	local function completeEverything(player: any)
+		-- Discover the desk evidence as a real playthrough does, so the
+		-- timeline has its full four events to reconstruct.
+		EvidenceService.discover(player, "EV-001")
+		EvidenceService.discover(player, "EV-002")
+		EvidenceService.discover(player, "EV-003")
 		completeThroughObj003(player)
 		-- Victor's conversation is still active (only advanced once above) --
 		-- leave it before starting Mara's, or begin() is a silent no-op.
@@ -91,6 +98,8 @@ return function(t)
 		ConversationService.advance(player) -- unlocks STMT-SUS-001-ALIBI
 		ReasoningService.evaluate(player) -- unlocks DEDUCT-001
 		ObjectiveService.recordFact(player, "Deduction", "DEDUCT-001") -- completes OBJ-004
+		-- M5: reconstruct the timeline (completes OBJ-005).
+		TimelineService.submitSequence(player, { "TIMELINE-001", "TIMELINE-002", "TIMELINE-004", "TIMELINE-003" })
 	end
 
 	-- Phase 2N: completes every objective AND makes a formal accusation, the

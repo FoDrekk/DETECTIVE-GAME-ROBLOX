@@ -87,6 +87,7 @@ Signals.Names = table.freeze({
 	RequestReasoning = "RequestReasoning",
 	RequestAccusation = "RequestAccusation",
 	SubmitAccusation = "SubmitAccusation",
+	SubmitTimelineOrder = "SubmitTimelineOrder",
 })
 
 return Signals

@@ -28,6 +28,7 @@ return function(t)
 	local EvidenceService = require(Server:WaitForChild("EvidenceService"))
 	local ConversationService = require(Server:WaitForChild("ConversationService"))
 	local ReasoningService = require(Server:WaitForChild("ReasoningService"))
+	local TimelineService = require(Server:WaitForChild("TimelineService"))
 	local StoryEvents = require(Server:WaitForChild("StoryEvents"))
 	local CaseRegistry = require(game:GetService("ServerStorage"):WaitForChild("Config"):WaitForChild("CaseRegistry"))
 	local expect = t.expect
@@ -633,8 +634,10 @@ return function(t)
 
 	-- Phase 2M: DEDUCT-001/OBJ-004 requires Mara's statement too -- nothing
 	-- above this test ever speaks to her, so OBJ-004 only completes once
-	-- that's added on top of the OBJ-003 chain.
-	t.test("no active objective remains once OBJ-004 (the last objective) completes", function()
+	-- that's added on top of the OBJ-003 chain. M5: OBJ-005 (reconstruct the
+	-- timeline) is now the final objective, so OBJ-004 completing advances to
+	-- OBJ-005 rather than ending the chain.
+	t.test("OBJ-004 completing advances to OBJ-005 (reconstruct the timeline)", function()
 		local player = makePlayer()
 		local data = PlayerDataService.get(player)
 
@@ -658,6 +661,36 @@ return function(t)
 		ObjectiveService.recordFact(player, "Deduction", "DEDUCT-001")
 
 		expect.truthy(data.caseState.completedObjectives["OBJ-004"])
+		expect.equal(ObjectiveService.getActiveObjectiveId(player), "OBJ-005")
+	end)
+
+	-- M5: the timeline objective completes once the player has established the
+	-- sequence, and only then is there no active objective left.
+	t.test("no active objective remains once OBJ-005 (reconstruct timeline) completes", function()
+		local player = makePlayer()
+		local data = PlayerDataService.get(player)
+
+		ObjectiveService.recordInteraction(player, "Examine", "EV-001")
+		ObjectiveService.recordInteraction(player, "Examine", "EV-002")
+		ObjectiveService.recordInteraction(player, "Read", "EV-003")
+		ConversationService.begin(player, "SUS-002")
+		ObjectiveService.recordInteraction(player, "Talk", nil, "SUS-002")
+		ConversationService.advance(player)
+		EvidenceService.discover(player, "EV-004")
+		ReasoningService.evaluate(player)
+		ObjectiveService.recordFact(player, "Contradiction", "CONTRA-001")
+		ConversationService.leave(player)
+		ConversationService.begin(player, "SUS-001")
+		ConversationService.advance(player)
+		ReasoningService.evaluate(player)
+		ObjectiveService.recordFact(player, "Deduction", "DEDUCT-001")
+		expect.equal(ObjectiveService.getActiveObjectiveId(player), "OBJ-005")
+
+		-- Establishing the timeline completes it (via the direct objective
+		-- progression the real game uses). Only EV-004 was discovered here, so
+		-- the timeline is a single event.
+		expect.truthy(TimelineService.submitSequence(player, { "TIMELINE-004" }))
+		expect.truthy(data.caseState.completedObjectives["OBJ-005"])
 		expect.falsy(ObjectiveService.getActiveObjectiveId(player))
 	end)
 

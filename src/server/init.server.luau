@@ -178,6 +178,18 @@ local function bootstrap()
 		end
 	end)
 
+	-- 8b. Timeline reconstruction (M5). The client sends only an ordered list
+	-- of discovered event ids; TimelineService validates it against the
+	-- canonical chronological order it computes server-side. Never trusts a
+	-- client claim that the order is correct.
+	local submitTimelineOrder = Signals.get(Signals.Names.SubmitTimelineOrder)
+	submitTimelineOrder.OnServerEvent:Connect(function(player: Player, orderedIds)
+		if type(orderedIds) ~= "table" then
+			return
+		end
+		TimelineService.submitSequence(player, orderedIds)
+	end)
+
 	-- 9. Dialogue progression requests. Conversations are started via the
 	-- existing InteractionRequest pipeline (Talk kind); these only continue
 	-- or end an already-active conversation.

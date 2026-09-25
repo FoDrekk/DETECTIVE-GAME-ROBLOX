@@ -56,6 +56,7 @@ local requestDialogueClose = Signals.wait(Signals.Names.DialogueClose)
 local requestReasoning = Signals.wait(Signals.Names.RequestReasoning)
 local requestAccusation = Signals.wait(Signals.Names.RequestAccusation)
 local submitAccusation = Signals.wait(Signals.Names.SubmitAccusation)
+local submitTimelineOrder = Signals.wait(Signals.Names.SubmitTimelineOrder)
 
 local currentPhase: Types.GamePhase = "MainMenu"
 local lastBriefing: Types.CaseBriefing? = nil
@@ -274,6 +275,13 @@ local function bootstrap()
 	-- whether the player is eligible and records the accusation.
 	AccusationView.onSelectionRequested().Event:Connect(function(accusationId: string)
 		submitAccusation:FireServer(accusationId)
+	end)
+
+	-- M5: the player's reconstructed timeline order. Only the ordered ids are
+	-- sent; the server validates them and responds with a fresh TimelineUpdate
+	-- (established, and in canonical order if correct).
+	TimelineView.onOrderSubmitted().Event:Connect(function(orderedIds: { string })
+		submitTimelineOrder:FireServer(orderedIds)
 	end)
 
 	InputController.onClose(closeOverlays)

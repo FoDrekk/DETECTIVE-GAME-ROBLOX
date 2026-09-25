@@ -1,9 +1,9 @@
 # Mystery Case — Development Roadmap
 
-Written after a full audit of the repository (Phase 2O, 222/222 tests) and a
-real Studio playthrough from spawn to Case Closed. Supersedes the phase-by-phase
-"out of scope" lists in `ARCHITECTURE.md` as the forward plan; those sections
-remain the record of what each phase deliberately did and did not build.
+Written after a full audit of the repository and a real Studio playthrough
+from spawn to Case Closed. Supersedes the phase-by-phase "out of scope" lists
+in `ARCHITECTURE.md` as the forward plan; those sections remain the record of
+what each phase deliberately did and did not build.
 
 ## The game
 
@@ -17,6 +17,7 @@ Core loop:
 BRIEFING → EXPLORE → EXAMINE → EVIDENCE (timeline grows)
         → QUESTION SUSPECTS → STATEMENTS
         → CROSS-REFERENCE (contradictions / deductions in the Case File)
+        → RECONSTRUCT THE TIMELINE
         → ACCUSE → RESOLUTION
 ```
 
@@ -96,6 +97,20 @@ recommended default; the product owner can redirect.)
 - Fresh spawn-to-Case-Closed-to-replay playthrough: clean console, no stale
   UI between runs.
 - Docs reconciled.
+
+### M5 — The timeline is a mechanic (investigation depth) — done
+
+- The timeline is no longer handed to the player pre-sorted: while it is
+  unestablished it presents the discovered events in a deliberately jumbled
+  authored order with the clock times hidden, and the player must put them in
+  the order they happened.
+- The server validates the order (`TimelineService.submitSequence`) against
+  the canonical chronological order it computes; a wrong, incomplete,
+  duplicated or invented order is rejected. Establishing is permanent and
+  per-player.
+- A new final objective (`OBJ-005`) gates on the established sequence, so the
+  case cannot be closed by collecting objects alone — the player must both
+  reason about the evidence and reconstruct the night.
 
 ## Known follow-ups (not blocking)
 

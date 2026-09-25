@@ -112,6 +112,21 @@ Mobile & gamepad support:
   underneath them), following `GuiService.TopbarInset` since the top bar
   initialises after the game's client script.
 
+M5: the timeline is a mechanic, not decoration.
+
+- **The player reconstructs the sequence of events.** The case timeline now
+  opens in the case's authored (deliberately non-chronological) order with
+  the clock times hidden (`?`); the player reorders the discovered events with
+  up/down controls and confirms. `TimelineService.submitSequence` accepts the
+  order only if it is exactly the discovered set, each once, in canonical
+  chronological order — the server computes and compares it, and never trusts
+  a client claim. Establishing is permanent, per-player, and idempotent.
+- **A new final objective, `OBJ-005` ("Reconstruct the Timeline")**, gates on
+  the established sequence. Because it is the last objective, the accusation
+  picker (`[Q]`) is now only offered once the player has both reasoned about
+  the case *and* put its events in order — the case can no longer be closed by
+  simply collecting objects.
+
 M4: a complete session.
 
 - **The ending has a next step**: the closing screen offers
@@ -415,12 +430,17 @@ OBJECTIVE PROGRESS → NEXT CLUE
 6. When all requirements are met the server completes the objective and the
    client shows **OBJECTIVE COMPLETE**, then the next objective in the chain:
    `OBJ-001` → `OBJ-002` (question Victor Lane) → `OBJ-003` (review the
-   contradiction) → `OBJ-004` (close the investigation).
-7. Press **C** to review the **CASE FILE** — unlocked statements,
+   contradiction) → `OBJ-004` (close the investigation) → `OBJ-005`
+   (reconstruct the timeline).
+7. Press **T** to open the **CASE TIMELINE**. Until step 6's final objective
+   is done, the events appear in a deliberately jumbled order with their times
+   hidden; the player moves them into the order they happened and confirms.
+   The server validates the order and reveals the clock times once it is right.
+8. Press **C** to review the **CASE FILE** — unlocked statements,
    contradictions, deductions and evidence links.
-8. Examining a non-evidence object (desk, cabinet, coffee cup, …) shows a
+9. Examining a non-evidence object (desk, cabinet, coffee cup, …) shows a
    short authored observation; it never advances progress.
-9. Re-examining discovered evidence does not duplicate progress; invalid, wrong
-   kind, and too-far interactions are rejected. Not every interactable yields
-   evidence.
+10. Re-examining discovered evidence does not duplicate progress; invalid, wrong
+    kind, and too-far interactions are rejected. Not every interactable yields
+    evidence.
 

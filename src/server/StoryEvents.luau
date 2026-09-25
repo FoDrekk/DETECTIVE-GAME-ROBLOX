@@ -35,6 +35,7 @@ export type StoryEventKind =
 	| "ContradictionUnlocked"
 	| "DeductionUnlocked"
 	| "AccusationMade"
+	| "TimelineEstablished"
 
 local bindables: { [string]: BindableEvent } = {}
 

@@ -100,7 +100,16 @@ validates that the authored interactables satisfy the gameplay contract.
   matching timeline event on first discovery, then publishes `StoryEvents`
   `"EvidenceDiscovered"`.
 - **TimelineService** — data-driven case timeline. Events stay hidden until one
-  of their source evidence items is discovered; ordered by `timeMinutes`.
+  of their source evidence items is discovered. Since M5 the timeline is also a
+  player mechanic: until the player reconstructs it, events are delivered in
+  the case's authored `timelineChallengeOrder` (deliberately non-chronological)
+  and `submitSequence` accepts an ordered id list only when it matches the
+  canonical chronological order the server computes. Owns
+  `PlayerCaseState.timelineEstablished`; on success calls
+  `ObjectiveService.recordFact(player, "Timeline", "")` directly (so the gated
+  objective completes synchronously) and publishes `StoryEvents`
+  `"TimelineEstablished"`. Once established, events are delivered in
+  chronological order (see below).
 - **ObjectiveService** — data-driven objective tracking, including multi-
   objective sequencing (see below). Evaluates generic evidence/interaction/
   target/contradiction/deduction requirements from case data; owns
@@ -585,6 +594,50 @@ the phase is `CaseClosed` is dispatched to `requestReplay`, the same way
 `"CaseClosed"` is dispatched to `requestConclude`. The client sends it from
 `[E] Investigate again` on the closing screen, and clears its own
 `investigationComplete`/last-summary flags whenever `CaseBriefing` begins.
+
+## Timeline reconstruction (M5)
+
+Before M5 the timeline was decorative: every event revealed automatically and
+was handed to the client already sorted, so the player never engaged with it.
+M5 makes establishing the sequence a real, server-validated investigation step.
+
+- **Challenge order.** `CaseDefinition.timelineChallengeOrder` (optional)
+  names timeline event ids in a deliberately non-chronological order;
+  `TimelineService.challengeOrder` delivers the discovered events in that
+  order (falling back to the `timeline` array order, then appending any event
+  the list omits, so nothing is ever lost). It is fixed by the case, never
+  shuffled at random, so the puzzle is deterministic and reproducible.
+- **Submission.** `TimelineService.submitSequence(player, orderedIds)` accepts
+  the order only when the list is non-empty, contains exactly the player's
+  discovered events (no missing, no duplicate, no undiscovered id), each
+  once, in canonical chronological order (`timeMinutes`, then id — the same
+  ordering `chronological()` computes). The server compares against its own
+  data; a client can neither invent a correct order nor claim one.
+- **Permanence & idempotency.** `PlayerCaseState.timelineEstablished` is set
+  once and stays set; a later call is a safe no-op returning false.
+- **Objective integration.** `submitSequence` calls
+  `ObjectiveService.recordFact(player, "Timeline", "")` **directly** (the
+  same synchronous pattern `InteractionService` uses for evidence and
+  interaction requirements) so an objective gated on `timelineEstablished`
+  completes the instant the order is accepted, independent of deferred
+  `StoryEvents` delivery. The `"TimelineEstablished"` StoryEvent is published
+  too, for any other observer.
+- **Requirement gate.** `ObjectiveRequirement.timelineEstablished` is a new
+  optional gate alongside `evidence`/`interaction`/`target`/`contradiction`/
+  `deduction`; `requirementSatisfied` checks the player's own live state.
+  CASE-001's `OBJ-005` ("Reconstruct the Timeline") uses it and is the final
+  objective, so the accusation picker is only offered once the player has both
+  reasoned about the case and ordered its events.
+- **Spoiler safety.** Until established, the client receives the events with
+  their clock times hidden (it renders `?`); the canonical order and the true
+  timestamps are only sent once the player has earned them. The payload
+  (`Types.TimelinePayload.established`) carries one boolean and nothing about
+  the answer.
+- **Client.** `TimelineView` (opened with `T`) renders move-up/move-down
+  controls and a `Confirm sequence` button while unestablished, submits the
+  working order through the `SubmitTimelineOrder` remote, and becomes
+  read-only once the server confirms. It decides nothing — it renders the
+  server's order and reports the player's arrangement.
 
 ## Case Closed: formal conclusion (Phase 2L)
 

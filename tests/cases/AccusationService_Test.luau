@@ -18,6 +18,7 @@ return function(t)
 	local ConversationService = require(Server:WaitForChild("ConversationService"))
 	local EvidenceService = require(Server:WaitForChild("EvidenceService"))
 	local ReasoningService = require(Server:WaitForChild("ReasoningService"))
+	local TimelineService = require(Server:WaitForChild("TimelineService"))
 	local PlayerDataService = require(Server:WaitForChild("PlayerDataService"))
 	local expect = t.expect
 
@@ -36,7 +37,7 @@ return function(t)
 		EvidenceService.discover(player, "EV-003")
 	end
 
-	-- Completes every currently-authored CASE-001 objective (OBJ-001..004).
+	-- Completes every currently-authored CASE-001 objective (OBJ-001..005).
 	local function completeEverything(player: any)
 		discoverDesk(player)
 		ObjectiveService.recordInteraction(player, "Examine", "EV-001")
@@ -53,6 +54,8 @@ return function(t)
 		ConversationService.advance(player) -- unlocks STMT-SUS-001-ALIBI
 		ReasoningService.evaluate(player) -- unlocks DEDUCT-001
 		ObjectiveService.recordFact(player, "Deduction", "DEDUCT-001") -- completes OBJ-004
+		-- M5: reconstruct the timeline (completes OBJ-005).
+		TimelineService.submitSequence(player, { "TIMELINE-001", "TIMELINE-002", "TIMELINE-004", "TIMELINE-003" })
 	end
 
 	-- A player who has completed everything except speaking to Mara: OBJ-001/002/003
@@ -200,9 +203,13 @@ return function(t)
 		expect.equal(#resolution.basedOn, 0)
 	end)
 
-	-- Support requires every referenced fact: without the desk evidence the
-	-- motive (DEDUCT-002) is unknown, so accusing Victor is not yet supported.
-	t.test("accusing Victor without the motive evidence is unsupported", function()
+	-- Support requires every referenced fact. In the real game a player cannot
+	-- reach the accusation without completing every objective -- and OBJ-001
+	-- requires the desk evidence, which unlocks the motive (DEDUCT-002) -- so
+	-- "unsupported Victor" is only reachable by accusing someone the evidence
+	-- does not name (covered above with Mara). This test instead pins the gate
+	-- itself: with the timeline (OBJ-005) unfinished, no accusation is possible.
+	t.test("an accusation is rejected until every objective, including the timeline, is complete", function()
 		local player = makePlayer()
 		ObjectiveService.recordInteraction(player, "Examine", "EV-001")
 		ObjectiveService.recordInteraction(player, "Examine", "EV-002")
@@ -219,8 +226,16 @@ return function(t)
 		ReasoningService.evaluate(player)
 		ObjectiveService.recordFact(player, "Deduction", "DEDUCT-001")
 
+		-- OBJ-005 (reconstruct the timeline) is still open.
+		expect.equal(ObjectiveService.getActiveObjectiveId(player), "OBJ-005")
+		expect.falsy(AccusationService.accuse(player, "ACC-001"))
+		expect.falsy(AccusationService.hasAccusation(player))
+
+		-- Once the timeline is reconstructed, the accusation is accepted.
+		-- Only EV-004 was discovered here, so the timeline is a single event.
+		expect.truthy(TimelineService.submitSequence(player, { "TIMELINE-004" }))
+		expect.equal(ObjectiveService.getActiveObjectiveId(player), nil)
 		expect.truthy(AccusationService.accuse(player, "ACC-001"))
-		expect.falsy(AccusationService.getResolution(player).supported)
 	end)
 
 	-- An accusation is a commitment: repeating it or trying to change it is

@@ -21,14 +21,18 @@ return function(t)
 		return player
 	end
 
-	-- Discovering all three clues reveals all three timeline events in order.
-	t.test("full case reveals three timeline events in order", function()
+	-- Discovering all three clues reveals all three timeline events, and once
+	-- the player has reconstructed the sequence they read in clock order.
+	t.test("full case reveals three timeline events in order once established", function()
 		local player = makePlayer()
 		EvidenceService.discover(player, "EV-001")
 		EvidenceService.discover(player, "EV-002")
 		EvidenceService.discover(player, "EV-003")
 		local events = TimelineService.getDiscovered(player)
 		expect.equal(#events, 3)
+		-- Establish the sequence from whatever is discovered.
+		expect.truthy(TimelineService.submitSequence(player, { "TIMELINE-001", "TIMELINE-002", "TIMELINE-003" }))
+		events = TimelineService.getDiscovered(player)
 		expect.equal(events[1].timestamp, "11:42 PM")
 		expect.equal(events[2].timestamp, "11:47 PM")
 		expect.equal(events[3].timestamp, "12:00 AM")

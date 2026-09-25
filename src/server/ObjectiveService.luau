@@ -100,6 +100,9 @@ local function requirementSatisfied(
 	if requirement.deduction and not data.caseState.unlockedDeductions[requirement.deduction] then
 		return false
 	end
+	if requirement.timelineEstablished and data.caseState.timelineEstablished ~= true then
+		return false
+	end
 	-- A requirement with no constraint at all can never be satisfied.
 	if
 		not requirement.evidence
@@ -107,6 +110,7 @@ local function requirementSatisfied(
 		and not requirement.target
 		and not requirement.contradiction
 		and not requirement.deduction
+		and not requirement.timelineEstablished
 	then
 		return false
 	end
@@ -294,7 +298,7 @@ function ObjectiveService.recordInteraction(
 	return evaluateObjectives(player, data, kind, evidenceId, targetName)
 end
 
-export type FactKind = "Contradiction" | "Deduction"
+export type FactKind = "Contradiction" | "Deduction" | "Timeline"
 
 --[[
 	Record a reasoning fact unlocking (Phase 2J) -- the ContradictionUnlocked/
@@ -307,10 +311,12 @@ export type FactKind = "Contradiction" | "Deduction"
 	progressed is skipped) and safe regardless of call order.
 ]]
 function ObjectiveService.recordFact(player: Player, kind: FactKind, id: string): boolean
-	if kind ~= "Contradiction" and kind ~= "Deduction" then
+	if kind ~= "Contradiction" and kind ~= "Deduction" and kind ~= "Timeline" then
 		return false
 	end
-	if type(id) ~= "string" or id == "" then
+	-- Contradiction/Deduction name a specific fact id; Timeline is a single
+	-- player-level milestone, so it carries no id (an empty one is valid).
+	if kind ~= "Timeline" and (type(id) ~= "string" or id == "") then
 		return false
 	end
 	local data = PlayerDataService.get(player)

@@ -125,6 +125,10 @@ export type TimelineEventDefinition = {
 --   deduction    : same as `contradiction`, for a deduction id. CASE-001's
 --                  OBJ-004 uses this (Phase 2M) via DEDUCT-001; the gate is
 --                  generic and hardcodes no case id.
+--   timelineEstablished : the objective advances once this player has
+--                  successfully reconstructed the case timeline (M5). Checked
+--                  live against the player's own state, like the reasoning
+--                  gates above, so ordering never matters.
 export type ObjectiveRequirement = {
 	id: string,
 	label: string,
@@ -133,6 +137,7 @@ export type ObjectiveRequirement = {
 	target: string?,
 	contradiction: string?,
 	deduction: string?,
+	timelineEstablished: boolean?,
 }
 
 export type ObjectiveDefinition = {
@@ -276,6 +281,13 @@ export type CaseDefinition = {
 	observations: { ObservationDefinition }?,
 	evidence: { EvidenceDefinition },
 	timeline: { TimelineEventDefinition },
+	-- M5: the order in which a not-yet-reconstructed timeline presents its
+	-- events to the player (a list of timeline event ids). Deliberately
+	-- different from chronological order so reconstructing it is a real
+	-- puzzle. Optional: absent means the authored `timeline` array order is
+	-- used as-is. Never affects which events exist or how they sort once the
+	-- player has established the sequence.
+	timelineChallengeOrder: { string }?,
 	objectives: { ObjectiveDefinition },
 	conversations: { ConversationDefinition },
 	statements: { StatementDefinition },
@@ -318,6 +330,10 @@ export type TimelinePayload = {
 	events: { TimelineEventProgress },
 	-- Total number of events that exist for the case (not hidden content).
 	totalEvents: number,
+	-- Whether this player has reconstructed the timeline (M5). While false the
+	-- events are delivered in the authored challenge order for the player to
+	-- arrange; once true they are delivered in canonical chronological order.
+	established: boolean,
 }
 
 export type EvidenceState = {
@@ -351,6 +367,10 @@ export type PlayerCaseState = {
 	-- AccusationService (Phase 2N); never set directly by any other system.
 	-- Once set it is permanent (an accusation is a commitment).
 	accusationId: string?,
+	-- Whether this player has successfully reconstructed the case timeline
+	-- (M5). Owned by TimelineService; never set directly by any other system.
+	-- Once true it stays true (a solved ordering is not un-solved).
+	timelineEstablished: boolean?,
 }
 
 export type PlayerData = {

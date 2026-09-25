@@ -248,4 +248,28 @@ return function(t)
 			end
 		end
 	end)
+
+	-- M5: the authored timeline challenge order must reference real timeline
+	-- events, cover each event exactly once, and be a real puzzle (i.e. not
+	-- already in chronological order).
+	t.test("timeline challenge order is valid and non-chronological", function()
+		local caseDef = CaseRegistry.get("CASE-001")
+		local byId = {}
+		for _, event in ipairs(caseDef.timeline) do
+			byId[event.id] = event
+		end
+
+		local challenge = caseDef.timelineChallengeOrder
+		expect.truthy(challenge)
+		expect.equal(#challenge, #caseDef.timeline)
+
+		local seen = {}
+		for index, id in ipairs(challenge) do
+			expect.truthy(byId[id])
+			expect.falsy(seen[id])
+			seen[id] = true
+			-- Not already in canonical position.
+			expect.falsy(challenge[index] == caseDef.timeline[index].id)
+		end
+	end)
 end
