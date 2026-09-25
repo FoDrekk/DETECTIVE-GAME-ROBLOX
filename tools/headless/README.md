@@ -17,7 +17,7 @@ and regressions in the test suite.
 | `RobloxShim.luau` | Headless stand-in for the engine API the game uses: data types (Vector3, CFrame, Color3, UDim2, ...), the instance tree with attributes/tags/signals, a virtual-time `task` scheduler with deferred `BindableEvent` delivery, tweens, ray casts against part boxes, R15 rig generation, `RemoteEvent` recording. |
 | `build.js` | Recreates the Rojo project (`default.project.json`) on top of the shim, including `assets/Office.rbxm` converted to instances, and appends an entry script. Output is one Luau file. |
 | `entry_tests.luau` | Entry: runs the server bootstrap (as Studio Play would), then the unit-test suite (`tests/cases`). |
-| `entry_playthrough.luau` | Entry: a scripted end-to-end playthrough with a real (shim) `Player`, driving the game only through its `RemoteEvent`s, like a client. |
+| `entry_playthrough.luau` | Entry: a scripted end-to-end playthrough: the real server and client scripts together, driven only through player inputs (prompt targeting, the interact key, dialogue choice buttons, timeline buttons, ACCUSE). Prints a transcript. |
 | `entry_scene_dump.luau` | Entry: boots the server and prints every visible part and light (for layout previews). |
 | `render_scene.py` | Rough layout previews from a scene dump: a top-down plan and a few ray-cast perspective shots (numpy + pillow). Not Roblox's renderer: boxes, no shadows, flat materials -- for catching floating/overlapping/misplaced props, not for judging the look. |
 | `sourcemap.js` | Writes a Rojo-compatible `sourcemap.json` so `luau-lsp analyze` can resolve Roblox-style requires without Rojo. |
