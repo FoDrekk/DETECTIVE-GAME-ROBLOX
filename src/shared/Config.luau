@@ -155,4 +155,36 @@ Config.UI.Theme = {
 	FontBold = Enum.Font.GothamBold,
 }
 
+-- Conversation presentation (DialogueView).
+Config.UI.Dialogue = {
+	PanelHeight = 178,
+	PanelMaxWidth = 860,
+	PanelBottomOffset = 34,
+	PanelTransparency = 0.06,
+	-- Fraction of the screen height each letterbox bar covers.
+	LetterboxHeight = 0.075,
+	BodyTop = 30,
+	BodyTopWithPrompt = 54,
+	BodyTextSize = 19,
+	ChoiceHeight = 40,
+	ChoiceHover = Color3.fromRGB(34, 32, 28),
+	-- Typewriter: characters per second, and holds after punctuation.
+	CharactersPerSecond = 52,
+	SentencePause = 0.32,
+	EllipsisPause = 0.22,
+	CommaPause = 0.1,
+	DashPause = 0.22,
+	-- The investigator's own lines.
+	PlayerText = Color3.fromRGB(196, 204, 214),
+	PlayerFont = Enum.Font.GothamMedium,
+	-- Speaker portrait (a still copy of the NPC in a ViewportFrame).
+	PortraitSize = 126,
+	PortraitDistance = 3.1,
+	PortraitFieldOfView = 26,
+	PortraitAimDrop = 0.35,
+	PortraitBackdrop = Color3.fromRGB(24, 26, 32),
+	PortraitAmbient = Color3.fromRGB(120, 118, 124),
+	PortraitLight = Color3.fromRGB(255, 226, 190),
+}
+
 return Config

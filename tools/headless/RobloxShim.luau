@@ -649,7 +649,21 @@ local ColorSequence = {
 		return makeColorSequence({ makeColorKey(0, a), makeColorKey(1, b or a) })
 	end,
 }
-local makeRect = valueType("Rect", { "Min", "Max" })
+local makeRectRaw = valueType("Rect", { "Min", "Max" })
+local function makeRect(minV, maxV)
+	local r = makeRectRaw(minV, maxV)
+	local mt = getmetatable(r)
+	local base = mt.__index
+	mt.__index = function(self, key)
+		if key == "Width" then
+			return rawget(self, "Max").X - rawget(self, "Min").X
+		elseif key == "Height" then
+			return rawget(self, "Max").Y - rawget(self, "Min").Y
+		end
+		return base(self, key)
+	end
+	return r
+end
 local Rect = {
 	new = function(a, b, c, d)
 		if c then
@@ -1299,6 +1313,36 @@ local DEFAULTS: { [string]: { [string]: any } } = {
 	SurfaceAppearance = {},
 }
 
+-- Real properties whose default value is nil (reading them must not error).
+local NIL_DEFAULTS: { [string]: { [string]: boolean } } = {
+	Model = { PrimaryPart = true },
+	GuiService = { SelectedObject = true },
+	Player = { Character = true, Team = true },
+	ViewportFrame = { CurrentCamera = true },
+	Camera = { CameraSubject = true },
+	WeldConstraint = { Part0 = true, Part1 = true },
+	JointInstance = { Part0 = true, Part1 = true },
+	Sound = { SoundGroup = true },
+	LayerCollector = { Adornee = true },
+	Highlight = { Adornee = true },
+	ObjectValue = { Value = true },
+	Humanoid = { SeatPart = true },
+	GuiObject = { NextSelectionUp = true, NextSelectionDown = true, NextSelectionLeft = true, NextSelectionRight = true },
+	Attachment = {},
+}
+
+local function nilDefault(className: string, key: string): boolean
+	local c: string? = className
+	while c do
+		local d = NIL_DEFAULTS[c]
+		if d and d[key] then
+			return true
+		end
+		c = SUPER[c]
+	end
+	return false
+end
+
 local function defaultFor(className: string, key: string): (boolean, any)
 	local c: string? = className
 	while c do
@@ -1397,7 +1441,7 @@ InstanceMT.__index = function(self, key)
 	if has then
 		return default
 	end
-	if i.propsSet[key] then
+	if i.propsSet[key] or nilDefault(i.className, key) then
 		return nil
 	end
 	error(`{key} is not a valid member of {i.className} "{i.name}"`, 2)
@@ -3125,7 +3169,11 @@ env.settings = function()
 	return {}
 end
 env.os = setmetatable({
-	clock = os.clock,
+	-- Virtual: animation/typewriter timing follows the scheduler's clock,
+	-- so a headless run is deterministic and fast.
+	clock = function()
+		return Scheduler.now
+	end,
 	time = function()
 		return 1700000000 + math.floor(Scheduler.now)
 	end,

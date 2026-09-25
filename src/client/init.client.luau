@@ -55,6 +55,7 @@ local requestObjectives = Signals.wait(Signals.Names.RequestObjectives)
 local requestTimeline = Signals.wait(Signals.Names.RequestTimeline)
 local requestDialogueAdvance = Signals.wait(Signals.Names.DialogueAdvance)
 local requestDialogueClose = Signals.wait(Signals.Names.DialogueClose)
+local requestDialogueChoose = Signals.wait(Signals.Names.DialogueChoose)
 local requestReasoning = Signals.wait(Signals.Names.RequestReasoning)
 local requestAccusation = Signals.wait(Signals.Names.RequestAccusation)
 local submitAccusation = Signals.wait(Signals.Names.SubmitAccusation)
@@ -190,7 +191,9 @@ local function bootstrap()
 		primaryLabel = function(): string?
 			if TitleScreenView.isOpen() then
 				return "Play"
-			elseif DialogueView.isOpen() or EvidencePanel.isOpen() then
+			elseif DialogueView.isOpen() then
+				return DialogueView.primaryLabel()
+			elseif EvidencePanel.isOpen() then
 				return "Continue"
 			elseif currentPhase == "CaseBriefing" then
 				return "Begin investigation"
@@ -232,8 +235,12 @@ local function bootstrap()
 			SoundController.play("Tick")
 			TitleScreenView.dismiss()
 		elseif DialogueView.isOpen() then
-			SoundController.play("Tick")
-			requestDialogueAdvance:FireServer()
+			-- The view finishes a line that is still typing, and holds a line
+			-- that is waiting for a question; otherwise the server continues.
+			if not DialogueView.handlePrimary() then
+				SoundController.play("Tick")
+				requestDialogueAdvance:FireServer()
+			end
 		elseif EvidencePanel.isOpen() then
 			-- [E] Continue: dismiss the readout and return to exploring.
 			closeOverlays()
@@ -297,6 +304,13 @@ local function bootstrap()
 	-- whether the player is eligible and records the accusation.
 	AccusationView.onSelectionRequested().Event:Connect(function(accusationId: string)
 		submitAccusation:FireServer(accusationId)
+	end)
+
+	-- The investigator's question. Only its id is sent; the server checks
+	-- it is on offer before following it.
+	DialogueView.onChoiceSelected().Event:Connect(function(choiceId: string)
+		SoundController.play("Tick")
+		requestDialogueChoose:FireServer(choiceId)
 	end)
 
 	-- M5: the player's reconstructed timeline order. Only the ordered ids are
@@ -378,6 +392,11 @@ local function bootstrap()
 
 	dialogueUpdated.OnClientEvent:Connect(function(payload: Types.DialoguePayload)
 		SoundController.setDucked(payload.active or currentPhase == "CaseClosed")
+		-- The conversation takes the screen: the objective HUD steps aside.
+		ObjectiveView.setActive(currentPhase == "Investigation" and not payload.active)
+		if payload.active then
+			InteractionPromptView.setPrompt(nil)
+		end
 		if payload.active then
 			EvidencePanel.close()
 			-- Frame the suspect's face from the player's side.
