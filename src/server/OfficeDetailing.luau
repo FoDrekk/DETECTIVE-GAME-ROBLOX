@@ -310,18 +310,41 @@ local TAPE_YELLOW = Color3.fromRGB(232, 197, 71)
 -- A thin ribbon from `pointA` to `pointB`. CFrame.lookAt orients the part's
 -- local Z axis toward `pointB`, so putting the ribbon's length on Size.Z
 -- (not the more usual Size.X) makes it span exactly between the two points.
+-- For a ribbon in a wall plane (constant Z) the part's local X is the wall
+-- normal, so the ribbon is thin on X and its lettered faces are Right/Left.
+local TAPE_TEXT = "CRIME SCENE  •  DO NOT CROSS  •  CRIME SCENE  •  DO NOT CROSS  •  CRIME SCENE"
+
 local function tapeStrip(name: string, pointA: Vector3, pointB: Vector3, parent: Instance)
 	local mid = (pointA + pointB) / 2
 	local length = (pointB - pointA).Magnitude
 	local strip = Instance.new("Part")
 	strip.Name = name
-	strip.Size = Vector3.new(0.5, 0.06, length)
+	strip.Size = Vector3.new(0.06, 0.5, length)
 	strip.CFrame = CFrame.lookAt(mid, pointB)
 	strip.Color = TAPE_YELLOW
 	strip.Material = Enum.Material.SmoothPlastic
 	strip.Anchored = true
 	strip.CanCollide = false
 	strip.Parent = parent
+
+	-- M6: lettering, readable from the corridor and from inside the office.
+	for _, face in ipairs({ Enum.NormalId.Right, Enum.NormalId.Left }) do
+		local surface = Instance.new("SurfaceGui")
+		surface.Face = face
+		surface.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+		surface.PixelsPerStud = 60
+		surface.LightInfluence = 1
+		surface.Parent = strip
+		local label = Instance.new("TextLabel")
+		label.BackgroundTransparency = 1
+		label.Size = UDim2.fromScale(1, 1)
+		label.Font = Enum.Font.GothamBlack
+		label.TextScaled = true
+		label.TextWrapped = false
+		label.TextColor3 = Color3.fromRGB(20, 18, 14)
+		label.Text = TAPE_TEXT
+		label.Parent = surface
+	end
 end
 
 -- Crossed tape across Daniel's office doorway -- the one entrance a player
@@ -335,13 +358,14 @@ local function buildCrimeSceneTape(folder: Instance)
 end
 
 -- A flat, abstracted chalk outline on the floor of Daniel's office, in the
--- open space between the desk and the door -- clear of the desk, the
--- storage corner, and the doorway itself. All parts share the same thin Y
--- extent so they sit flush on the floor without z-fighting each other.
+-- open floor east of the desk -- clear of the desk, of the walkway between
+-- the office and storage doors (x -22..-18), and in view from the doorway.
+-- All parts share the same thin Y extent so they sit flush on the floor
+-- without z-fighting each other.
 local function buildChalkOutline(folder: Instance)
 	local y = 0.06
 	local thickness = 0.05
-	local origin = Vector3.new(-24, y, -16.5) -- torso center
+	local origin = Vector3.new(-16.4, y, -8.8) -- torso center
 	local outline = Instance.new("Folder")
 	outline.Name = "ChalkOutline"
 	outline.Parent = folder
@@ -425,6 +449,179 @@ local function placeInvestigatorSpawn(office: Instance)
 	end
 end
 
+-- M6: the authored asset ships Daniel's desk group 4 studs above the floor
+-- (desk, chair, monitor, lamp), leaving the evidence on it hanging in the air
+-- at the correct desk height. Settle the group so the evidence rests on the
+-- desk: desk and chair onto the floor, the chair pulled out on the side the
+-- laptop faces, the monitor and lamp onto the desk's back edge, and the
+-- lamp's light and the coffee cup back with them. Each move is a rigid
+-- transform of a named authored folder/part, keyed by where it lands.
+local DESK_TOP_Y = 2.62
+
+-- Rigidly move every part in `group` so that `from` (a point in its current
+-- frame) lands on `to`, turned by `yaw` degrees.
+local function moveGroup(group: Instance, from: Vector3, to: Vector3, yaw: number)
+	local transform = CFrame.new(to) * CFrame.Angles(0, math.rad(yaw), 0) * CFrame.new(-from)
+	local parts: { BasePart } = {}
+	if group:IsA("BasePart") then
+		table.insert(parts, group)
+	end
+	for _, descendant in ipairs(group:GetDescendants()) do
+		if descendant:IsA("BasePart") then
+			table.insert(parts, descendant)
+		end
+	end
+	for _, p in ipairs(parts) do
+		p.CFrame = transform * p.CFrame
+	end
+end
+
+local function lowestPoint(group: Instance): Vector3?
+	local best: Vector3? = nil
+	for _, descendant in ipairs(group:GetDescendants()) do
+		if descendant:IsA("BasePart") then
+			local bottom = descendant.Position - Vector3.new(0, descendant.Size.Y / 2, 0)
+			if not best or bottom.Y < best.Y then
+				best = bottom
+			end
+		end
+	end
+	return best
+end
+
+local function settleDanielsDesk(office: Instance)
+	local furniture = office:FindFirstChild("Furniture")
+	if not furniture then
+		return
+	end
+	local desk = furniture:FindFirstChild("DanielDesk")
+	local deskBottom = desk and lowestPoint(desk)
+	-- Idempotent: only an elevated desk is corrected.
+	if not desk or not deskBottom or deskBottom.Y < 1 then
+		return
+	end
+	local drop = Vector3.new(0, -deskBottom.Y, 0)
+	moveGroup(desk, Vector3.zero, drop, 0)
+
+	local chair = furniture:FindFirstChild("DanielChair")
+	if chair then
+		-- Pulled out on the south side, where the laptop faces.
+		moveGroup(chair, Vector3.zero, drop + Vector3.new(0, 0, 3), 0)
+	end
+
+	local monitor = furniture:FindFirstChild("DanielMonitor")
+	local monitorBase = monitor and lowestPoint(monitor)
+	if monitor and monitorBase then
+		-- Behind the laptop, screen turned toward the chair.
+		moveGroup(monitor, monitorBase, Vector3.new(-24, DESK_TOP_Y, -9.55), 180)
+	end
+
+	local lamp = furniture:FindFirstChild("DanielLamp")
+	local lampBase = lamp and lowestPoint(lamp)
+	if lamp and lampBase then
+		local target = Vector3.new(-27.2, DESK_TOP_Y, -9.3)
+		moveGroup(lamp, lampBase, target, 0)
+		local glow = office:FindFirstChild("DanielGlow", true)
+		local head = lamp:FindFirstChild("LampHead")
+		if glow and glow:IsA("BasePart") and head and head:IsA("BasePart") then
+			glow.Position = head.Position - Vector3.new(0, 0.4, 0)
+		end
+	end
+
+	local cup = office:FindFirstChild("Interactables") and office.Interactables:FindFirstChild("CoffeeCup")
+	if cup and cup:IsA("BasePart") then
+		-- The desk's far-left corner, set back: clear of the evidence, so it
+		-- never becomes the prompt while approaching the phone, laptop or
+		-- document.
+		cup.Position = Vector3.new(-27.4, DESK_TOP_Y + cup.Size.Y / 2, -7.7)
+	end
+end
+
+-- M6: the desk props, dressed. The Interactable parts themselves keep their
+-- names, tags and positions (interaction and framing depend on them); only
+-- their look changes, plus untagged decoration parented to Detailing.
+local function dressDeskProps(office: Instance, folder: Instance)
+	local interactables = office:FindFirstChild("Interactables")
+	if not interactables then
+		return
+	end
+
+	-- A white ceramic mug of cold coffee instead of a red block.
+	local cup = interactables:FindFirstChild("CoffeeCup")
+	if cup and cup:IsA("Part") then
+		local height, diameter = 0.6, 0.5
+		local center = cup.Position
+		cup.Shape = Enum.PartType.Cylinder
+		-- A cylinder's axis is its local X: stand it upright.
+		cup.Size = Vector3.new(height, diameter, diameter)
+		cup.CFrame = CFrame.new(center) * CFrame.Angles(0, 0, math.rad(90))
+		cup.Color = Color3.fromRGB(232, 228, 220)
+		cup.Material = Enum.Material.SmoothPlastic
+
+		local coffee = part("CoffeeCup_Coffee", Vector3.new(0.02, diameter * 0.84, diameter * 0.84), center, Color3.fromRGB(38, 24, 16), Enum.Material.SmoothPlastic, false)
+		coffee.Shape = Enum.PartType.Cylinder
+		coffee.CFrame = CFrame.new(center + Vector3.new(0, height / 2 - 0.06, 0)) * CFrame.Angles(0, 0, math.rad(90))
+		coffee.CanQuery = false
+		coffee.Parent = folder
+
+		local handle = part("CoffeeCup_Handle", Vector3.new(0.08, 0.34, 0.2), center + Vector3.new(diameter / 2 + 0.05, 0, 0), cup.Color, Enum.Material.SmoothPlastic, false)
+		handle.CanQuery = false
+		handle.Parent = folder
+	end
+
+	-- The phone's screen still faintly lit, face up on the desk.
+	local phone = interactables:FindFirstChild("Phone")
+	if phone and phone:IsA("BasePart") then
+		local screen = part(
+			"Phone_Screen",
+			Vector3.new(phone.Size.X * 0.82, 0.02, phone.Size.Z * 0.86),
+			phone.Position,
+			Color3.fromRGB(58, 82, 98),
+			Enum.Material.Neon,
+			false,
+			0.3
+		)
+		screen.CFrame = phone.CFrame * CFrame.new(0, phone.Size.Y / 2 + 0.01, 0)
+		screen.CanQuery = false
+		screen.Parent = folder
+	end
+
+	-- The drawer front under the desktop on the chair side, at the desk's
+	-- far-left end, away from the evidence (the authored part lies flat on
+	-- top of the desk). The desk's front edge is z = -6; the default
+	-- orientation keeps the examine close-up on the open, chair side.
+	local drawer = interactables:FindFirstChild("DeskDrawer")
+	if drawer and drawer:IsA("BasePart") then
+		local front = Vector3.new(-26.9, DESK_TOP_Y - 0.1 - 0.3, -5.96)
+		drawer.Size = Vector3.new(1.8, 0.45, 0.12)
+		drawer.CFrame = CFrame.new(front)
+		drawer.Color = Color3.fromRGB(150, 104, 62)
+		drawer.Material = Enum.Material.Wood
+		local pull = part("DeskDrawer_Pull", Vector3.new(0.5, 0.06, 0.06), front + Vector3.new(0, 0, 0.09), Color3.fromRGB(40, 40, 44), Enum.Material.Metal, false)
+		pull.CanQuery = false
+		pull.Parent = folder
+	end
+
+	-- Screens at night: the monitor has gone to sleep; the laptop is still
+	-- awake, dimmed.
+	local monitor = office:FindFirstChild("Furniture") and office.Furniture:FindFirstChild("DanielMonitor")
+	local monitorScreen = monitor and monitor:FindFirstChild("Screen")
+	if monitorScreen and monitorScreen:IsA("BasePart") then
+		monitorScreen.Color = Color3.fromRGB(16, 18, 22)
+		monitorScreen.Material = Enum.Material.Glass
+	end
+	local laptop = interactables:FindFirstChild("Laptop")
+	local laptopDisplay = laptop and laptop:FindFirstChild("LaptopDisplay")
+	if laptopDisplay and laptopDisplay:IsA("BasePart") then
+		laptopDisplay.Color = Color3.fromRGB(70, 108, 136)
+	end
+	-- The meeting room's presentation screen idles on a dim standby blue.
+	local presentation = office:FindFirstChild("Furniture") and office.Furniture:FindFirstChild("PresScreenOn")
+	if presentation and presentation:IsA("BasePart") then
+		presentation.Color = Color3.fromRGB(24, 40, 66)
+	end
+end
+
 function OfficeDetailing.start()
 	local office = workspace:FindFirstChild(Config.Environment.OfficeModelName)
 	if not office then
@@ -433,6 +630,7 @@ function OfficeDetailing.start()
 	end
 
 	placeInvestigatorSpawn(office)
+	settleDanielsDesk(office)
 	retuneFixtures()
 
 	local folder = office:FindFirstChild(DETAIL_FOLDER_NAME)
@@ -452,6 +650,7 @@ function OfficeDetailing.start()
 	buildCrimeSceneTape(folder)
 	buildChalkOutline(folder)
 	buildEvidenceMarkers(folder)
+	dressDeskProps(office, folder)
 
 	log:info("office detailing applied", { parts = #folder:GetChildren() })
 end

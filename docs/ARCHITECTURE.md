@@ -915,6 +915,44 @@ mechanism — see "Extension points" below for why that was never necessary:
 the reasoning system was generic from Phase 2H, CASE-001 simply had nothing
 worth deducing about motive until now.
 
+## Production presentation (M6)
+
+Presentation only: no service, payload or case-state contract changed.
+
+- **Audio** — `client/SoundController` builds `SoundService.MysteryCase_Audio`
+  with two SoundGroups (Ambience, Effects) from `Config.Audio`. The bootstrap
+  calls `play(cue)` on real events (evidence discovered, dialogue/panel ticks,
+  a new contradiction/deduction or the timeline being established, the
+  verdict) and `setDucked` while dialogue or the closing screen is up.
+- **Suspects** — `server/SuspectSpawner` builds each NPC with
+  `Players:CreateHumanoidModelFromDescription` from the suspect's optional
+  `appearance` (`Types.SuspectAppearance`: body package key into
+  `Config.Characters.Bodies`, hair asset id + colour, skin/outfit colours).
+  The root is anchored; the default idle plays on the server Animator. The
+  Interactable contract lives on an invisible, welded hitbox part still named
+  after the suspect id, so `InteractionService`, objective `target` matching
+  and client framing are unchanged. A `ConversationStarted` StoryEvents
+  subscriber tweens the root to face the speaking player (mock players are
+  ignored).
+- **Camera** — `CameraController.faceSubject(part)` frames a conversation from
+  the player's side at face height (`Config.Camera.Conversation`);
+  `playCinematic(from, to, duration)` / `stopCinematic()` drive the title
+  drift in their own mode, which the examine/explore transitions leave alone.
+- **Title screen** — `client/TitleScreenView` opens once per client session
+  (`Config.Presentation`), holds the briefing back while open, and routes the
+  primary input to Play (`E` / `X` / tap / click). Dismissing fires
+  `onDismissed`, on which the bootstrap shows the briefing if that is the
+  current phase.
+- **Environment** — `OfficeDetailing.settleDanielsDesk` rigidly moves the
+  asset's elevated desk group onto the floor (idempotent: only an elevated
+  desk is moved) and `dressDeskProps` restyles the desk interactables in place
+  (names, tags and positions of evidence untouched). `server/CitySkyline`
+  builds the night city deterministically (fixed seed) beside the authored
+  backdrop.
+- **Targeting** — `InteractionController.findNearest` scores each in-range
+  interactable by distance × a facing weight (1 ahead → 2.8 behind the camera
+  heading); the range check itself is unchanged.
+
 ## Deliberately not implemented
 
 Phase 2G shipped a one-suspect vertical slice; Phase 2H added the reasoning
@@ -933,7 +971,9 @@ authored answer and a verdict on the player's own accusation.
 Explicitly still out of scope: any suspect beyond SUS-001/SUS-002, branching
 dialogue/choices, interrogation, confrontation, NPC AI/movement/animation,
 voice acting, cinematic cutscenes, additional locations, persistence, and
-multiplayer/per-session state. `Types.DialogueNodeDefinition.next` still
+multiplayer/per-session state. (M6 added only an idle animation, a turn to
+face the speaker, and a title-screen camera drift — no NPC movement, AI or
+cutscenes.) `Types.DialogueNodeDefinition.next` still
 supports a linear chain only — a real choice/branch contract remains future
 work, added only once a case's content actually needs it.
 

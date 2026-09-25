@@ -40,6 +40,23 @@ local function getRoot(): BasePart?
 	return character:FindFirstChild("HumanoidRootPart") :: BasePart?
 end
 
+-- M6: among interactables in range, prefer the one the player is facing.
+-- Distance is scaled by how far off the camera's heading the object lies
+-- (x1 dead ahead, x1.9 to the side, x2.8 directly behind), so on a crowded
+-- desk the item you are looking at wins over one that is merely closer.
+local function facingWeight(offset: Vector3): number
+	local camera = workspace.CurrentCamera
+	if not camera then
+		return 1
+	end
+	local look = Vector3.new(camera.CFrame.LookVector.X, 0, camera.CFrame.LookVector.Z)
+	local flat = Vector3.new(offset.X, 0, offset.Z)
+	if look.Magnitude < 0.01 or flat.Magnitude < 0.01 then
+		return 1
+	end
+	return 1 + 0.9 * (1 - look.Unit:Dot(flat.Unit))
+end
+
 local function findNearest(): (Instance?, number?)
 	local root = getRoot()
 	if not root then
@@ -47,14 +64,20 @@ local function findNearest(): (Instance?, number?)
 	end
 	local origin = root.Position
 	local best: Instance? = nil
-	local bestDist = Config.Interaction.MaxPromptDistance
+	local bestDist: number? = nil
+	local bestScore = math.huge
 	for _, instance in ipairs(Interactable.getAll()) do
 		local part = Interactable.getPart(instance)
 		if part and part:IsDescendantOf(workspace) then
-			local dist = (origin - part.Position).Magnitude
-			if dist <= bestDist then
-				best = instance
-				bestDist = dist
+			local offset = part.Position - origin
+			local dist = offset.Magnitude
+			if dist <= Config.Interaction.MaxPromptDistance then
+				local score = dist * facingWeight(offset)
+				if score < bestScore then
+					best = instance
+					bestDist = dist
+					bestScore = score
+				end
 			end
 		end
 	end

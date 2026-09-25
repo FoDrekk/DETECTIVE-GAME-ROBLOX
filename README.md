@@ -63,7 +63,7 @@ MysteryCaseRoblox/
    ├─ server/               -> ServerScriptService.Server
    ├─ client/               -> StarterPlayer.StarterPlayerScripts.Client
    ├─ shared/               -> ReplicatedStorage.Shared
-   ├─ config/               -> ReplicatedStorage.Config
+   ├─ config/               -> ServerStorage.Config (server-only: holds the solution)
    └─ ui/                   -> ReplicatedStorage.UI
 ```
 
@@ -82,7 +82,7 @@ print `[PASS]` / `[FAIL]` / `[TIMEOUT]` plus a `[SUMMARY]` line.
 
 ## Status
 
-See [docs/ROADMAP.md](docs/ROADMAP.md) for the forward plan (M1–M4).
+See [docs/ROADMAP.md](docs/ROADMAP.md) for the forward plan (M1–M6).
 
 ### Controls
 
@@ -111,6 +111,29 @@ Mobile & gamepad support:
 - The objective panel now sits below Roblox's top-bar buttons (it was
   underneath them), following `GuiService.TopbarInset` since the top bar
   initialises after the game's client script.
+
+M6: production presentation — it looks and sounds like a game.
+
+- **Title screen.** The session opens on "THE LAST CALL", letterboxed over a
+  slow camera drift through the meeting room where both suspects wait. Play
+  fades to black and reveals the briefing; a replay skips it.
+- **Real suspects.** Mara and Victor are R15 avatars built from a
+  `HumanoidDescription` (Roblox's free Man/Woman bodies, catalog hair
+  recoloured to natural tones, per-part outfit colours). They breathe with the
+  default idle animation and turn to face whoever talks to them; the
+  conversation camera frames their face from the player's side.
+- **Audio.** Rain on the windows and a low drone, ducked under dialogue and the
+  closing screen; cues for evidence, UI ticks, reasoning breakthroughs and the
+  verdict. Every sound is from Roblox's licensed ProSoundEffects / APM
+  libraries and was verified to load.
+- **The scene.** Daniel's desk (shipped 4 studs in the air in the office
+  asset) is settled so the evidence rests on it; the mug, drawer and screens
+  are dressed; the scene tape reads "CRIME SCENE • DO NOT CROSS"; the chalk
+  outline is in the office rather than behind its wall.
+- **A city outside.** Two layers of towers with window grids, a horizon glow
+  and blinking aviation lights replace the black void beyond the windows.
+- **Easier targeting.** With several objects in reach, the prompt prefers the
+  one you are facing, not merely the nearest.
 
 M5: the timeline is a mechanic, not decoration.
 

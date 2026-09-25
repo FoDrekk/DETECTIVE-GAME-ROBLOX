@@ -112,11 +112,34 @@ recommended default; the product owner can redirect.)
   case cannot be closed by collecting objects alone — the player must both
   reason about the evidence and reconstruct the night.
 
+### M6 — Production presentation (looks and sounds like a game) — done
+
+- **Audio**: rain + drone ambience and event cues (evidence, ticks, reasoning,
+  verdict), ducked under dialogue and the closing screen; licensed library
+  sounds only, each verified to load.
+- **Suspect characters**: R15 avatars from verified catalog body/hair ids,
+  idle animation, turn to face the player, face-framed conversation camera.
+- **Title screen + intro camera**: shown once per session; replays skip it.
+- **Props and skyline**: Daniel's desk settled onto the floor (the office
+  asset has it 4 studs up, with the evidence floating beneath it), desk props
+  dressed, lettered scene tape, the chalk outline moved into the office, and a
+  code-built night city outside the windows.
+- **Targeting**: the interaction prompt prefers what the player faces, so the
+  crowded desk no longer hands the prompt to a neighbouring object.
+- Verified with a spawn-to-verdict-to-replay run in Studio (correct verdict
+  sting, ducking, replay without the title) and the full suite (258 tests).
+
 ## Known follow-ups (not blocking)
 
 - **Examine close-up framing** points from the object's own facing, which
   often frames a wall; the centered evidence panel also covers the object.
-  Frame from the player's side and move the panel off-center.
+  Frame from the player's side and move the panel off-center. (Conversations
+  already do this since M6 via `CameraController.faceSubject`.)
+- **The office asset itself still has Daniel's desk 4 studs up**; M6 corrects
+  it at runtime. Fixing `assets/Office.rbxm` directly would let that
+  correction be removed.
+- **Suspect faces are Roblox's default dynamic head.** Classic face decals map
+  poorly onto it, so none is applied; distinct faces need dynamic-head assets.
 - ~~Keyboard only.~~ Resolved: touch buttons and gamepad bindings, with
   hints that follow the active device (see README "Controls").
 - **Gamepad input verified by binding, not by a physical controller.**
