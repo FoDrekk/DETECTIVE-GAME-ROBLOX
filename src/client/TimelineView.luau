@@ -16,6 +16,8 @@ local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Co
 local Components = require(ReplicatedStorage:WaitForChild("UI"):WaitForChild("Components"))
 local Types = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Types"))
 
+local InputHints = require(script.Parent:WaitForChild("InputHints"))
+
 local TimelineView = {}
 
 local Theme = Config.UI.Theme
@@ -250,9 +252,9 @@ function TimelineView.start()
 	emptyLabel.TextWrapped = true
 	emptyLabel.TextYAlignment = Enum.TextYAlignment.Top
 
-	Components.text({
+	local hint = Components.text({
 		name = "Hint",
-		text = "[T] Close",
+		text = "",
 		size = UDim2.new(1, 0, 0, 16),
 		position = UDim2.new(0, 0, 1, -20),
 		textSize = 11,
@@ -260,6 +262,8 @@ function TimelineView.start()
 		xAlign = Enum.TextXAlignment.Right,
 		parent = root,
 	})
+	-- On touch the Timeline button toggles it closed.
+	InputHints.bind(hint, "Timeline", "Close")
 
 	RunService.RenderStepped:Connect(function()
 		currentAlpha += (targetAlpha - currentAlpha) * 0.18

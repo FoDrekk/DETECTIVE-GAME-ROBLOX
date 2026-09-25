@@ -102,9 +102,12 @@ recommended default; the product owner can redirect.)
 - **Examine close-up framing** points from the object's own facing, which
   often frames a wall; the centered evidence panel also covers the object.
   Frame from the player's side and move the panel off-center.
-- **Keyboard only.** Every action is a key (E/T/C/Q); touch and gamepad
-  players have no way to play. Needs on-screen buttons before a public
-  release.
+- ~~Keyboard only.~~ Resolved: touch buttons and gamepad bindings, with
+  hints that follow the active device (see README "Controls").
+- **Gamepad input verified by binding, not by a physical controller.**
+  Studio's input tool cannot emulate a real pad; the bindings, hints and
+  picker selection were checked in-engine. Worth one pass with real
+  hardware before release.
 - **Single-player scope.** The phase machine is server-wide, so a second
   player in the same server shares one briefing/investigation/closing phase.
   Fine for a 1-player server; per-player phases are needed for more.

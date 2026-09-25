@@ -44,6 +44,15 @@ Config.Interaction = {
 	-- server has told the client every objective is done; the server
 	-- re-validates eligibility and the chosen accusation regardless.
 	ConcludeKey = "Q",
+	-- Gamepad equivalents (KeyCode enum names). A stays jump and confirms
+	-- the selected button in GUI navigation, so it is deliberately unused.
+	Gamepad = {
+		Interact = "ButtonX",
+		CaseFile = "ButtonY",
+		Timeline = "ButtonL1",
+		Accuse = "ButtonR1",
+		Close = "ButtonB",
+	},
 }
 
 Config.Camera = {

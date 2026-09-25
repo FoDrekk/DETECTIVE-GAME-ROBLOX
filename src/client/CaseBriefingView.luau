@@ -12,6 +12,8 @@ local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Co
 local Components = require(ReplicatedStorage:WaitForChild("UI"):WaitForChild("Components"))
 local Types = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Types"))
 
+local InputHints = require(script.Parent:WaitForChild("InputHints"))
+
 local CaseBriefingView = {}
 
 local Theme = Config.UI.Theme
@@ -136,13 +138,15 @@ function CaseBriefingView.start()
 
 	hintLabel = Components.text({
 		name = "Hint",
-		text = "[ E ]  Begin Investigation",
+		text = "",
 		size = UDim2.new(1, 0, 0, 20),
 		position = UDim2.new(0, 0, 1, -24),
 		textSize = 13,
 		color = Theme.Accent,
 		parent = root,
 	})
+	-- On touch the primary touch button reads "Begin investigation".
+	InputHints.bind(hintLabel, "Interact", "Begin Investigation")
 end
 
 return CaseBriefingView

@@ -16,6 +16,8 @@ local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Co
 local Components = require(ReplicatedStorage:WaitForChild("UI"):WaitForChild("Components"))
 local Types = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Types"))
 
+local InputHints = require(script.Parent:WaitForChild("InputHints"))
+
 local CaseFileView = {}
 
 local Theme = Config.UI.Theme
@@ -393,9 +395,9 @@ function CaseFileView.start()
 	emptyLabel.TextWrapped = true
 	emptyLabel.TextYAlignment = Enum.TextYAlignment.Top
 
-	Components.text({
+	local hint = Components.text({
 		name = "Hint",
-		text = "[C] Close",
+		text = "",
 		size = UDim2.new(1, 0, 0, 16),
 		position = UDim2.new(0, 0, 1, -20),
 		textSize = 11,
@@ -403,6 +405,8 @@ function CaseFileView.start()
 		xAlign = Enum.TextXAlignment.Right,
 		parent = root,
 	})
+	-- On touch the Case File button toggles it closed.
+	InputHints.bind(hint, "CaseFile", "Close")
 
 	RunService.RenderStepped:Connect(function()
 		currentAlpha += (targetAlpha - currentAlpha) * 0.18

@@ -13,12 +13,15 @@
 	Opened with Q, dismissed with Q or ESC.
 ]]
 
+local GuiService = game:GetService("GuiService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Components = require(ReplicatedStorage:WaitForChild("UI"):WaitForChild("Components"))
 local Types = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Types"))
+
+local InputHints = require(script.Parent:WaitForChild("InputHints"))
 
 local AccusationView = {}
 
@@ -32,6 +35,7 @@ local emptyLabel: TextLabel? = nil
 
 local rows: { Instance } = {}
 local isOpen = false
+local accused = false
 local targetAlpha = 0
 local currentAlpha = 0
 
@@ -131,6 +135,41 @@ local function addOptionRow(index: number, option: Types.AccusationOption, selec
 	end
 end
 
+local function applyHint()
+	if not hintLabel then
+		return
+	end
+	if InputHints.scheme() == "Touch" then
+		hintLabel.Text = if accused then "Accusation recorded." else "Tap ACCUSE to name a suspect."
+	elseif accused then
+		hintLabel.Text = `Accusation recorded. {InputHints.format("Accuse", "Close")}`
+	else
+		hintLabel.Text = `Select a suspect to accuse, or {InputHints.format("Accuse", "Cancel")}`
+	end
+end
+
+-- With a gamepad, highlight the first ACCUSE button so the D-pad can move
+-- between suspects and A confirms (Roblox's built-in GUI navigation).
+local function selectForGamepad()
+	if InputHints.scheme() ~= "Gamepad" or not listFrame then
+		return
+	end
+	for _, row in ipairs(rows) do
+		local select = row:FindFirstChild("Select")
+		if select and select:IsA("GuiButton") then
+			GuiService.SelectedObject = select
+			return
+		end
+	end
+end
+
+local function releaseGamepadSelection()
+	local selected = GuiService.SelectedObject
+	if selected and root and selected:IsDescendantOf(root) then
+		GuiService.SelectedObject = nil
+	end
+end
+
 -- Renders the server-authorized accusation options. Once the player has
 -- accused someone, the picker becomes read-only (their choice is permanent)
 -- and shows which option they committed to.
@@ -147,10 +186,10 @@ function AccusationView.update(payload: Types.AccusationPayload)
 		addOptionRow(index, option, payload.selected == nil)
 	end
 
-	if hintLabel then
-		hintLabel.Text = if payload.selected
-			then "Accusation recorded. [Q] Close"
-			else `Select a suspect to accuse, or [{Config.Interaction.ConcludeKey}] Cancel`
+	accused = payload.selected ~= nil
+	applyHint()
+	if isOpen then
+		selectForGamepad()
 	end
 end
 
@@ -178,12 +217,14 @@ function AccusationView.open()
 	end
 	root.Visible = true
 	setVisible(true)
+	selectForGamepad()
 end
 
 function AccusationView.close()
 	if not isOpen then
 		return
 	end
+	releaseGamepadSelection()
 	setVisible(false)
 end
 
@@ -286,6 +327,13 @@ function AccusationView.start()
 		xAlign = Enum.TextXAlignment.Right,
 		parent = root,
 	})
+
+	InputHints.changed().Event:Connect(function()
+		applyHint()
+		if isOpen then
+			selectForGamepad()
+		end
+	end)
 
 	RunService.RenderStepped:Connect(function()
 		currentAlpha += (targetAlpha - currentAlpha) * 0.18

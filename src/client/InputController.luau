@@ -1,100 +1,81 @@
 --!strict
 --[[
 	InputController
-	Centralised input. Uses UserInputService / ContextActionService.
-	Emits intent, never performs gameplay directly.
+	Centralised input. Emits intent, never performs gameplay directly.
+
+	Every action is bound to its keyboard key and its gamepad button (see
+	Config.Interaction / InputGlyphs), and can be triggered directly by the
+	on-screen touch controls via InputController.invoke -- so all three input
+	schemes drive exactly the same callbacks.
 ]]
 
 local ContextActionService = game:GetService("ContextActionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local UserInputService = game:GetService("UserInputService")
 
-local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
+local InputGlyphs = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("InputGlyphs"))
 
 local InputController = {}
 
-local ACTION_INTERACT = "MysteryCase_Interact"
-local ACTION_CLOSE = "MysteryCase_ClosePanel"
-local ACTION_TIMELINE = "MysteryCase_ToggleTimeline"
-local ACTION_CASE_FILE = "MysteryCase_ToggleCaseFile"
-local ACTION_CONCLUDE = "MysteryCase_ConcludeInvestigation"
+type Action = InputGlyphs.Action
 
-local interactCallback: (() -> ())? = nil
-local closeCallback: (() -> ())? = nil
-local timelineCallback: (() -> ())? = nil
-local caseFileCallback: (() -> ())? = nil
-local concludeCallback: (() -> ())? = nil
+local callbacks: { [Action]: (() -> ())? } = {}
 local interactEnabled = false
 
 function InputController.onInteract(fn: () -> ())
-	interactCallback = fn
+	callbacks.Interact = fn
 end
 
 function InputController.onClose(fn: () -> ())
-	closeCallback = fn
+	callbacks.Close = fn
 end
 
 function InputController.onToggleTimeline(fn: () -> ())
-	timelineCallback = fn
+	callbacks.Timeline = fn
 end
 
 function InputController.onToggleCaseFile(fn: () -> ())
-	caseFileCallback = fn
+	callbacks.CaseFile = fn
 end
 
--- Phase 2L: requests concluding the investigation. Always bound during
--- Investigation; whether it does anything is decided by the callback (gated
--- on the server having already told the client every objective is done) and
--- re-validated server-side regardless.
+-- Requests the accusation picker. Always bound during Investigation; whether
+-- it does anything is decided by the callback (gated on the server having
+-- told the client every objective is done) and re-validated server-side.
 function InputController.onConcludeInvestigation(fn: () -> ())
-	concludeCallback = fn
+	callbacks.Accuse = fn
+end
+
+-- Trigger an action as if its key were pressed (used by touch buttons).
+function InputController.invoke(action: Action)
+	if action == "Interact" and not interactEnabled then
+		return
+	end
+	local fn = callbacks[action]
+	if fn then
+		fn()
+	end
+end
+
+local function bind(action: Action, sink: boolean)
+	ContextActionService:BindAction(`MysteryCase_{action}`, function(_, state)
+		if action == "Interact" and not interactEnabled then
+			return Enum.ContextActionResult.Pass
+		end
+		if state == Enum.UserInputState.Begin then
+			local fn = callbacks[action]
+			if fn then
+				fn()
+			end
+		end
+		return if sink then Enum.ContextActionResult.Sink else Enum.ContextActionResult.Pass
+	end, false, table.unpack(InputGlyphs.keyCodes(action)))
 end
 
 function InputController.start()
-	ContextActionService:BindAction(ACTION_INTERACT, function(_, state)
-		if not interactEnabled then
-			return Enum.ContextActionResult.Pass
-		end
-		if state == Enum.UserInputState.Begin and interactCallback then
-			interactCallback()
-		end
-		return Enum.ContextActionResult.Sink
-	end, false, Enum.KeyCode[Config.Interaction.PrimaryKey])
-
-	ContextActionService:BindAction(ACTION_CLOSE, function(_, state)
-		if state == Enum.UserInputState.Begin and closeCallback then
-			closeCallback()
-		end
-		return Enum.ContextActionResult.Pass
-	end, false, Enum.KeyCode[Config.Interaction.ClosePanelKey])
-
-	ContextActionService:BindAction(ACTION_TIMELINE, function(_, state)
-		if state == Enum.UserInputState.Begin and timelineCallback then
-			timelineCallback()
-		end
-		return Enum.ContextActionResult.Sink
-	end, false, Enum.KeyCode[Config.Interaction.TimelineKey])
-
-	ContextActionService:BindAction(ACTION_CASE_FILE, function(_, state)
-		if state == Enum.UserInputState.Begin and caseFileCallback then
-			caseFileCallback()
-		end
-		return Enum.ContextActionResult.Sink
-	end, false, Enum.KeyCode[Config.Interaction.CaseFileKey])
-
-	ContextActionService:BindAction(ACTION_CONCLUDE, function(_, state)
-		if state == Enum.UserInputState.Begin and concludeCallback then
-			concludeCallback()
-		end
-		return Enum.ContextActionResult.Sink
-	end, false, Enum.KeyCode[Config.Interaction.ConcludeKey])
-
-	-- Explicitly ignore game-processed input in Phase 1.
-	UserInputService.InputBegan:Connect(function(_, processed)
-		if processed then
-			return
-		end
-	end)
+	bind("Interact", true)
+	bind("Close", false)
+	bind("Timeline", true)
+	bind("CaseFile", true)
+	bind("Accuse", true)
 end
 
 function InputController.setInteractEnabled(enabled: boolean)

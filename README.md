@@ -84,6 +84,34 @@ print `[PASS]` / `[FAIL]` / `[TIMEOUT]` plus a `[SUMMARY]` line.
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for the forward plan (M1–M4).
 
+### Controls
+
+| Action | Keyboard | Gamepad | Touch |
+|---|---|---|---|
+| Interact / continue / begin / investigate again | E | X | Main action button (bottom-right, labelled with what it will do) |
+| Case File | C | Y | Case File button |
+| Timeline | T | LB | Timeline button |
+| Name the suspect (once the investigation is complete) | Q | RB | Name Suspect button |
+| Close panels | Roblox menu | B | Tap the panel's button again |
+| Choose a suspect in the accusation picker | Click ACCUSE | D-pad + A | Tap ACCUSE |
+
+Movement and camera use Roblox's standard controls on every device. On-screen
+hints follow whichever device was used last (`[E]`, `(X)`, or no key on
+touch). QA: set the LocalPlayer attribute `InputSchemeOverride` to
+`Keyboard`, `Gamepad` or `Touch` to force a scheme from a desktop session.
+
+Mobile & gamepad support:
+
+- Every action is bound to its key **and** its gamepad button
+  (`Config.Interaction.Gamepad`); touch buttons call the same
+  `InputController.invoke` entry point, so all three schemes drive identical
+  code paths. Gamepad A is deliberately left for jump and GUI confirm.
+- `InputGlyphs` (shared, unit-tested) maps each action to its binding and
+  hint per scheme; the client's `InputHints` tracks the active scheme.
+- The objective panel now sits below Roblox's top-bar buttons (it was
+  underneath them), following `GuiService.TopbarInset` since the top bar
+  initialises after the game's client script.
+
 M4: a complete session.
 
 - **The ending has a next step**: the closing screen offers

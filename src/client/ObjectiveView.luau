@@ -15,12 +15,15 @@
 	Intentionally restrained: no XP, levels, tracker panels or RPG HUD.
 ]]
 
+local GuiService = game:GetService("GuiService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Components = require(ReplicatedStorage:WaitForChild("UI"):WaitForChild("Components"))
 local Types = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Types"))
+
+local InputHints = require(script.Parent:WaitForChild("InputHints"))
 
 local ObjectiveView = {}
 
@@ -177,6 +180,17 @@ function ObjectiveView.start()
 	root.AutomaticSize = Enum.AutomaticSize.Y
 	root.Visible = false
 
+	-- The ScreenGui ignores the GUI inset, so sit below Roblox's own top-bar
+	-- buttons (menu, chat). The top bar initialises after this script, so
+	-- follow its inset as it changes rather than reading it once.
+	local function placeBelowTopbar()
+		if root then
+			root.Position = UDim2.fromOffset(28, math.max(28, GuiService.TopbarInset.Height + 12))
+		end
+	end
+	placeBelowTopbar()
+	GuiService:GetPropertyChangedSignal("TopbarInset"):Connect(placeBelowTopbar)
+
 	Components.padding(root, 16)
 
 	Components.text({
@@ -259,7 +273,7 @@ function ObjectiveView.start()
 
 	concludeHintLabel = Components.text({
 		name = "ConcludeHint",
-		text = `[{Config.Interaction.ConcludeKey}]  Name the suspect`,
+		text = "",
 		size = UDim2.new(1, 0, 0, 18),
 		position = UDim2.fromOffset(0, 104),
 		font = Theme.FontBold,
@@ -269,6 +283,8 @@ function ObjectiveView.start()
 		parent = root,
 	})
 	concludeHintLabel.Visible = false
+	-- On touch this matches the "Name Suspect" touch button.
+	InputHints.bind(concludeHintLabel, "Accuse", "Name the suspect", "Tap Name Suspect")
 
 	RunService.RenderStepped:Connect(function()
 		currentAlpha += (targetAlpha - currentAlpha) * 0.15

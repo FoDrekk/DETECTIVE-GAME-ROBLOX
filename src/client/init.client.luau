@@ -31,6 +31,8 @@ local CaseFileView = require(Modules:WaitForChild("CaseFileView"))
 local AccusationView = require(Modules:WaitForChild("AccusationView"))
 local CaseClosedView = require(Modules:WaitForChild("CaseClosedView"))
 local CameraController = require(Modules:WaitForChild("CameraController"))
+local InputHints = require(Modules:WaitForChild("InputHints"))
+local TouchControls = require(Modules:WaitForChild("TouchControls"))
 
 local player = Players.LocalPlayer
 
@@ -110,7 +112,7 @@ local function applyPhase(phase: Types.GamePhase)
 		InteractionController.resumeScan()
 	else
 		InteractionController.pauseScan()
-		InteractionPromptView.setPrompt(nil, nil)
+		InteractionPromptView.setPrompt(nil)
 	end
 
 	if phase == "CaseBriefing" then
@@ -150,7 +152,9 @@ end
 local function bootstrap()
 	Logger.setMinSeverity(Config.Logging.MinSeverity :: Logger.Severity)
 
-	-- Input bindings (E = interact, ESC = close) must exist before any phase.
+	-- Input scheme detection first: views bind their key hints to it.
+	InputHints.start()
+	-- Input bindings (keyboard + gamepad) must exist before any phase.
 	InputController.start()
 
 	-- Views first so they exist before the first phase arrives.
@@ -166,17 +170,41 @@ local function bootstrap()
 	CaseClosedView.start()
 	CameraController.start()
 
+	-- Touch: the primary button performs whatever [E] would do right now,
+	-- labelled accordingly; the side buttons mirror T / C / Q.
+	TouchControls.start({
+		primaryLabel = function(): string?
+			if DialogueView.isOpen() or EvidencePanel.isOpen() then
+				return "Continue"
+			elseif currentPhase == "CaseBriefing" then
+				return "Begin investigation"
+			elseif currentPhase == "CaseClosed" then
+				return "Investigate again"
+			elseif currentPhase == "Investigation" and not AccusationView.isOpen() then
+				local target = InteractionController.getCurrent()
+				return if target then target.label else nil
+			end
+			return nil
+		end,
+		showInvestigationButtons = function(): boolean
+			return currentPhase == "Investigation" and not DialogueView.isOpen()
+		end,
+		showAccuse = function(): boolean
+			return currentPhase == "Investigation" and investigationComplete and not DialogueView.isOpen()
+		end,
+	})
+
 	-- Interaction scanning.
 	InteractionController.start()
 	InteractionController.onPromptChanged().Event:Connect(function(prompt)
 		if currentPhase ~= "Investigation" then
-			InteractionPromptView.setPrompt(nil, nil)
+			InteractionPromptView.setPrompt(nil)
 			return
 		end
 		if prompt then
-			InteractionPromptView.setPrompt(prompt.key, prompt.label)
+			InteractionPromptView.setPrompt(prompt.label)
 		else
-			InteractionPromptView.setPrompt(nil, nil)
+			InteractionPromptView.setPrompt(nil)
 		end
 	end)
 

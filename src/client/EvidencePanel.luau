@@ -13,6 +13,8 @@ local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Co
 local Components = require(ReplicatedStorage:WaitForChild("UI"):WaitForChild("Components"))
 local Types = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Types"))
 
+local InputHints = require(script.Parent:WaitForChild("InputHints"))
+
 local EvidencePanel = {}
 
 local Theme = Config.UI.Theme
@@ -274,9 +276,10 @@ function EvidencePanel.start()
 	continueButton.TextSize = 11
 	continueButton.TextColor3 = Theme.Accent
 	continueButton.TextXAlignment = Enum.TextXAlignment.Right
-	continueButton.Text = `[{Config.Interaction.PrimaryKey}] Continue`
 	continueButton.AutoButtonColor = false
 	continueButton.Parent = root
+	-- Tappable as-is on touch, so it keeps a label there too.
+	InputHints.bind(continueButton, "Interact", "Continue", "Continue")
 	continueButton.Activated:Connect(function()
 		continueRequested:Fire()
 	end)

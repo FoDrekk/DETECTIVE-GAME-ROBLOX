@@ -141,9 +141,22 @@ validates that the authored interactables satisfy the gameplay contract.
   but live Roblox clients reserve it for the system menu and never deliver it
   to the game, so no panel relies on it: every panel closes with its own key,
   the evidence readout with `[E] Continue` (or a click), and
-  `GuiService.MenuOpened` runs the same close-all path (M1).
+  `GuiService.MenuOpened` runs the same close-all path (M1). Each action is
+  bound to its keyboard key and its gamepad button (from `InputGlyphs`), and
+  `InputController.invoke(action)` lets touch buttons trigger the very same
+  callbacks — one code path for all three input schemes.
+- **InputHints** — tracks the active scheme (keyboard / gamepad / touch) from
+  the player's last input (or the `InputSchemeOverride` attribute for QA) and
+  keeps hint labels in sync via `InputHints.bind`, which only ever sets text.
+  The per-scheme bindings and glyphs themselves are the pure, unit-tested
+  shared module `InputGlyphs`.
+- **TouchControls** — on touch only: a context-labelled primary action
+  button (the bootstrap supplies the label: examine target, Continue, Begin,
+  Investigate again) and Case File / Timeline / Name Suspect buttons, polled
+  from bootstrap providers at 10 Hz.
 - **InteractionController** — proximity scan, prompt data, request dispatch.
-- **InteractionPromptView** — small `[E] Examine` prompt.
+- **InteractionPromptView** — small `[E] Examine` prompt (glyph follows the
+  scheme; hidden on touch, where the primary touch button replaces it).
 - **EvidencePanel** — dark investigative evidence panel.
 - **ObservationPanel** (Phase 2O) — lightweight, transient flavour-text
   readout for non-evidence interactables; visually distinct from the evidence

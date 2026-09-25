@@ -18,6 +18,8 @@ local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Co
 local Components = require(ReplicatedStorage:WaitForChild("UI"):WaitForChild("Components"))
 local Types = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Types"))
 
+local InputHints = require(script.Parent:WaitForChild("InputHints"))
+
 local DialogueView = {}
 
 local Theme = Config.UI.Theme
@@ -82,8 +84,9 @@ function DialogueView.update(payload: Types.DialoguePayload)
 
 	speakerLabel.Text = string.upper(payload.suspectName or payload.speaker or "")
 	bodyLabel.Text = payload.text or ""
-	local key = Config.Interaction.PrimaryKey
-	hintLabel.Text = if payload.canContinue then `[{key}] Continue` else `[{key}] End conversation`
+	-- On touch the primary touch button advances the conversation instead.
+	local hintText = if payload.canContinue then "Continue" else "End conversation"
+	hintLabel.Text = if InputHints.scheme() == "Touch" then "" else InputHints.format("Interact", hintText)
 
 	if payload.unlockedStatement then
 		statementLabel.Text = `STATEMENT RECORDED — {string.upper(payload.unlockedStatement.label)}`

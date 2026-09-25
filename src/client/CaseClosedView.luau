@@ -19,6 +19,8 @@ local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Co
 local Components = require(ReplicatedStorage:WaitForChild("UI"):WaitForChild("Components"))
 local Types = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Types"))
 
+local InputHints = require(script.Parent:WaitForChild("InputHints"))
+
 local CaseClosedView = {}
 
 local Theme = Config.UI.Theme
@@ -248,10 +250,11 @@ function CaseClosedView.start()
 		parent = root,
 	})
 
-	-- M4: the ending has a next step.
-	Components.text({
+	-- M4: the ending has a next step. On touch the primary touch button reads
+	-- "Investigate again".
+	local replayHint = Components.text({
 		name = "ReplayHint",
-		text = `[{Config.Interaction.PrimaryKey}]  Investigate again`,
+		text = "",
 		size = UDim2.new(1, 0, 0, 16),
 		position = UDim2.new(0, 0, 1, -20),
 		font = Theme.FontBold,
@@ -260,6 +263,7 @@ function CaseClosedView.start()
 		xAlign = Enum.TextXAlignment.Right,
 		parent = root,
 	})
+	InputHints.bind(replayHint, "Interact", "Investigate again")
 end
 
 return CaseClosedView
