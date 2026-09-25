@@ -158,7 +158,8 @@ recommended default; the product owner can redirect.)
   anything (since M5); re-examining a found clue did nothing; objective
   progress could be stranded if a clue was found before its objective became
   active; Daniel's office door opened into the pantry; the chalk "outline"
-  was a filled silhouette.
+  was a filled silhouette; the meeting room's "glazing frame" was a solid
+  slab covering the glass.
 - **Verification so far (no Studio in the authoring environment):** 288 unit
   tests and an 81-check scripted playthrough (real server + real client
   scripts, driven only through player inputs) under the headless shim in

@@ -96,8 +96,8 @@ local function buildMeetingRoomGlazing(folder: Instance)
 	-- this makes the existing "Part_Meeting_West_N" segment itself
 	-- semi-transparent instead (a property tweak on a named existing
 	-- instance, the same safe category as the lighting retuning above),
-	-- and adds a frame outline flush against its corridor-facing surface,
-	-- which sits in genuinely open space and needs no embedding.
+	-- and frames its corridor-facing surface with slim rails and mullions,
+	-- which sit in genuinely open space and need no embedding.
 	local office = workspace:FindFirstChild(Config.Environment.OfficeModelName)
 	local shell = office and office:FindFirstChild("Shell")
 	local wall = shell and shell:FindFirstChild("Part_Meeting_West_N")
@@ -107,8 +107,18 @@ local function buildMeetingRoomGlazing(folder: Instance)
 		wall.Color = GLASS_TINT
 	end
 
-	local frame = part("Meeting_InteriorGlazing_Frame", Vector3.new(0.5, 9, 7.4), Vector3.new(9.4, 4.25, -18.5), TRIM, Enum.Material.SmoothPlastic, false)
-	frame.Parent = folder
+	-- A real frame on the corridor side: head and sill rails with slim
+	-- mullions (it used to be one solid slab that hid the glass entirely).
+	local x = 9.42
+	local z0, z1 = -23.5, -12
+	local length = z1 - z0
+	local mid = (z0 + z1) / 2
+	part("Meeting_Glazing_Head", Vector3.new(0.16, 0.25, length), Vector3.new(x, 11.8, mid), TRIM, Enum.Material.Metal, false).Parent = folder
+	part("Meeting_Glazing_Sill", Vector3.new(0.16, 0.25, length), Vector3.new(x, 0.125, mid), TRIM, Enum.Material.Metal, false).Parent = folder
+	for i = 0, 3 do
+		local z = z0 + 0.1 + i * (length - 0.2) / 3
+		part(`Meeting_Glazing_Mullion_{i}`, Vector3.new(0.16, 11.8, 0.16), Vector3.new(x, 5.9, z), TRIM, Enum.Material.Metal, false).Parent = folder
+	end
 end
 
 
