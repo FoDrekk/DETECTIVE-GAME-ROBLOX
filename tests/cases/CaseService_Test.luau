@@ -101,4 +101,22 @@ return function(t)
 		expect.falsy((payload :: any).locations)
 		expect.falsy((payload :: any).objectives)
 	end)
+
+	-- M6: every suspect placed in the world has a buildable appearance.
+	t.test("every placed Case001 suspect has a valid appearance", function()
+		local Config = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Config"))
+		for _, suspect in ipairs(CaseService.getSuspects("CASE-001")) do
+			if suspect.npcPlacement then
+				local appearance = suspect.appearance
+				expect.truthy(appearance)
+				if appearance then
+					expect.truthy(Config.Characters.Bodies[appearance.body])
+					expect.truthy(appearance.hair > 0)
+					for _, key in ipairs({ "hairColor", "skin", "top", "bottom", "shoes" }) do
+						expect.equal(typeof((appearance :: any)[key]), "Color3")
+					end
+				end
+			end
+		end
+	end)
 end

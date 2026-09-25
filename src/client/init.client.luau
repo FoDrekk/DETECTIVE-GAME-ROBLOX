@@ -34,6 +34,7 @@ local CameraController = require(Modules:WaitForChild("CameraController"))
 local InputHints = require(Modules:WaitForChild("InputHints"))
 local SoundController = require(Modules:WaitForChild("SoundController"))
 local TouchControls = require(Modules:WaitForChild("TouchControls"))
+local TitleScreenView = require(Modules:WaitForChild("TitleScreenView"))
 
 local player = Players.LocalPlayer
 
@@ -126,7 +127,8 @@ local function applyPhase(phase: Types.GamePhase)
 	end
 
 	if phase == "CaseBriefing" then
-		if lastBriefing then
+		-- Held back while the title screen is up; shown when it closes.
+		if lastBriefing and not TitleScreenView.isOpen() then
 			CaseBriefingView.show(lastBriefing)
 		end
 	else
@@ -180,12 +182,15 @@ local function bootstrap()
 	AccusationView.start()
 	CaseClosedView.start()
 	CameraController.start()
+	TitleScreenView.start()
 
 	-- Touch: the primary button performs whatever [E] would do right now,
 	-- labelled accordingly; the side buttons mirror T / C / Q.
 	TouchControls.start({
 		primaryLabel = function(): string?
-			if DialogueView.isOpen() or EvidencePanel.isOpen() then
+			if TitleScreenView.isOpen() then
+				return "Play"
+			elseif DialogueView.isOpen() or EvidencePanel.isOpen() then
 				return "Continue"
 			elseif currentPhase == "CaseBriefing" then
 				return "Begin investigation"
@@ -223,7 +228,10 @@ local function bootstrap()
 	-- Primary interact key (E) is routed by phase: continue an open dialogue,
 	-- begin briefing, or interact.
 	InputController.onInteract(function()
-		if DialogueView.isOpen() then
+		if TitleScreenView.isOpen() then
+			SoundController.play("Tick")
+			TitleScreenView.dismiss()
+		elseif DialogueView.isOpen() then
 			SoundController.play("Tick")
 			requestDialogueAdvance:FireServer()
 		elseif EvidencePanel.isOpen() then
@@ -316,7 +324,8 @@ local function bootstrap()
 
 	caseBriefingLoaded.OnClientEvent:Connect(function(payload: Types.CasePayload)
 		lastBriefing = payload.briefing
-		if currentPhase == "CaseBriefing" then
+		TitleScreenView.setCase(payload.briefing)
+		if currentPhase == "CaseBriefing" and not TitleScreenView.isOpen() then
 			CaseBriefingView.show(payload.briefing)
 		end
 	end)
@@ -367,13 +376,13 @@ local function bootstrap()
 		SoundController.setDucked(payload.active or currentPhase == "CaseClosed")
 		if payload.active then
 			EvidencePanel.close()
-			-- Frame the suspect, same technique as examining evidence.
+			-- Frame the suspect's face from the player's side.
 			local target = InteractionController.getCurrent()
 			if target then
 				local instance = target.instance
 				local part = instance:IsA("BasePart") and instance or instance:FindFirstChildWhichIsA("BasePart")
 				if part then
-					CameraController.examine(part)
+					CameraController.faceSubject(part)
 				end
 			end
 			InteractionController.pauseScan()
@@ -406,6 +415,15 @@ local function bootstrap()
 			CaseClosedView.show(summary)
 		end
 	end)
+
+	-- M6: the title screen, once per session. Closing it reveals whatever the
+	-- phase shows -- the briefing, on a first join.
+	TitleScreenView.onDismissed().Event:Connect(function()
+		if currentPhase == "CaseBriefing" and lastBriefing then
+			CaseBriefingView.show(lastBriefing)
+		end
+	end)
+	TitleScreenView.open()
 
 	-- Join race guard: the server fires the phase/case on PlayerAdded, which can
 	-- happen before these listeners are connected. Re-request both now that the

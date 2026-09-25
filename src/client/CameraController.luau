@@ -21,7 +21,7 @@ local blendToken = 0
 
 local HIDE_AVATAR_STEP = "MysteryCase_HideAvatarWhileExamining"
 
-local mode: "Explore" | "Examine" = "Explore"
+local mode: "Explore" | "Examine" | "Cinematic" = "Explore"
 local focusPart: BasePart? = nil
 local savedMaxZoom: number? = nil
 local savedMinZoom: number? = nil
@@ -73,7 +73,8 @@ local function blendTo(target: CFrame, duration: number)
 end
 
 local function setExplore()
-	if mode == "Explore" then
+	-- Only a close-up is undone here; a cinematic is ended by stopCinematic.
+	if mode ~= "Examine" then
 		return
 	end
 	mode = "Explore"
@@ -96,12 +97,11 @@ local function setExplore()
 	savedMinZoom = nil
 end
 
--- Blend to a framed view of a target part.
-function CameraController.examine(part: BasePart)
-	if not part then
-		return
-	end
-
+-- Enter the close-up mode (scriptable camera, hidden avatar, tight zoom) and
+-- blend to `target`, keeping `part` as the focus that ends the mode if it is
+-- destroyed.
+local function frame(part: BasePart, target: CFrame)
+	CameraController.stopCinematic()
 	if savedMaxZoom == nil then
 		savedMaxZoom = player.CameraMaxZoomDistance
 		savedMinZoom = player.CameraMinZoomDistance
@@ -116,20 +116,87 @@ function CameraController.examine(part: BasePart)
 	mode = "Examine"
 	focusPart = part
 
-	local cam = getCamera()
-	cam.CameraType = Enum.CameraType.Scriptable
-
-	local size = part.Size
-	local distance = math.max(size.Magnitude * 0.9, 4)
-	local focus = part.Position
-	local target = CFrame.lookAt(
-		focus + Vector3.new(0, size.Y * 0.4, 0) - (part.CFrame.LookVector * distance),
-		focus
-	)
+	getCamera().CameraType = Enum.CameraType.Scriptable
 	blendTo(target, Config.Camera.ExamineBlendTime)
 
 	player.CameraMaxZoomDistance = 6
 	player.CameraMinZoomDistance = 4
+end
+
+-- Blend to a framed view of a target part.
+function CameraController.examine(part: BasePart)
+	if not part then
+		return
+	end
+
+	local size = part.Size
+	local distance = math.max(size.Magnitude * 0.9, 4)
+	local focus = part.Position
+	frame(part, CFrame.lookAt(focus + Vector3.new(0, size.Y * 0.4, 0) - (part.CFrame.LookVector * distance), focus))
+end
+
+-- M6: frame a person's face for a conversation. The shot is taken from the
+-- player's side of the subject (they turn to face the player), slightly off
+-- axis like an over-the-shoulder shot. `part` is the subject's full-height
+-- hitbox; the face sits near its top.
+function CameraController.faceSubject(part: BasePart)
+	if not part then
+		return
+	end
+
+	local character = player.Character
+	local playerRoot = character and character:FindFirstChild("HumanoidRootPart")
+	local face = part.Position + Vector3.new(0, part.Size.Y * 0.32, 0)
+	local toward = if playerRoot and playerRoot:IsA("BasePart")
+		then Vector3.new(playerRoot.Position.X - face.X, 0, playerRoot.Position.Z - face.Z)
+		else part.CFrame.LookVector
+	if toward.Magnitude < 0.1 then
+		toward = part.CFrame.LookVector
+	end
+	toward = toward.Unit
+	local side = toward:Cross(Vector3.yAxis).Unit
+
+	local conv = Config.Camera.Conversation
+	local eye = face + toward * conv.Distance + side * conv.SideOffset + Vector3.new(0, conv.Height, 0)
+	-- Aim below the face so it sits in the upper third, clear of the
+	-- dialogue panel.
+	frame(part, CFrame.lookAt(eye, face - Vector3.new(0, conv.AimDrop, 0)))
+end
+
+-- M6: a slow, looping camera drift between two framings (the title
+-- screen's backdrop). Ping-pongs with sine easing until stopCinematic.
+local cinematicToken = 0
+
+function CameraController.playCinematic(from: CFrame, to: CFrame, duration: number)
+	setExplore()
+	savedCameraType = getCamera().CameraType
+	mode = "Cinematic"
+	cinematicToken += 1
+	local token = cinematicToken
+	local cam = getCamera()
+	cam.CameraType = Enum.CameraType.Scriptable
+	cam.CFrame = from
+	local startClock = os.clock()
+	task.spawn(function()
+		while token == cinematicToken do
+			local t = ((os.clock() - startClock) / duration) % 2
+			local alpha = if t > 1 then 2 - t else t
+			local eased = (1 - math.cos(alpha * math.pi)) / 2
+			cam.CameraType = Enum.CameraType.Scriptable
+			cam.CFrame = from:Lerp(to, eased)
+			RunService.RenderStepped:Wait()
+		end
+	end)
+end
+
+function CameraController.stopCinematic()
+	if mode ~= "Cinematic" then
+		return
+	end
+	cinematicToken += 1
+	mode = "Explore"
+	getCamera().CameraType = savedCameraType or Enum.CameraType.Custom
+	savedCameraType = nil
 end
 
 function CameraController.stopExamining()

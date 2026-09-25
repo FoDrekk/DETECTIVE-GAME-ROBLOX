@@ -82,11 +82,63 @@ Config.Audio = {
 	DuckedAmbience = 0.35,
 }
 
+-- M6: suspect characters. Body packages are Roblox's free "Man" and "Woman"
+-- bundles; every id was checked with MarketplaceService:GetProductInfo
+-- (creator Roblox, correct asset type) before being added.
+Config.Characters = {
+	Bodies = {
+		Man = {
+			Torso = 86500008,
+			LeftArm = 86500054,
+			RightArm = 86500036,
+			LeftLeg = 86500064,
+			RightLeg = 86500078,
+		},
+		Woman = {
+			Torso = 86499666,
+			LeftArm = 86499716,
+			RightArm = 86499698,
+			LeftLeg = 86499753,
+			RightLeg = 86499793,
+		},
+	},
+	-- Roblox's default R15 idle (the same one player avatars use).
+	IdleAnimation = "rbxassetid://507766388",
+	-- Seconds for a suspect to turn toward the player who speaks to them.
+	TurnTime = 0.45,
+}
+
 Config.Camera = {
 	DefaultDistance = 12,
 	DefaultHeight = 2.5,
 	ExamineBlendTime = 0.6,
 	TransitionBlendTime = 0.35,
+	-- M6: conversation shot, relative to the suspect's face (studs).
+	Conversation = {
+		Distance = 4.2,
+		SideOffset = 1.1,
+		Height = 0.4,
+		AimDrop = 1.1,
+	},
+}
+
+-- M6: title screen and the camera drift behind it (world coordinates of the
+-- authored office; the shot ping-pongs between From and To).
+Config.Presentation = {
+	Title = {
+		Kicker = "A MYSTERY CASE",
+		-- Shown until the case briefing arrives with the real title.
+		Fallback = "THE LAST CALL",
+		Footer = "Best played with headphones.",
+	},
+	IntroShot = {
+		-- Inside the meeting room, drifting from the doorway toward the table
+		-- where the two suspects wait (south wall z = -6, table centre
+		-- (20, 2.6, -14)).
+		From = { Position = Vector3.new(23.5, 6.4, -6.9), LookAt = Vector3.new(20, 3.9, -17) },
+		To = { Position = Vector3.new(18.5, 5.4, -9.4), LookAt = Vector3.new(20.5, 4, -17) },
+		Duration = 26,
+	},
 }
 
 Config.UI = {}

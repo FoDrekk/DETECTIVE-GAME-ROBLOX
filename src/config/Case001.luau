@@ -34,6 +34,17 @@ local Case001: Types.CaseDefinition = {
 				position = Vector3.new(16.5, 3, -19),
 				lookAt = Vector3.new(20, 3, -14),
 			},
+			-- ROBLOX Girl ponytail (Roblox catalog), dark brown; a burgundy
+			-- cardigan over dark trousers -- dressed in a hurry, woken at night.
+			appearance = {
+				body = "Woman",
+				hair = 48474294,
+				hairColor = Color3.fromRGB(58, 38, 30),
+				skin = Color3.fromRGB(234, 198, 170),
+				top = Color3.fromRGB(104, 38, 48),
+				bottom = Color3.fromRGB(46, 46, 54),
+				shoes = Color3.fromRGB(28, 26, 26),
+			},
 		},
 		{
 			id = "SUS-002",
@@ -45,6 +56,17 @@ local Case001: Types.CaseDefinition = {
 			npcPlacement = {
 				position = Vector3.new(24, 3, -17.5),
 				lookAt = Vector3.new(20, 3, -14),
+			},
+			-- Classic Male v2 hair (Roblox catalog), near black; still in the
+			-- charcoal suit he wore to the office.
+			appearance = {
+				body = "Man",
+				hair = 4637254498,
+				hairColor = Color3.fromRGB(40, 36, 34),
+				skin = Color3.fromRGB(198, 152, 122),
+				top = Color3.fromRGB(46, 48, 56),
+				bottom = Color3.fromRGB(38, 40, 46),
+				shoes = Color3.fromRGB(20, 18, 18),
 			},
 		},
 	},

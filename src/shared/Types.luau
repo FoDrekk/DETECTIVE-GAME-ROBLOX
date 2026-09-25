@@ -62,6 +62,22 @@ export type SuspectDefinition = {
 		position: Vector3,
 		lookAt: Vector3?,
 	}?,
+	-- Optional (M6): how the NPC looks. Absent falls back to a plain default
+	-- avatar. `body` names a package in Config.Characters.Bodies; `hair` is a
+	-- verified Roblox catalog asset id, recoloured to `hairColor`. The face is
+	-- the avatar's default head. Purely presentation.
+	appearance: SuspectAppearance?,
+}
+
+export type SuspectAppearance = {
+	body: string,
+	hair: number,
+	hairColor: Color3,
+	skin: Color3,
+	-- Worn colours: shirt/jacket (torso and sleeves), trousers, shoes.
+	top: Color3,
+	bottom: Color3,
+	shoes: Color3,
 }
 
 export type LocationDefinition = {
