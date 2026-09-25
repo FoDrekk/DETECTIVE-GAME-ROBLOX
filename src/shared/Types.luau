@@ -68,6 +68,17 @@ export type LocationDefinition = {
 	id: string,
 	name: string,
 	description: string,
+	-- Optional: where to place a physical nameplate/sign for this location in
+	-- the current office environment (M3). Absent means no sign is spawned.
+	-- Mirrors SuspectDefinition.npcPlacement -- purely technical staging.
+	-- `text` is the sign's own text -- deliberately separate from `name`
+	-- (the location's identity, e.g. "Office") since a door nameplate reads
+	-- the occupant's name, not the room's.
+	signPlacement: {
+		position: Vector3,
+		lookAt: Vector3?,
+		text: string,
+	}?,
 }
 
 -- Authored flavour text for a non-evidence interactable (Phase 2O). Keyed by

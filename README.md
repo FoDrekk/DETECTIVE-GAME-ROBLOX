@@ -84,6 +84,19 @@ print `[PASS]` / `[FAIL]` / `[TIMEOUT]` plus a `[SUMMARY]` line.
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for the forward plan (M1–M4).
 
+M3: the office tells the story.
+
+- **Daniel's office reads as a crime scene**: crossed scene tape across its
+  doorway, a chalk outline on the floor between the desk and the door, and
+  numbered evidence markers beside the phone, laptop and document. All
+  runtime-built in `OfficeDetailing` (the Studio asset is untouched), purely
+  atmospheric, never tagged as interactables.
+- **Wayfinding**: a "DANIEL REYES" nameplate beside his office door, so the
+  first objective ("Investigate Daniel's office") is findable. Authored as
+  data (`LocationDefinition.signPlacement`, mirroring `npcPlacement`) and
+  spawned by `OfficeRoom`; the sign's text is its own field, never the
+  location's `name`.
+
 M2: the case has an answer.
 
 - **CASE-001 has a solution**: Victor Lane killed Daniel Reyes to stop the

@@ -155,6 +155,18 @@ return function(t)
 		expect.equal(motive.requiredFacts[2].id, "EV-003")
 	end)
 
+	-- M3: LOC-001 authors a nameplate placement, with its own sign text
+	-- (deliberately not `location.name`, which stays the room's own name).
+	t.test("declares a sign placement for the office location", function()
+		local caseDef = CaseRegistry.get("CASE-001")
+		local location = caseDef.locations[1]
+		expect.equal(location.name, "Office")
+		local placement = location.signPlacement
+		expect.truthy(placement)
+		expect.truthy(#placement.text > 0)
+		expect.truthy(typeof(placement.position) == "Vector3")
+	end)
+
 	-- M2: the case has an answer, and it names a suspect the player can accuse.
 	t.test("declares a solution naming an accusable suspect", function()
 		local caseDef = CaseRegistry.get("CASE-001")

@@ -54,6 +54,19 @@ local Case001: Types.CaseDefinition = {
 			id = "LOC-001",
 			name = "Office",
 			description = "Daniel's private office. Where the body was discovered.",
+			-- M3: a nameplate beside the office door, mounted on the corridor
+			-- side so it reads facing into the room from the approach. The
+			-- victim's name is already public (stated in the case briefing
+			-- every player reads first); this only makes it findable in the
+			-- world. Technical staging, like npcPlacement/propPlacement.
+			-- Part_Daniel_South_B spans Z -2.5..-1.5 (1-stud wall centered at
+			-- -2); -1.45 sits the 0.06-thick plaque just proud of its
+			-- corridor face instead of embedded inside it.
+			signPlacement = {
+				position = Vector3.new(-16.3, 5.5, -1.45),
+				lookAt = Vector3.new(-16.3, 5.5, 6),
+				text = "Daniel Reyes",
+			},
 		},
 	},
 

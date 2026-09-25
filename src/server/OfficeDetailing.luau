@@ -302,6 +302,110 @@ local function buildDeskDensification(folder: Instance)
 end
 
 --------------------------------------------------------------------------
+-- 8. Crime scene dressing (M3) -- purely atmospheric, no case-specific data
+--------------------------------------------------------------------------
+
+local TAPE_YELLOW = Color3.fromRGB(232, 197, 71)
+
+-- A thin ribbon from `pointA` to `pointB`. CFrame.lookAt orients the part's
+-- local Z axis toward `pointB`, so putting the ribbon's length on Size.Z
+-- (not the more usual Size.X) makes it span exactly between the two points.
+local function tapeStrip(name: string, pointA: Vector3, pointB: Vector3, parent: Instance)
+	local mid = (pointA + pointB) / 2
+	local length = (pointB - pointA).Magnitude
+	local strip = Instance.new("Part")
+	strip.Name = name
+	strip.Size = Vector3.new(0.5, 0.06, length)
+	strip.CFrame = CFrame.lookAt(mid, pointB)
+	strip.Color = TAPE_YELLOW
+	strip.Material = Enum.Material.SmoothPlastic
+	strip.Anchored = true
+	strip.CanCollide = false
+	strip.Parent = parent
+end
+
+-- Crossed tape across Daniel's office doorway -- the one entrance a player
+-- must pass through to reach the scene, so it reads before anything else.
+local function buildCrimeSceneTape(folder: Instance)
+	local doorGapMinX, doorGapMaxX = -22, -18
+	local doorZ = -2.75
+	local low, high = 3, 6.4
+	tapeStrip("SceneTape_1", Vector3.new(doorGapMinX, low, doorZ), Vector3.new(doorGapMaxX, high, doorZ), folder)
+	tapeStrip("SceneTape_2", Vector3.new(doorGapMinX, high, doorZ), Vector3.new(doorGapMaxX, low, doorZ), folder)
+end
+
+-- A flat, abstracted chalk outline on the floor of Daniel's office, in the
+-- open space between the desk and the door -- clear of the desk, the
+-- storage corner, and the doorway itself. All parts share the same thin Y
+-- extent so they sit flush on the floor without z-fighting each other.
+local function buildChalkOutline(folder: Instance)
+	local y = 0.06
+	local thickness = 0.05
+	local origin = Vector3.new(-24, y, -16.5) -- torso center
+	local outline = Instance.new("Folder")
+	outline.Name = "ChalkOutline"
+	outline.Parent = folder
+
+	local function stroke(name: string, size: Vector3, offset: Vector3, yaw: number)
+		local p = Instance.new("Part")
+		p.Name = name
+		p.Size = size
+		p.CFrame = CFrame.new(origin + offset) * CFrame.Angles(0, math.rad(yaw), 0)
+		p.Color = Color3.fromRGB(235, 235, 230)
+		p.Material = Enum.Material.SmoothPlastic
+		p.Anchored = true
+		p.CanCollide = false
+		p.Parent = outline
+	end
+
+	stroke("Head", Vector3.new(1.3, thickness, 1.3), Vector3.new(0, 0, -2), 0)
+	stroke("Torso", Vector3.new(1.6, thickness, 3), Vector3.new(0, 0, 0), 0)
+	stroke("ArmLeft", Vector3.new(0.5, thickness, 2.2), Vector3.new(-1.3, 0, -0.6), 35)
+	stroke("ArmRight", Vector3.new(0.5, thickness, 2.4), Vector3.new(1.4, 0, -0.3), -50)
+	stroke("LegLeft", Vector3.new(0.55, thickness, 2.6), Vector3.new(-0.7, 0, 2.4), -20)
+	stroke("LegRight", Vector3.new(0.55, thickness, 2.6), Vector3.new(0.7, 0, 2.4), 20)
+end
+
+-- Small numbered evidence markers beside the desk items (M3). Purely
+-- atmospheric staging -- the number carries no meaning of its own, and the
+-- item beneath each marker is already the real, independently-tagged
+-- Interactable; these are never tagged and never referenced by id, so they
+-- can never shadow or duplicate a real interaction.
+local function buildEvidenceMarkers(folder: Instance)
+	local markers = {
+		{ n = 1, pos = Vector3.new(-20.5, 2.85, -10.2) }, -- beside the Phone
+		{ n = 2, pos = Vector3.new(-25, 2.85, -9.8) }, -- beside the Laptop
+		{ n = 3, pos = Vector3.new(-22.6, 2.85, -9.6) }, -- beside the Document
+	}
+	for _, marker in ipairs(markers) do
+		local card = Instance.new("Part")
+		card.Name = `EvidenceMarker_{marker.n}`
+		card.Size = Vector3.new(0.5, 0.55, 0.02)
+		card.CFrame = CFrame.lookAt(marker.pos, marker.pos + Vector3.new(0, 0, 1)) * CFrame.Angles(math.rad(-25), 0, 0)
+		card.Color = TAPE_YELLOW
+		card.Material = Enum.Material.SmoothPlastic
+		card.Anchored = true
+		card.CanCollide = false
+		card.Parent = folder
+
+		local gui = Instance.new("SurfaceGui")
+		gui.Face = Enum.NormalId.Front
+		gui.LightInfluence = 0
+		gui.PixelsPerStud = 80
+		gui.Parent = card
+
+		local label = Instance.new("TextLabel")
+		label.BackgroundTransparency = 1
+		label.Size = UDim2.fromScale(1, 1)
+		label.Text = tostring(marker.n)
+		label.Font = Enum.Font.GothamBold
+		label.TextColor3 = Color3.fromRGB(20, 20, 20)
+		label.TextScaled = true
+		label.Parent = gui
+	end
+end
+
+--------------------------------------------------------------------------
 -- Public entry point
 --------------------------------------------------------------------------
 
@@ -345,6 +449,9 @@ function OfficeDetailing.start()
 	buildPantry(folder)
 	buildDroppedCeilings(folder)
 	buildDeskDensification(folder)
+	buildCrimeSceneTape(folder)
+	buildChalkOutline(folder)
+	buildEvidenceMarkers(folder)
 
 	log:info("office detailing applied", { parts = #folder:GetChildren() })
 end

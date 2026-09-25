@@ -32,6 +32,7 @@ local log = Logger.scoped("OfficeRoom")
 local OfficeRoom = {}
 
 local EVIDENCE_PROPS_FOLDER_NAME = "EvidenceProps"
+local LOCATION_SIGNS_FOLDER_NAME = "LocationSigns"
 
 local function clearDefaultGround()
 	for _, name in ipairs(Config.Environment.DefaultGroundNames) do
@@ -186,6 +187,83 @@ local function spawnEvidenceProps()
 end
 
 --[[
+	Builds a small wall plaque naming a location, for any location that
+	authors `signPlacement` (M3). Mirrors buildEvidenceProp's
+	placement-driven pattern exactly. Not an Interactable -- purely
+	wayfinding, not a clue -- and not tagged, so it never competes with a
+	real interaction prompt.
+]]
+local function buildLocationSign(location: Types.LocationDefinition): BasePart?
+	local placement = location.signPlacement
+	if not placement then
+		return nil
+	end
+
+	local Theme = Config.UI.Theme
+
+	local plaque = Instance.new("Part")
+	plaque.Name = "Sign_" .. location.id
+	plaque.Size = Vector3.new(2.6, 0.8, 0.06)
+	plaque.Color = Color3.fromRGB(30, 31, 35)
+	plaque.Material = Enum.Material.Metal
+	plaque.Anchored = true
+	plaque.CanCollide = false
+
+	local target = if placement.lookAt
+		then CFrame.lookAt(placement.position, Vector3.new(placement.lookAt.X, placement.position.Y, placement.lookAt.Z))
+		else CFrame.new(placement.position)
+	plaque.CFrame = target
+
+	local gui = Instance.new("SurfaceGui")
+	gui.Name = "Label"
+	gui.Face = Enum.NormalId.Front
+	gui.LightInfluence = 0
+	gui.PixelsPerStud = 60
+	gui.Parent = plaque
+
+	local label = Instance.new("TextLabel")
+	label.BackgroundTransparency = 1
+	label.Size = UDim2.fromScale(1, 1)
+	label.Text = string.upper(placement.text)
+	label.Font = Theme.FontBold
+	label.TextColor3 = Theme.Accent
+	label.TextScaled = true
+	label.Parent = gui
+
+	return plaque
+end
+
+local function buildLocationSigns()
+	local office = workspace:FindFirstChild(Config.Environment.OfficeModelName)
+	local parent = office or workspace
+
+	local folder = parent:FindFirstChild(LOCATION_SIGNS_FOLDER_NAME)
+	if not folder then
+		folder = Instance.new("Folder")
+		folder.Name = LOCATION_SIGNS_FOLDER_NAME
+		folder.Parent = parent
+	end
+
+	local caseDef = CaseRegistry.get(Config.Game.AutoStartCase)
+	if not caseDef then
+		return
+	end
+
+	local spawned = 0
+	for _, location in ipairs(caseDef.locations) do
+		local sign = buildLocationSign(location)
+		if sign then
+			sign.Parent = folder
+			spawned += 1
+		end
+	end
+
+	if spawned > 0 then
+		log:info("location signs spawned", { count = spawned })
+	end
+end
+
+--[[
 	Apply authored flavour text (Phase 2O) to no-evidence interactables by
 	instance name. Additive and runtime-only: an entry whose instance is
 	absent is skipped, and any interactable that carries evidence is never
@@ -226,6 +304,7 @@ function OfficeRoom.start()
 
 	applyEveningLighting()
 	spawnEvidenceProps()
+	buildLocationSigns()
 	applyObservations()
 	validateInteractables()
 	log:info("environment ready", { office = office ~= nil })

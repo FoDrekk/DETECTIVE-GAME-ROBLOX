@@ -48,7 +48,7 @@ bottleneck, in three layers:
 
 ## Milestones
 
-### M1 — Friction-free loop (UX integrity)
+### M1 — Friction-free loop (UX integrity) — done
 
 The player can get from spawn to Case Closed without confusion, overlap, or
 soft-locks. No story changes.
@@ -64,10 +64,11 @@ soft-locks. No story changes.
 - HUD and interaction prompt only appear during the investigation.
 - Close-up examine camera hides the player's own avatar.
 
-### M2 — The case has an answer (narrative)
+### M2 — The case has an answer (narrative) — done
 
-Requires a canon decision from the product owner (who killed Daniel, and the
-corrected time of death) before implementation.
+Canon chosen: Victor Lane killed Daniel to stop the partnership's
+dissolution; Daniel was found shortly after midnight. (Taken as the
+recommended default; the product owner can redirect.)
 
 - One consistent timeline across briefing, evidence, observations and
   dialogue.
@@ -77,13 +78,16 @@ corrected time of death) before implementation.
 - Accusation resolves to a verdict: the resolution screen tells the player
   whether they were right and what actually happened.
 
-### M3 — The office tells the story (environment)
+### M3 — The office tells the story (environment) — done
 
 - Daniel's office reads as a crime scene (scene tape, outline, evidence
   markers), staged at runtime like the rest of `OfficeDetailing`.
-- Wayfinding: room signage and Daniel's nameplate so "Investigate Daniel's
-  office" is actionable without wandering.
-- Lighting draws the eye to the desk and the reception evidence.
+- Wayfinding: Daniel's nameplate so "Investigate Daniel's office" is
+  actionable without wandering. (Other rooms were left unsigned: the
+  suspects are visible through the Meeting Room glazing, and no objective
+  points anywhere else.)
+- Lighting: kept as tuned in Phase 2L-A (Daniel's office is already the
+  warmest, brightest room); no change needed.
 
 ### M4 — A complete session (flow & finish)
 
