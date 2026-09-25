@@ -1,11 +1,11 @@
 --!strict
 --[[
-	Tests for ReplicatedStorage.Config.CaseRegistry.
+	Tests for ServerStorage.Config.CaseRegistry.
 	Covers loading, lookup by id, and lookup of an unknown id.
 ]]
 return function(t)
 	local ReplicatedStorage = game:GetService("ReplicatedStorage")
-	local CaseRegistry = require(ReplicatedStorage:WaitForChild("Config"):WaitForChild("CaseRegistry"))
+	local CaseRegistry = require(game:GetService("ServerStorage"):WaitForChild("Config"):WaitForChild("CaseRegistry"))
 	local expect = t.expect
 
 	-- The registry loads the authored CASE-001 definition.
@@ -133,11 +133,11 @@ return function(t)
 		expect.equal(contradiction.right.id, "EV-004")
 	end)
 
-	-- Phase 2M: CASE-001 declares exactly one deduction, referencing real
-	-- facts by id rather than duplicating their content.
-	t.test("declares exactly one deduction, referencing real facts", function()
+	-- CASE-001 declares two deductions (opportunity via DEDUCT-001, motive via
+	-- DEDUCT-002), referencing real facts by id.
+	t.test("declares its deductions, referencing real facts", function()
 		local caseDef = CaseRegistry.get("CASE-001")
-		expect.equal(#caseDef.deductions, 1)
+		expect.equal(#caseDef.deductions, 2)
 		local deduction = caseDef.deductions[1]
 		expect.equal(deduction.id, "DEDUCT-001")
 		expect.equal(#deduction.requiredFacts, 3)
@@ -147,6 +147,54 @@ return function(t)
 		expect.equal(deduction.requiredFacts[2].id, "STMT-SUS-002-ALIBI")
 		expect.equal(deduction.requiredFacts[3].kind, "Evidence")
 		expect.equal(deduction.requiredFacts[3].id, "EV-004")
+
+		local motive = caseDef.deductions[2]
+		expect.equal(motive.id, "DEDUCT-002")
+		expect.equal(#motive.requiredFacts, 2)
+		expect.equal(motive.requiredFacts[1].id, "EV-002")
+		expect.equal(motive.requiredFacts[2].id, "EV-003")
+	end)
+
+	-- M2: the case has an answer, and it names a suspect the player can accuse.
+	t.test("declares a solution naming an accusable suspect", function()
+		local caseDef = CaseRegistry.get("CASE-001")
+		local solution = caseDef.solution
+		expect.truthy(solution)
+		expect.truthy(#solution.reveal > 0)
+		local accusable = false
+		for _, accusation in ipairs(caseDef.accusations or {}) do
+			if accusation.suspectId == solution.culpritSuspectId then
+				accusable = true
+			end
+		end
+		expect.truthy(accusable)
+	end)
+
+	-- Case definitions contain the solution, so they must never replicate.
+	t.test("case data lives in ServerStorage, not ReplicatedStorage", function()
+		expect.falsy(ReplicatedStorage:FindFirstChild("Config"))
+		expect.truthy(game:GetService("ServerStorage"):FindFirstChild("Config"))
+	end)
+
+	-- Every timeline event is revealed by a real evidence item, and every
+	-- evidence item with a timestamp belongs to a timeline event.
+	t.test("timeline events and timestamped evidence reference each other", function()
+		local caseDef = CaseRegistry.get("CASE-001")
+		local evidenceById = {}
+		for _, ev in ipairs(caseDef.evidence) do
+			evidenceById[ev.id] = ev
+			if ev.timestamp then
+				expect.truthy(ev.timelineEventId)
+			end
+		end
+		for _, event in ipairs(caseDef.timeline) do
+			for _, sourceId in ipairs(event.sourceEvidenceIds) do
+				local source = evidenceById[sourceId]
+				expect.truthy(source)
+				expect.equal(source.timelineEventId, event.id)
+				expect.equal(source.timestamp, event.timestamp)
+			end
+		end
 	end)
 
 	-- Phase 2N: CASE-001 declares one accusation per suspect, and every

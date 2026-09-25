@@ -1,19 +1,15 @@
 --!strict
 --[[
 	CaseClosedView
-	Minimal cinematic closing overlay shown during the CaseClosed phase
-	(Phase 2L). Mirrors CaseBriefingView's visual pattern.
+	Cinematic closing overlay shown during the CaseClosed phase (Phase 2L).
+	Mirrors CaseBriefingView's visual pattern.
 
-	Purely presentational: renders only the factual Types.CaseClosedSummary
-	the server sends once it accepts the player's own conclusion request. It
-	never decides whether the investigation is actually complete, and never
-	states or implies who did anything.
-
-	Phase 2O: in addition to the counts, it now restates the case back to the
-	player using only already-discovered facts -- the timeline they actually
-	revealed, the contradiction they actually unlocked, and their own
-	accusation. This is a factual recap of the player's evidence, never a
-	verdict.
+	Purely presentational: renders the Types.CaseClosedSummary the server sends
+	once it accepts the player's accusation. M2: leads with the verdict --
+	whether the player named the culprit -- and what actually happened, then
+	the sequence of events they uncovered and their stats. A case without an
+	authored solution falls back to reporting whether the evidence supports
+	the accusation (Phase 2N).
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -29,9 +25,12 @@ local Theme = Config.UI.Theme
 
 local gui: ScreenGui? = nil
 local root: Frame? = nil
-local summaryLabel: TextLabel? = nil
+local titleLabel: TextLabel? = nil
+local verdictLabel: TextLabel? = nil
+local revealHeader: TextLabel? = nil
+local revealLabel: TextLabel? = nil
 local timelineLabel: TextLabel? = nil
-local contradictionLabel: TextLabel? = nil
+local statsLabel: TextLabel? = nil
 
 local function setVisible(visible: boolean)
 	if not gui or not root then
@@ -40,7 +39,19 @@ local function setVisible(visible: boolean)
 	if visible then
 		gui.Enabled = true
 		root.Visible = true
-		TweenService:Create(root, TweenInfo.new(0.4), { BackgroundTransparency = 0.15 }):Play()
+		root.BackgroundTransparency = 1
+		TweenService:Create(root, TweenInfo.new(0.5), { BackgroundTransparency = 0.08 }):Play()
+		-- Reveal the text top to bottom, like the briefing.
+		for index, label in ipairs({ titleLabel, verdictLabel, revealHeader, revealLabel, timelineLabel, statsLabel }) do
+			if label then
+				label.TextTransparency = 1
+				TweenService:Create(
+					label,
+					TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 0, false, 0.2 + index * 0.25),
+					{ TextTransparency = 0 }
+				):Play()
+			end
+		end
 	else
 		local tween = TweenService:Create(root, TweenInfo.new(0.25), { BackgroundTransparency = 1 })
 		tween.Completed:Once(function()
@@ -51,63 +62,67 @@ local function setVisible(visible: boolean)
 	end
 end
 
--- The factual sequence of events the player actually revealed, in the order
--- the server already sorted them. Never includes an undiscoved event.
+-- The sequence of events the player actually revealed, already sorted by the
+-- server. Never includes an undiscovered event.
 local function buildTimelineText(summary: Types.CaseClosedSummary): string
 	if #summary.timeline == 0 then
 		return "No timeline events were recorded."
 	end
 	local lines = {}
 	for _, event in ipairs(summary.timeline) do
-		table.insert(lines, `{event.timestamp}  {event.title}`)
+		table.insert(lines, `{event.timestamp}   {event.title}`)
 	end
 	return table.concat(lines, "\n")
 end
 
--- The contradiction the player actually unlocked, stated factually from the
--- authored label/summaries/reason. Never a conclusion about guilt.
-local function buildContradictionText(summary: Types.CaseClosedSummary): string
-	local contradiction = summary.contradiction
-	if not contradiction then
-		return "No contradiction was established."
+local function applyHeadline(summary: Types.CaseClosedSummary)
+	if not titleLabel or not verdictLabel or not revealHeader or not revealLabel then
+		return
 	end
-	local text = `{contradiction.leftSummary}  vs.  {contradiction.rightSummary}`
-	if contradiction.reason then
-		text ..= `\n{contradiction.reason}`
-	end
-	return text
-end
+	local accusation = summary.accusation
+	local verdict = summary.verdict
+	local accusedName = if accusation then accusation.suspectName else "no one"
 
-function CaseClosedView.show(summary: Types.CaseClosedSummary)
-	if not summaryLabel or not timelineLabel or not contradictionLabel then
+	if verdict then
+		if verdict.correct then
+			titleLabel.Text = "Case solved."
+			titleLabel.TextColor3 = Theme.Accent
+			verdictLabel.Text = `You accused {accusedName}. You were right.`
+		else
+			titleLabel.Text = "The wrong person was charged."
+			titleLabel.TextColor3 = Theme.TextPrimary
+			verdictLabel.Text = `You accused {accusedName}. The killer was {verdict.culpritName}.`
+		end
+		revealHeader.Visible = true
+		revealLabel.Visible = true
+		revealLabel.Text = verdict.reveal
 		return
 	end
 
-	-- Counts the player accumulated, all of them real server-side totals.
-	local counts = `Objectives completed: {summary.objectivesCompleted} / {summary.objectivesTotal}\n`
-		.. `Evidence examined: {summary.evidenceExamined} / {summary.evidenceTotal}\n`
-		.. `Contradictions identified: {summary.contradictionsIdentified}`
-
-	-- The player's own accusation, stated factually. `supported` says only
-	-- whether the evidence they unlocked is consistent with the choice --
-	-- never that the accusation is the truth.
-	local accusation = summary.accusation
+	-- No authored solution: report only whether the evidence supports the
+	-- accusation.
+	titleLabel.Text = "Investigation concluded."
+	titleLabel.TextColor3 = Theme.TextPrimary
 	if accusation then
-		counts ..= `\n\nAccusation: {accusation.suspectName}\n`
-		if accusation.supported then
-			local basedOn = if #accusation.basedOn > 0
-				then table.concat(accusation.basedOn, ", ")
-				else "the case evidence"
-			counts ..= `Consistent with the evidence you found ({basedOn}).`
-		else
-			counts ..= "Not supported by the evidence you found."
-		end
+		verdictLabel.Text = if accusation.supported
+			then `You accused {accusedName}. The evidence you found supports it.`
+			else `You accused {accusedName}. The evidence you found does not support it.`
+	else
+		verdictLabel.Text = ""
 	end
-	summaryLabel.Text = counts
+	revealHeader.Visible = false
+	revealLabel.Visible = false
+end
 
+function CaseClosedView.show(summary: Types.CaseClosedSummary)
+	if not timelineLabel or not statsLabel then
+		return
+	end
+	applyHeadline(summary)
 	timelineLabel.Text = buildTimelineText(summary)
-	contradictionLabel.Text = buildContradictionText(summary)
-
+	statsLabel.Text = `Evidence {summary.evidenceExamined}/{summary.evidenceTotal}`
+		.. `   ·   Objectives {summary.objectivesCompleted}/{summary.objectivesTotal}`
+		.. `   ·   Contradictions {summary.contradictionsIdentified}`
 	setVisible(true)
 end
 
@@ -121,11 +136,11 @@ function CaseClosedView.start()
 
 	root = Components.frame({
 		name = "CaseClosed",
-		size = UDim2.fromOffset(560, 480),
+		size = UDim2.fromOffset(600, 520),
 		position = UDim2.fromScale(0.5, 0.5),
 		anchor = Vector2.new(0.5, 0.5),
 		color = Theme.Background,
-		transparency = 0.15,
+		transparency = 0.08,
 		radius = 8,
 		border = true,
 		parent = gui,
@@ -153,37 +168,57 @@ function CaseClosedView.start()
 		parent = root,
 	})
 
-	Components.text({
-		name = "Body",
-		text = "Investigation concluded.",
-		size = UDim2.new(1, 0, 0, 30),
+	titleLabel = Components.text({
+		name = "Title",
+		text = "",
+		size = UDim2.new(1, 0, 0, 32),
 		position = UDim2.fromOffset(0, 42),
 		font = Theme.FontBold,
-		textSize = 22,
+		textSize = 26,
 		color = Theme.TextPrimary,
 		parent = root,
 	})
 
-	summaryLabel = Components.text({
-		name = "Summary",
+	verdictLabel = Components.text({
+		name = "Verdict",
 		text = "",
-		size = UDim2.new(1, 0, 0, 130),
-		position = UDim2.fromOffset(0, 84),
+		size = UDim2.new(1, 0, 0, 20),
+		position = UDim2.fromOffset(0, 80),
+		textSize = 15,
+		color = Theme.TextPrimary,
+		parent = root,
+	})
+	verdictLabel.TextWrapped = true
+
+	revealHeader = Components.text({
+		name = "RevealHeader",
+		text = "WHAT HAPPENED",
+		size = UDim2.new(1, 0, 0, 14),
+		position = UDim2.fromOffset(0, 120),
+		font = Theme.FontBold,
+		textSize = 11,
+		color = Theme.Accent,
+		parent = root,
+	})
+
+	revealLabel = Components.text({
+		name = "Reveal",
+		text = "",
+		size = UDim2.new(1, 0, 0, 120),
+		position = UDim2.fromOffset(0, 140),
 		textSize = 14,
 		color = Theme.TextSecondary,
 		parent = root,
 	})
-	summaryLabel.TextWrapped = true
-	summaryLabel.TextYAlignment = Enum.TextYAlignment.Top
-	summaryLabel.LineHeight = 1.35
+	revealLabel.TextWrapped = true
+	revealLabel.TextYAlignment = Enum.TextYAlignment.Top
+	revealLabel.LineHeight = 1.3
 
-	-- Factual case restatement (Phase 2O): the sequence of events the player
-	-- revealed, then the contradiction they unlocked.
 	Components.text({
 		name = "TimelineHeader",
 		text = "THE SEQUENCE OF EVENTS",
 		size = UDim2.new(1, 0, 0, 14),
-		position = UDim2.fromOffset(0, 224),
+		position = UDim2.fromOffset(0, 274),
 		font = Theme.FontBold,
 		textSize = 11,
 		color = Theme.Accent,
@@ -193,8 +228,8 @@ function CaseClosedView.start()
 	timelineLabel = Components.text({
 		name = "Timeline",
 		text = "",
-		size = UDim2.new(1, 0, 0, 72),
-		position = UDim2.fromOffset(0, 242),
+		size = UDim2.new(1, 0, 0, 96),
+		position = UDim2.fromOffset(0, 294),
 		textSize = 13,
 		color = Theme.TextPrimary,
 		parent = root,
@@ -203,35 +238,11 @@ function CaseClosedView.start()
 	timelineLabel.TextYAlignment = Enum.TextYAlignment.Top
 	timelineLabel.LineHeight = 1.3
 
-	Components.text({
-		name = "ContradictionHeader",
-		text = "THE CONTRADICTION",
-		size = UDim2.new(1, 0, 0, 14),
-		position = UDim2.fromOffset(0, 322),
-		font = Theme.FontBold,
-		textSize = 11,
-		color = Theme.Accent,
-		parent = root,
-	})
-
-	contradictionLabel = Components.text({
-		name = "Contradiction",
+	statsLabel = Components.text({
+		name = "Stats",
 		text = "",
-		size = UDim2.new(1, 0, 0, 56),
-		position = UDim2.fromOffset(0, 340),
-		textSize = 13,
-		color = Theme.TextPrimary,
-		parent = root,
-	})
-	contradictionLabel.TextWrapped = true
-	contradictionLabel.TextYAlignment = Enum.TextYAlignment.Top
-	contradictionLabel.LineHeight = 1.3
-
-	Components.text({
-		name = "Footer",
-		text = "The investigation session has ended. The evidence above is what you found.",
-		size = UDim2.new(1, 0, 0, 20),
-		position = UDim2.new(0, 0, 1, -24),
+		size = UDim2.new(1, 0, 0, 16),
+		position = UDim2.new(0, 0, 1, -20),
 		textSize = 11,
 		color = Theme.TextSecondary,
 		parent = root,

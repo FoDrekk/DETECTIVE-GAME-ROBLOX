@@ -8,9 +8,6 @@
       "Shared": {
         "$path": "src/shared"
       },
-      "Config": {
-        "$path": "src/config"
-      },
       "UI": {
         "$path": "src/ui"
       }
@@ -31,6 +28,9 @@
 
     "ServerStorage": {
       "$className": "ServerStorage",
+      "Config": {
+        "$path": "src/config"
+      },
       "UnitTest": {
         "$className": "Folder",
         "RunUnitTest": {

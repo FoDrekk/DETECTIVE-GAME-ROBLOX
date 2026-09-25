@@ -83,9 +83,9 @@ local function canConclude(player: Player): boolean
 	return AccusationService.hasAccusation(player)
 end
 
--- A factual summary of this player's own case progress, computed entirely
--- from server-side state at the moment their conclusion is accepted. Never
--- a verdict; every field is a real count, not a CASE-001-specific number.
+-- A summary of this player's own case progress, computed entirely from
+-- server-side state at the moment their conclusion is accepted, plus the
+-- case's verdict on their accusation (M2). Every count is a real total.
 --
 -- Public (matching ObjectiveService.getActiveObjectiveId's pattern) so the
 -- exact summary shown at the close is directly, synchronously testable --
@@ -99,10 +99,9 @@ function GameStateService.getClosingSummary(player: Player): Types.CaseClosedSum
 	if not caseDef then
 		return nil
 	end
-	-- Phase 2O: restate the case factually at the close. Both lists are built
-	-- from already-authorized state: only discovered timeline events, and only
-	-- the player's own unlocked contradiction. Never hidden content, never a
-	-- verdict.
+	-- Phase 2O: restate the case at the close. Both lists are built from
+	-- already-authorized state: only discovered timeline events, and only the
+	-- player's own unlocked contradiction.
 	local reasoning = ReasoningService.getPayload(player)
 	return {
 		objectivesCompleted = Util.count(data.caseState.completedObjectives),
@@ -111,10 +110,11 @@ function GameStateService.getClosingSummary(player: Player): Types.CaseClosedSum
 		evidenceTotal = #caseDef.evidence,
 		contradictionsIdentified = Util.count(data.caseState.unlockedContradictions),
 		-- Phase 2N: the player's own accusation and whether the evidence they
-		-- actually unlocked is consistent with it. Never a verdict.
+		-- actually unlocked is consistent with it.
 		accusation = AccusationService.getResolution(player),
 		timeline = TimelineService.getDiscovered(player),
 		contradiction = if #reasoning.contradictions > 0 then reasoning.contradictions[1] else nil,
+		verdict = AccusationService.getVerdict(player),
 	}
 end
 

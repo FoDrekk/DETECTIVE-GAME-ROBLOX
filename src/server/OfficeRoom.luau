@@ -25,7 +25,7 @@ local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Co
 local Logger = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Logger"))
 local Interactable = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Interactable"))
 local Types = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Types"))
-local CaseRegistry = require(ReplicatedStorage:WaitForChild("Config"):WaitForChild("CaseRegistry"))
+local CaseRegistry = require(game:GetService("ServerStorage"):WaitForChild("Config"):WaitForChild("CaseRegistry"))
 
 local log = Logger.scoped("OfficeRoom")
 

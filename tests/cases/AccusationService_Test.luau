@@ -28,8 +28,17 @@ return function(t)
 		return player
 	end
 
+	-- Discovers the desk evidence as InteractionService does in real play, so
+	-- the facts it carries (e.g. DEDUCT-002's motive) are actually known.
+	local function discoverDesk(player: any)
+		EvidenceService.discover(player, "EV-001")
+		EvidenceService.discover(player, "EV-002")
+		EvidenceService.discover(player, "EV-003")
+	end
+
 	-- Completes every currently-authored CASE-001 objective (OBJ-001..004).
 	local function completeEverything(player: any)
+		discoverDesk(player)
 		ObjectiveService.recordInteraction(player, "Examine", "EV-001")
 		ObjectiveService.recordInteraction(player, "Examine", "EV-002")
 		ObjectiveService.recordInteraction(player, "Read", "EV-003")
@@ -49,6 +58,7 @@ return function(t)
 	-- A player who has completed everything except speaking to Mara: OBJ-001/002/003
 	-- done, DEDUCT-001/OBJ-004 still locked.
 	local function completeThroughObj003(player: any)
+		discoverDesk(player)
 		ObjectiveService.recordInteraction(player, "Examine", "EV-001")
 		ObjectiveService.recordInteraction(player, "Examine", "EV-002")
 		ObjectiveService.recordInteraction(player, "Read", "EV-003")
@@ -129,7 +139,50 @@ return function(t)
 		expect.equal(resolution.suspectId, "SUS-002")
 		expect.equal(resolution.suspectName, "Victor Lane")
 		expect.truthy(resolution.supported)
-		expect.equal(#resolution.basedOn, 2) -- CONTRA-001 + DEDUCT-001 labels
+		expect.equal(#resolution.basedOn, 3) -- CONTRA-001 + DEDUCT-001 + DEDUCT-002 labels
+	end)
+
+	-- M2: the case's true answer is resolved only once the player commits.
+	t.test("there is no verdict before the player accuses", function()
+		local player = makePlayer()
+		completeEverything(player)
+		expect.falsy(AccusationService.getVerdict(player))
+	end)
+
+	t.test("accusing Victor yields a correct verdict", function()
+		local player = makePlayer()
+		completeEverything(player)
+		AccusationService.accuse(player, "ACC-001")
+
+		local verdict = AccusationService.getVerdict(player)
+		expect.truthy(verdict)
+		expect.truthy(verdict.correct)
+		expect.equal(verdict.culpritName, "Victor Lane")
+		expect.truthy(#verdict.reveal > 0)
+	end)
+
+	t.test("accusing Mara yields an incorrect verdict that names the culprit", function()
+		local player = makePlayer()
+		completeEverything(player)
+		AccusationService.accuse(player, "ACC-002")
+
+		local verdict = AccusationService.getVerdict(player)
+		expect.truthy(verdict)
+		expect.falsy(verdict.correct)
+		expect.equal(verdict.culpritName, "Victor Lane")
+	end)
+
+	-- The answer must never reach the client through the picker payload.
+	t.test("the picker payload never carries the solution", function()
+		local player = makePlayer()
+		completeEverything(player)
+		local payload = AccusationService.getPayload(player) :: any
+		expect.falsy(payload.verdict)
+		expect.falsy(payload.solution)
+		for _, option in ipairs(payload.options) do
+			expect.falsy(option.correct)
+			expect.falsy(option.reveal)
+		end
 	end)
 
 	-- Accusing the suspect no authored contradiction/deduction names is still
@@ -145,6 +198,29 @@ return function(t)
 		expect.equal(resolution.suspectId, "SUS-001")
 		expect.falsy(resolution.supported)
 		expect.equal(#resolution.basedOn, 0)
+	end)
+
+	-- Support requires every referenced fact: without the desk evidence the
+	-- motive (DEDUCT-002) is unknown, so accusing Victor is not yet supported.
+	t.test("accusing Victor without the motive evidence is unsupported", function()
+		local player = makePlayer()
+		ObjectiveService.recordInteraction(player, "Examine", "EV-001")
+		ObjectiveService.recordInteraction(player, "Examine", "EV-002")
+		ObjectiveService.recordInteraction(player, "Read", "EV-003")
+		ConversationService.begin(player, "SUS-002")
+		ObjectiveService.recordInteraction(player, "Talk", nil, "SUS-002")
+		ConversationService.advance(player)
+		EvidenceService.discover(player, "EV-004")
+		ReasoningService.evaluate(player)
+		ObjectiveService.recordFact(player, "Contradiction", "CONTRA-001")
+		ConversationService.leave(player)
+		ConversationService.begin(player, "SUS-001")
+		ConversationService.advance(player)
+		ReasoningService.evaluate(player)
+		ObjectiveService.recordFact(player, "Deduction", "DEDUCT-001")
+
+		expect.truthy(AccusationService.accuse(player, "ACC-001"))
+		expect.falsy(AccusationService.getResolution(player).supported)
 	end)
 
 	-- An accusation is a commitment: repeating it or trying to change it is

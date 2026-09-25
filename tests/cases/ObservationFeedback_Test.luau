@@ -23,7 +23,7 @@ return function(t)
 	local ObjectiveService = require(Server:WaitForChild("ObjectiveService"))
 	local PlayerDataService = require(Server:WaitForChild("PlayerDataService"))
 	local Interactable = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Interactable"))
-	local CaseRegistry = require(ReplicatedStorage:WaitForChild("Config"):WaitForChild("CaseRegistry"))
+	local CaseRegistry = require(game:GetService("ServerStorage"):WaitForChild("Config"):WaitForChild("CaseRegistry"))
 	local expect = t.expect
 
 	local function makePlayer(): any

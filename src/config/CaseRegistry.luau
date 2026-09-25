@@ -2,9 +2,13 @@
 --[[
 	CaseRegistry
 	Maps case ids to case definitions. Config only — no gameplay logic.
+
+	Lives in ServerStorage: case definitions include the solution, so they
+	must never replicate to clients. Clients only ever see server payloads.
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerStorage = game:GetService("ServerStorage")
 local Types = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Types"))
 local Logger = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Logger"))
 
@@ -31,7 +35,7 @@ local function loadAll()
 	end
 	loaded = true
 
-	local configFolder = ReplicatedStorage:WaitForChild("Config")
+	local configFolder = ServerStorage:WaitForChild("Config")
 	local casesFolder = configFolder:FindFirstChild("Cases") :: Folder?
 	local scanRoot = casesFolder or configFolder
 	for _, child in ipairs(scanRoot:GetChildren()) do

@@ -193,9 +193,7 @@ export type ContradictionDefinition = {
 
 -- A conclusion unlocked once every one of `requiredFacts` is discovered/
 -- unlocked. Distinct from a contradiction: the facts do not need to
--- conflict, only all be known. No conclusion text is authored on the
--- definition itself -- see ARCHITECTURE.md for why this phase ships no
--- production deduction content.
+-- conflict, only all be known. `label` names the conclusion.
 export type DeductionDefinition = {
 	id: string,
 	label: string,
@@ -276,6 +274,16 @@ export type CaseDefinition = {
 	-- complete. Optional: a case without any accusation data simply cannot be
 	-- concluded by accusation (Phase 2N).
 	accusations: { AccusationDefinition }?,
+	-- The true answer (M2). Server-only: case definitions live in
+	-- ServerStorage and this is only ever sent inside the closing summary,
+	-- after the player has committed to an accusation.
+	solution: CaseSolution?,
+}
+
+export type CaseSolution = {
+	culpritSuspectId: string,
+	-- What actually happened, told to the player at the close.
+	reveal: string,
 }
 
 export type DiscoveredEvidence = EvidenceDefinition & {
@@ -484,22 +492,12 @@ export type AccusationResolution = {
 	basedOn: { string },
 }
 
--- A factual, spoiler-safe summary of what the player did, sent once when
--- the server accepts their conclusion of the investigation (Phase 2L).
--- Purely a count of already-authorized facts the player already has --
--- never a verdict, and never any claim about who committed the crime. Every
--- count is a real total, not a hardcoded CASE-001 number.
---
--- Phase 2N adds `accusation`: the suspect this player formally accused and
--- whether the evidence they actually unlocked is consistent with that
--- accusation. It is still never a claim about who committed the crime --
--- only whether the facts this player gathered support the choice they made.
---
--- Phase 2O adds `timeline`/`contradiction`: the timeline events and unlocked
--- contradiction the player actually discovered, so the closing screen can
--- restate the case back to them. Both are already-authorized facts (only
--- discovered events, only an unlocked contradiction), never hidden content,
--- and never a verdict.
+-- The summary sent once the server accepts the player's conclusion of the
+-- investigation (Phase 2L). Every count is a real total, not a hardcoded
+-- CASE-001 number. `accusation` (2N) is the suspect this player accused and
+-- whether the evidence they unlocked supports it; `timeline`/`contradiction`
+-- (2O) restate only facts the player actually discovered; `verdict` (M2) is
+-- the case's true answer, revealed only now that the player has committed.
 export type CaseClosedSummary = {
 	objectivesCompleted: number,
 	objectivesTotal: number,
@@ -509,6 +507,15 @@ export type CaseClosedSummary = {
 	accusation: AccusationResolution?,
 	timeline: { TimelineEventProgress },
 	contradiction: ContradictionPayload?,
+	-- Present once the player has accused and the case authors a solution.
+	verdict: CaseVerdict?,
+}
+
+-- Whether the player's accusation named the culprit, and what happened.
+export type CaseVerdict = {
+	correct: boolean,
+	culpritName: string,
+	reveal: string,
 }
 
 return {}

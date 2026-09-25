@@ -29,7 +29,7 @@ return function(t)
 	local ConversationService = require(Server:WaitForChild("ConversationService"))
 	local ReasoningService = require(Server:WaitForChild("ReasoningService"))
 	local StoryEvents = require(Server:WaitForChild("StoryEvents"))
-	local CaseRegistry = require(ReplicatedStorage:WaitForChild("Config"):WaitForChild("CaseRegistry"))
+	local CaseRegistry = require(game:GetService("ServerStorage"):WaitForChild("Config"):WaitForChild("CaseRegistry"))
 	local expect = t.expect
 
 	local function makePlayer(): any

@@ -22,7 +22,7 @@ local Theme = Config.UI.Theme
 
 local gui: ScreenGui? = nil
 local root: Frame? = nil
-local content: Frame? = nil
+local content: ScrollingFrame? = nil
 local emptyLabel: TextLabel? = nil
 
 local rows: { Instance } = {}
@@ -96,9 +96,10 @@ local function addStatementRow(y: number, statement: Types.StatementPayload): nu
 end
 
 local function addContradictionRow(y: number, contradiction: Types.ContradictionPayload): number
+	local rowHeight = if contradiction.reason then 80 else 56
 	local row = Components.frame({
 		name = "Contradiction_" .. contradiction.id,
-		size = UDim2.new(1, 0, 0, 56),
+		size = UDim2.new(1, 0, 0, rowHeight),
 		position = UDim2.fromOffset(0, y),
 		color = Theme.Background,
 		transparency = 0.4,
@@ -133,16 +134,17 @@ local function addContradictionRow(y: number, contradiction: Types.Contradiction
 		local reason = Components.text({
 			name = "Reason",
 			text = contradiction.reason,
-			size = UDim2.new(1, 0, 0, 16),
+			size = UDim2.new(1, 0, 0, 34),
 			position = UDim2.fromOffset(0, 34),
 			textSize = 11,
 			color = Theme.TextSecondary,
 			parent = row,
 		})
 		reason.TextWrapped = true
+		reason.TextYAlignment = Enum.TextYAlignment.Top
 	end
 
-	return y + 64
+	return y + rowHeight + 8
 end
 
 local function addDeductionRow(y: number, deduction: Types.DeductionPayload): number
@@ -271,6 +273,10 @@ function CaseFileView.update(payload: Types.ReasoningPayload)
 			y = addRelatedRow(y, entry)
 		end
 	end
+
+	if content then
+		content.CanvasSize = UDim2.new(0, 0, 0, y)
+	end
 end
 
 local function setVisible(visible: boolean)
@@ -360,15 +366,20 @@ function CaseFileView.start()
 		parent = root,
 	})
 
-	content = Components.frame({
-		name = "Content",
-		size = UDim2.new(1, 0, 1, -110),
-		position = UDim2.fromOffset(0, 78),
-		transparency = 1,
-		parent = root,
-	})
+	-- A ScrollingFrame, not a plain Frame: the case grows over play (more
+	-- statements, contradictions and deductions than any one case started
+	-- with), so the panel scrolls rather than overflowing past its border.
+	content = Instance.new("ScrollingFrame")
+	content.Name = "Content"
+	content.Size = UDim2.new(1, 0, 1, -110)
+	content.Position = UDim2.fromOffset(0, 78)
 	content.BackgroundTransparency = 1
-	content.ClipsDescendants = false
+	content.BorderSizePixel = 0
+	content.ScrollBarThickness = 4
+	content.ScrollBarImageColor3 = Theme.Accent
+	content.CanvasSize = UDim2.new(0, 0, 0, 0)
+	content.AutomaticCanvasSize = Enum.AutomaticSize.None
+	content.Parent = root
 
 	emptyLabel = Components.text({
 		name = "Empty",

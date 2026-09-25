@@ -3,6 +3,14 @@
 	Case001 — THE LAST CALL
 	Investigative data for the first case.
 	Pure data only: no gameplay logic belongs here.
+
+	The story (M2 canon): Daniel Reyes was ending his partnership with Victor
+	Lane; the papers were to be signed at a midnight meeting. Victor claims he
+	left at 22:30, but he was still in the building when Daniel made his last,
+	unanswered call to his wife Mara at 11:47 PM. Minutes later Daniel was
+	dead, and Victor's badge was the last to leave at 11:52 PM. Daniel was
+	found shortly after midnight. Mara, asleep at home, is innocent: her
+	account is unverifiable, but nothing contradicts it.
 ]]
 
 local Types = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Types"))
@@ -10,8 +18,8 @@ local Types = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared"
 local Case001: Types.CaseDefinition = {
 	id = "CASE-001",
 	title = "THE LAST CALL",
-	description = "Daniel Reyes was found dead in his office shortly after 23:00. "
-		.. "A single unanswered call was placed minutes before his death. "
+	description = "Daniel Reyes was found dead in his office shortly after midnight. "
+		.. "His last call, placed minutes before his death, went unanswered. "
 		.. "Determine what happened.",
 
 	suspects = {
@@ -19,9 +27,9 @@ local Case001: Types.CaseDefinition = {
 			id = "SUS-001",
 			name = "Mara Reyes",
 			role = "Spouse",
-			alibi = "I was home and asleep. I know the phone records don't back that up.",
+			alibi = "I was home, asleep. I never heard his call. I only saw it when your people woke me. "
+				.. "No one can tell you I was there but me.",
 			-- Standing near the meeting table, waiting to be questioned.
-			-- Technical staging only -- no new location or story fact.
 			npcPlacement = {
 				position = Vector3.new(16.5, 3, -19),
 				lookAt = Vector3.new(20, 3, -14),
@@ -31,10 +39,9 @@ local Case001: Types.CaseDefinition = {
 			id = "SUS-002",
 			name = "Victor Lane",
 			role = "Business Partner",
-			alibi = "I left the office at half ten. Whatever the keycard log says, I was gone by then.",
-			-- Standing at the opposite side of the meeting table from Mara,
-			-- facing its center. Technical staging only, in the same room --
-			-- no new location or story fact (Phase 2I).
+			alibi = "I left at half ten. Daniel was still at his desk, working late like always. "
+				.. "Whatever happened, it happened after I'd gone.",
+			-- Opposite side of the meeting table from Mara, facing its center.
 			npcPlacement = {
 				position = Vector3.new(24, 3, -17.5),
 				lookAt = Vector3.new(20, 3, -14),
@@ -52,10 +59,7 @@ local Case001: Types.CaseDefinition = {
 
 	-- Phase 2O: authored flavour text for the office's non-evidence
 	-- interactables, applied at runtime by instance name (OfficeRoom).
-	-- Atmosphere only -- these objects carry no evidence, and every line
-	-- stays inside the case's already-authored facts (Daniel found dead
-	-- shortly after 23:00; an unanswered call minutes before his death).
-	-- No motive, culprit, or new event is stated or implied.
+	-- Atmosphere only -- these objects carry no evidence and point at no one.
 	observations = {
 		{
 			instanceName = "ReceptionDesk",
@@ -99,36 +103,32 @@ local Case001: Types.CaseDefinition = {
 			id = "EV-001",
 			name = "Phone",
 			description = "Daniel's phone was left on the desk.",
-			details = "The last outgoing call was made at 11:47 PM. It went unanswered.",
+			details = "His last outgoing call, at 11:47 PM, was to Mara Reyes. It went unanswered.",
 			location = "Daniel's Workspace",
 			importance = "Critical",
 			category = "Communication",
 			timestamp = "11:47 PM",
 			timelineEventId = "TIMELINE-002",
-			-- Phase 2O: the phone and the laptop both record activity at
-			-- Daniel's workspace minutes apart (11:47 PM and 11:42 PM), which
-			-- is the only evidence-to-evidence relationship CASE-001's authored
-			-- facts actually support. A mutual link, surfaced once both are found.
+			-- Both record Daniel at his desk minutes apart (11:42 / 11:47 PM).
 			relatedEvidenceIds = { "EV-002" },
 		},
 		{
 			id = "EV-002",
 			name = "Laptop",
 			description = "Daniel's laptop was left open.",
-			details = "A work document was modified at 11:42 PM.",
+			details = "A draft titled \"Reyes & Lane: dissolution of partnership\" was last saved at 11:42 PM.",
 			location = "Daniel's Workspace",
 			importance = "High",
 			category = "Digital Activity",
 			timestamp = "11:42 PM",
 			timelineEventId = "TIMELINE-001",
-			-- Phase 2O: see EV-001 -- the same workspace, minutes earlier.
 			relatedEvidenceIds = { "EV-001" },
 		},
 		{
 			id = "EV-003",
 			name = "Document",
-			description = "A meeting document was left on Daniel's desk.",
-			details = "It indicates a meeting scheduled for 12:00 AM.",
+			description = "A meeting agenda was left on Daniel's desk.",
+			details = "12:00 AM, with Victor Lane: \"Sign the dissolution. No more delays.\"",
 			location = "Daniel's Workspace",
 			importance = "Medium",
 			category = "Document",
@@ -136,27 +136,18 @@ local Case001: Types.CaseDefinition = {
 			timelineEventId = "TIMELINE-003",
 		},
 		{
-			-- Phase 2I: the independently discoverable access record already
-			-- implied by SUS-002's own authored alibi ("Keycard log suggests
-			-- otherwise"). No new timestamp is invented for it: `details`
-			-- states only that the record disagrees with Victor's own
-			-- already-authored claim, and stays silent on what it actually
-			-- shows. No timelineEventId/timestamp: a chronological timeline
-			-- entry would require inventing a precise clock time this case
-			-- does not specify anywhere.
 			id = "EV-004",
 			name = "Keycard Log",
 			description = "A printed keycard access record for the office door.",
-			details = "The recorded exit time does not match Victor Lane's stated departure of 22:30.",
+			details = "The last badge to leave the building tonight was Victor Lane's, at 11:52 PM.",
 			location = "Reception",
 			importance = "High",
 			category = "Security",
+			timestamp = "11:52 PM",
+			timelineEventId = "TIMELINE-004",
 			-- No hand-placed counterpart exists in the Studio-authored office
-			-- asset; OfficeRoom spawns a minimal physical prop for it (see
-			-- OfficeRoom.luau's evidence-prop spawner). Positioned close
-			-- against the reception desk/panel cluster (Phase 2L-A office
-			-- redesign) so it reads as an access-control terminal at the
-			-- point of entry, without any change to what it means.
+			-- asset; OfficeRoom spawns a minimal physical prop for it, next to
+			-- the reception desk at the point of entry.
 			propPlacement = {
 				position = Vector3.new(24, 3, 16.5),
 				lookAt = Vector3.new(24, 3, 20),
@@ -169,24 +160,32 @@ local Case001: Types.CaseDefinition = {
 			id = "TIMELINE-001",
 			timestamp = "11:42 PM",
 			timeMinutes = 1422,
-			title = "Laptop activity",
-			description = "A work document was modified on Daniel's laptop.",
+			title = "Partnership draft saved",
+			description = "Daniel saves a draft dissolving his partnership with Victor Lane.",
 			sourceEvidenceIds = { "EV-002" },
 		},
 		{
 			id = "TIMELINE-002",
 			timestamp = "11:47 PM",
 			timeMinutes = 1427,
-			title = "Outgoing phone call",
-			description = "The last outgoing call was made from Daniel's phone.",
+			title = "The last call",
+			description = "Daniel calls Mara. She does not answer.",
 			sourceEvidenceIds = { "EV-001" },
+		},
+		{
+			id = "TIMELINE-004",
+			timestamp = "11:52 PM",
+			timeMinutes = 1432,
+			title = "Victor Lane leaves",
+			description = "Victor Lane's badge is the last to exit the building.",
+			sourceEvidenceIds = { "EV-004" },
 		},
 		{
 			id = "TIMELINE-003",
 			timestamp = "12:00 AM",
 			timeMinutes = 1440,
-			title = "Scheduled meeting",
-			description = "A meeting document indicates a meeting scheduled for 12:00 AM.",
+			title = "The midnight meeting",
+			description = "Daniel was due to meet Victor Lane to sign the dissolution.",
 			sourceEvidenceIds = { "EV-003" },
 		},
 	},
@@ -205,10 +204,7 @@ local Case001: Types.CaseDefinition = {
 			},
 		},
 		{
-			-- Phase 2I: directs the player to the second suspect once the
-			-- scene has been surveyed. Talk+target was already proven generic
-			-- by a synthetic fixture in Phase 2F/2G; this is its first real
-			-- use. `target` matches SUS-002's spawned NPC root part, which
+			-- `target` matches SUS-002's spawned NPC root part, which
 			-- SuspectSpawner names after the suspect id.
 			id = "OBJ-002",
 			title = "Question Victor Lane",
@@ -221,9 +217,7 @@ local Case001: Types.CaseDefinition = {
 			prerequisites = { "OBJ-001" },
 		},
 		{
-			-- Phase 2J: gives CONTRA-001 a real gameplay consequence.
-			-- Completes the moment the contradiction unlocks -- no further
-			-- interaction required, no new evidence, no new dialogue.
+			-- Completes the moment CONTRA-001 unlocks.
 			id = "OBJ-003",
 			title = "Review Victor Lane's Statement",
 			description = "Cross-reference what Victor said against the evidence you've found.",
@@ -235,11 +229,8 @@ local Case001: Types.CaseDefinition = {
 			prerequisites = { "OBJ-002" },
 		},
 		{
-			-- Phase 2M: gives DEDUCT-001 a real gameplay consequence, and in
-			-- doing so closes a real gap -- nothing before this objective ever
-			-- required speaking to Mara. Completes the moment the deduction
-			-- unlocks, same pattern as OBJ-003 -- no further interaction
-			-- required, no new evidence, no new dialogue.
+			-- Completes the moment DEDUCT-001 unlocks, which requires Mara's
+			-- statement: no one concludes the case without hearing her.
 			id = "OBJ-004",
 			title = "Close the Investigation",
 			description = "Make sure both suspects have given their account before drawing conclusions.",
@@ -256,12 +247,9 @@ local Case001: Types.CaseDefinition = {
 		},
 	},
 
-	-- Phase 2G/2I/2O: one deterministic linear conversation per playable
-	-- suspect. Each suspect's one informational line is their already-authored
-	-- `alibi`, spoken in their own voice; the opening and closing lines are
-	-- minimal procedural framing carrying no case facts of their own. The two
-	-- suspects are given distinct registers, but neither says anything the
-	-- case data does not already state.
+	-- One linear conversation per suspect. Each suspect's informational line
+	-- is their `alibi`, spoken in their own voice; the opening and closing
+	-- lines are framing only.
 	conversations = {
 		{
 			suspectId = "SUS-001",
@@ -276,7 +264,8 @@ local Case001: Types.CaseDefinition = {
 				["SUS-001-2"] = {
 					id = "SUS-001-2",
 					speaker = "Mara Reyes",
-					text = "I was home and asleep. I know the phone records don't back that up.",
+					text = "I was home, asleep. I never heard his call. I only saw it when your people woke me. "
+						.. "No one can tell you I was there but me.",
 					next = "SUS-001-3",
 					statementId = "STMT-SUS-001-ALIBI",
 				},
@@ -301,7 +290,8 @@ local Case001: Types.CaseDefinition = {
 				["SUS-002-2"] = {
 					id = "SUS-002-2",
 					speaker = "Victor Lane",
-					text = "I left the office at half ten. Whatever the keycard log says, I was gone by then.",
+					text = "I left at half ten. Daniel was still at his desk, working late like always. "
+						.. "Whatever happened, it happened after I'd gone.",
 					next = "SUS-002-3",
 					statementId = "STMT-SUS-002-ALIBI",
 				},
@@ -315,9 +305,8 @@ local Case001: Types.CaseDefinition = {
 		},
 	},
 
-	-- Neither statement has separate text of its own: ConversationService
-	-- resolves each one's content from its suspect's authored `alibi` field
-	-- at unlock time, so a statement can never drift from the suspect data.
+	-- Statement text is resolved from each suspect's `alibi` at unlock time,
+	-- so a statement can never drift from the suspect data.
 	statements = {
 		{
 			id = "STMT-SUS-001-ALIBI",
@@ -331,47 +320,44 @@ local Case001: Types.CaseDefinition = {
 		},
 	},
 
-	-- Phase 2I: the first real contradiction. Both referenced facts are
-	-- already-authored content -- Victor's own alibi statement and the
-	-- keycard log evidence's own `details` text -- neither is duplicated
-	-- here, only referenced by id. See ARCHITECTURE.md for why CASE-001
-	-- shipped zero of these through Phase 2H, and ReasoningService_Test.luau
-	-- for the synthetic fixture that originally proved the mechanism before
-	-- any real content existed.
+	-- Opportunity: Victor's own account against the keycard log.
 	contradictions = {
 		{
 			id = "CONTRA-001",
 			label = "Victor's Departure Time",
 			left = { kind = "Statement", id = "STMT-SUS-002-ALIBI" },
 			right = { kind = "Evidence", id = "EV-004" },
-			reason = "Victor claims he left at 22:30; the keycard log does not match.",
+			reason = "Victor says he left at half past ten. His badge left the building at 11:52 PM, "
+				.. "five minutes after Daniel's last call.",
 		},
 	},
-	-- Phase 2M: the first real deduction. Unlike CONTRA-001, these facts don't
-	-- need to conflict -- the deduction fires once all three are known. Every
-	-- referenced fact is already-authored content (see STMT-SUS-001-ALIBI,
-	-- STMT-SUS-002-ALIBI, EV-004 above); neither is duplicated here, only
-	-- referenced by id. Deliberately includes Mara's statement alongside
-	-- Victor's: nothing before this closes the gap where a player could
-	-- conclude the case without ever speaking to her.
+
 	deductions = {
 		{
+			-- Having heard both suspects: Mara's account cannot be verified,
+			-- but only Victor's is contradicted by the evidence.
 			id = "DEDUCT-001",
-			label = "Both Accounts, One Contradiction",
+			label = "Only Victor's Account Breaks",
 			requiredFacts = {
 				{ kind = "Statement", id = "STMT-SUS-001-ALIBI" },
 				{ kind = "Statement", id = "STMT-SUS-002-ALIBI" },
 				{ kind = "Evidence", id = "EV-004" },
 			},
 		},
+		{
+			-- Motive: the draft on the laptop and the midnight agenda.
+			id = "DEDUCT-002",
+			label = "Daniel Was Ending the Partnership",
+			requiredFacts = {
+				{ kind = "Evidence", id = "EV-002" },
+				{ kind = "Evidence", id = "EV-003" },
+			},
+		},
 	},
-	-- Phase 2N: the two suspects the player may formally accuse once every
-	-- objective is complete. This is not a verdict and invents no story fact:
-	-- it only records which already-authored contradiction/deduction, if the
-	-- player has actually unlocked it, makes that accusation consistent with
-	-- the evidence they gathered. Victor is the suspect CONTRA-001 and
-	-- DEDUCT-001 both speak to; Mara is the only other person in the case, so
-	-- she is selectable but named by no authored contradiction or deduction.
+
+	-- The suspects the player may formally accuse once every objective is
+	-- complete. `supportedBy` names the reasoning that points at a suspect;
+	-- the verdict itself comes from `solution`.
 	accusations = {
 		{
 			id = "ACC-001",
@@ -379,7 +365,7 @@ local Case001: Types.CaseDefinition = {
 			label = "Accuse Victor Lane",
 			supportedBy = {
 				contradictions = { "CONTRA-001" },
-				deductions = { "DEDUCT-001" },
+				deductions = { "DEDUCT-001", "DEDUCT-002" },
 			},
 		},
 		{
@@ -387,6 +373,16 @@ local Case001: Types.CaseDefinition = {
 			suspectId = "SUS-001",
 			label = "Accuse Mara Reyes",
 		},
+	},
+
+	-- Server-only (this module lives in ServerStorage). Revealed at the close.
+	solution = {
+		culpritSuspectId = "SUS-002",
+		reveal = "Daniel spent his last evening finishing the papers that would end his partnership "
+			.. "with Victor Lane, to be signed at midnight. Victor never left at half past ten. He was "
+			.. "still in the building at 11:47 PM, when Daniel called Mara and she slept through it. "
+			.. "Minutes later Daniel was dead, and at 11:52 PM Victor's badge was the last to leave "
+			.. "the building. His alibi was the only one the evidence could break.",
 	},
 }
 

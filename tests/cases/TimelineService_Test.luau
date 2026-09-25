@@ -57,6 +57,31 @@ return function(t)
 		expect.equal(events[1].timestamp, "12:00 AM")
 	end)
 
+	-- M2: the keycard log (EV-004) reveals Victor's 11:52 PM exit.
+	t.test("reveals EV-004's timeline event", function()
+		local player = makePlayer()
+		EvidenceService.discover(player, "EV-004")
+		local events = TimelineService.getDiscovered(player)
+		expect.equal(#events, 1)
+		expect.equal(events[1].id, "TIMELINE-004")
+		expect.equal(events[1].timestamp, "11:52 PM")
+	end)
+
+	-- The full night reads in clock order: draft, call, exit, meeting.
+	t.test("places Victor's exit between the last call and the meeting", function()
+		local player = makePlayer()
+		EvidenceService.discover(player, "EV-003")
+		EvidenceService.discover(player, "EV-004")
+		EvidenceService.discover(player, "EV-001")
+		EvidenceService.discover(player, "EV-002")
+		local events = TimelineService.getDiscovered(player)
+		expect.equal(#events, 4)
+		expect.equal(events[1].id, "TIMELINE-001")
+		expect.equal(events[2].id, "TIMELINE-002")
+		expect.equal(events[3].id, "TIMELINE-004")
+		expect.equal(events[4].id, "TIMELINE-003")
+	end)
+
 	-- Events are ordered chronologically regardless of discovery order.
 	t.test("orders events chronologically by time", function()
 		local player = makePlayer()

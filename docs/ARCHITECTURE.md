@@ -11,7 +11,7 @@ presentation only.
 | Server | `src/server` | Authoritative state, evidence, phases, world integration |
 | Client | `src/client` | Input, camera, presentation, remote listeners |
 | Shared | `src/shared` | Types, config, state machine, signals, contracts, logger, utilities |
-| Config | `src/config` | Case data and the case registry (pure data) |
+| Config | `src/config` | Case data and the case registry (pure data). Server-only (M2): case definitions carry the solution, so they map under `ServerStorage`, never `ReplicatedStorage`. |
 | UI | `src/ui` | Reusable theme-driven UI component factories |
 | Tests | `tests/` | Headless unit tests (mapped under ServerStorage) |
 
@@ -19,11 +19,11 @@ Instances are mapped by `default.project.json`:
 
 ```
 ReplicatedStorage.Shared      <- src/shared
-ReplicatedStorage.Config      <- src/config
 ReplicatedStorage.UI          <- src/ui      (requireable UI factories)
 ServerScriptService.Server    <- src/server  (Script, children = services)
 StarterPlayer...Client        <- src/client  (LocalScript, children = modules)
 Workspace.Office              <- assets/Office.rbxm  (Studio-authored world)
+ServerStorage.Config          <- src/config  (case data; server-only, M2)
 ServerStorage.UnitTest        <- tests/      (RunUnitTest + Cases)
 ServerScriptService.UnitTestRunner <- tests/UnitTestRunner.server.luau (Disabled)
 ```
@@ -586,8 +586,8 @@ bridge is the only thing that touches the real RemoteEvent.
 `Types.CaseClosedSummary`: real, computed counts
 (objectives/evidence/contradictions) built from server-side state at the
 moment of conclusion, plus (Phase 2N) the player's own accusation and whether
-the evidence is consistent with it — never a verdict, never a claim about who
-did what.
+the evidence is consistent with it, and (M2) the case's verdict on that
+accusation — see "The case has an answer (M2)" below.
 
 **Known limitation, deliberately not addressed this phase**: `GameStateService`'s
 phase machine is a single, server-wide singleton, not per-player — matching
@@ -718,8 +718,9 @@ spoiler-safe. Unlinked evidence is simply absent, never faked.
 already spoiler-safe via `TimelineService.getDiscovered`) and `contradiction`
 (the player's unlocked contradiction, via `ReasoningService.getPayload`).
 `CaseClosedView` now restates the sequence of events and the contradiction
-alongside the counts and the accusation — all from already-authorized facts,
-never a verdict.
+alongside the counts and the accusation — all from already-authorized facts.
+(M2 later adds `verdict`, the one field on this summary that is a judgment,
+not a restatement — see below.)
 
 ### Discoverability hint
 
@@ -755,7 +756,80 @@ built and proven in Phase 2J by a synthetic fixture
 (`ObjectiveService_Test`'s `CASE-TEST-OBJ-REASONING`); Phase 2M supplies the
 first real content they run on.
 
-## Deliberately not implemented (Phase 2L/2M boundary)
+## The case has an answer (M2)
+
+Through Phase 2O, `CaseClosed` deliberately never said who did it: the
+closing screen reported only whether the player's own accusation was
+*consistent with the evidence they gathered*, never whether it was *true*.
+That was a real gap — a mystery with no answer isn't a mystery, it's a
+checklist. M2 gives CASE-001 a solution and rewrites its content around it,
+without touching a single id, objective, or the discovery flow.
+
+**The solution.** `Types.CaseSolution` (`{ culpritSuspectId, reveal }`) is an
+optional field on `CaseDefinition`, authored once in `Case001.luau`'s
+`solution` table. It is never sent to a client as part of the case's own
+payload — `CaseBriefingView`'s `CasePayload` never included case content
+beyond the header, and that discipline is what makes `solution` safe to add
+alongside it. `CaseSolution` is exported from `Types` (shared, so the type
+itself is inspectable) but the *value* lives only in `ServerStorage`.
+
+**Case data moved to `ServerStorage.Config`** (was `ReplicatedStorage.Config`).
+This was the actual enforcement mechanism: before M2, nothing in
+`CaseDefinition` was secret, so mapping case modules under `ReplicatedStorage`
+cost nothing. A `solution` field changes that — a case definition sitting in
+`ReplicatedStorage` would let any client `require()` it directly and read the
+answer before investigating anything. Every server module that required
+`Config.CaseRegistry` now does so via `ServerStorage` instead of
+`ReplicatedStorage`; no client module ever required it. `CaseRegistry` itself
+still knows nothing about being server-only — it is data, not a security
+boundary; the boundary is entirely which DataModel service the folder is
+parented under.
+
+**The verdict.** `AccusationService.getVerdict(player)` is the only thing
+that ever reads `solution`. It returns nil until the player has actually
+committed to an accusation (mirrors `getResolution`'s own precondition), then
+compares `accusationId`'s `suspectId` against `solution.culpritSuspectId` and
+returns `Types.CaseVerdict` (`{ correct, culpritName, reveal }`) — resolving
+`culpritName` from `CaseService.getSuspect`, never hardcoding it. Wrong is as
+honestly reported as right: an incorrect accusation still names the real
+culprit and the `reveal` text, exactly like a real closed case would.
+`GameStateService.getClosingSummary` calls it once, alongside everything else
+already being assembled for `CaseClosedSummary`, and the result is `verdict`
+on that summary — nil for a case that authors no `solution`, in which case
+`CaseClosedView` falls back to Phase 2N's supported/unsupported reporting.
+
+**CASE-001's answer.** Victor Lane killed Daniel Reyes to stop him ending
+their partnership. Every already-existing clue was rewritten to actually
+support it, none renamed or restructured:
+- The briefing's own internal contradiction is gone: Daniel was found
+  "shortly after 23:00" while his last call was "minutes before his death" at
+  11:47 PM could never both be true. He is now found "shortly after
+  midnight" — after the 12:00 AM meeting he never made.
+- `EV-001`'s last call is now explicitly *to Mara* (was anonymous), paying
+  off her own alibi ("I never heard his call") as the same event instead of
+  two coincidentally-unconnected facts.
+- `EV-002`/`EV-003` now name what the laptop draft and the meeting were
+  *for* (dissolving the partnership) — motive, not just activity — and back
+  a new deduction, `DEDUCT-002` ("Daniel Was Ending the Partnership"),
+  `requiredFacts = { EV-002, EV-003 }`.
+- `EV-004` (the keycard log) now states a real fact instead of only a
+  disagreement: Victor's badge left at 11:52 PM, five minutes after Daniel's
+  call — still worded from the log's own authority, inventing no new
+  document. Its `timelineEventId`/`timestamp` are new (`TIMELINE-004`),
+  since the case now has a specific time to place it at.
+- `CONTRA-001.reason` and `DEDUCT-001.label` were reworded to state the
+  break plainly (Victor's alibi is the only one the evidence contradicts;
+  Mara's is merely unverifiable) rather than gesture at "a contradiction"
+  the player had to infer the significance of themselves.
+- `ACC-001.supportedBy` now also names `DEDUCT-002`, so accusing Victor is
+  supported by opportunity *and* motive, not opportunity alone.
+
+None of this added a new suspect, evidence id, objective, or contradiction
+mechanism — see "Extension points" below for why that was never necessary:
+the reasoning system was generic from Phase 2H, CASE-001 simply had nothing
+worth deducing about motive until now.
+
+## Deliberately not implemented
 
 Phase 2G shipped a one-suspect vertical slice; Phase 2H added the reasoning
 architecture with no content to run it on; Phase 2I brought SUS-002 online
@@ -767,18 +841,15 @@ Phase 2N made the player accuse a suspect, gating the conclusion on that
 choice and reporting a factual, evidence-derived resolution; Phase 2O gave
 every interactable a response, put the suspects' accounts in their own
 voices, linked related evidence, restated the case at the close, and
-surfaced each objective's own description as a hint.
-Explicitly out of scope until their own phase: any suspect beyond
-SUS-001/SUS-002, branching dialogue/choices, interrogation, confrontation,
-a second contradiction or deduction, NPC
-AI/movement/animation, voice acting, cinematic cutscenes, additional
-locations, persistence, and multiplayer/per-session state.
-`Types.DialogueNodeDefinition.next` still supports a linear chain only — a
-real choice/branch contract remains future work, added only once a case's
-content actually needs it. `CaseClosed` still shows only a factual summary —
-no verdict, no claim about who committed the crime; the accusation is the
-player's own choice, reported as consistent or not with the evidence they
-found.
+surfaced each objective's own description as a hint; M2 gave the case an
+authored answer and a verdict on the player's own accusation.
+
+Explicitly still out of scope: any suspect beyond SUS-001/SUS-002, branching
+dialogue/choices, interrogation, confrontation, NPC AI/movement/animation,
+voice acting, cinematic cutscenes, additional locations, persistence, and
+multiplayer/per-session state. `Types.DialogueNodeDefinition.next` still
+supports a linear chain only — a real choice/branch contract remains future
+work, added only once a case's content actually needs it.
 
 ## Extension points (future phases)
 

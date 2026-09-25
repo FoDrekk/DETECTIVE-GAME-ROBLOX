@@ -236,5 +236,19 @@ return function(t)
 		expect.truthy(summary.contradiction)
 		expect.equal(summary.contradiction.id, "CONTRA-001")
 		expect.truthy(summary.accusation)
+		-- M2: the verdict on the committed accusation (ACC-001, Victor).
+		expect.truthy(summary.verdict)
+		expect.truthy(summary.verdict.correct)
+		expect.equal(summary.verdict.culpritName, "Victor Lane")
+	end)
+
+	-- Before an accusation exists there is nothing to judge, so no verdict.
+	t.test("closing summary carries no verdict without an accusation", function()
+		resetToInvestigation()
+		local player = makePlayer()
+		completeEverything(player)
+		local summary = GameStateService.getClosingSummary(player)
+		expect.truthy(summary)
+		expect.falsy(summary.verdict)
 	end)
 end

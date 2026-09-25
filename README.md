@@ -84,6 +84,28 @@ print `[PASS]` / `[FAIL]` / `[TIMEOUT]` plus a `[SUMMARY]` line.
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for the forward plan (M1–M4).
 
+M2: the case has an answer.
+
+- **CASE-001 has a solution**: Victor Lane killed Daniel Reyes to stop the
+  dissolution of their partnership. Every clue was rewritten around it —
+  Daniel is found "shortly after midnight" (was: a self-contradicting 23:00);
+  his last call, at 11:47 PM, is now to Mara by name; the laptop and meeting
+  document establish motive; a new evidence item, the keycard log, places
+  Victor's exit at 11:52 PM, after that call. Ids, objectives and the
+  discovery flow are unchanged.
+- **A second deduction** (`DEDUCT-002`, motive: the laptop draft + the
+  meeting agenda) joins the existing one (opportunity). The Case File and
+  its `ScrollingFrame` (was a fixed-height panel that overflowed once two
+  deductions and a longer contradiction reason existed) both handle it.
+- **The accusation gets a verdict**: `CaseDefinition.solution` (id,
+  culprit, reveal text) is server-only, authored in `Case001.luau`, and
+  never sent to a client until that player has committed to an accusation
+  (`AccusationService.getVerdict`). The closing screen leads with whether
+  the player was right and, either way, what actually happened.
+- **Case data moved to `ServerStorage.Config`** (was `ReplicatedStorage`):
+  the solution can only ever leak through what a service explicitly chooses
+  to send, never by sitting in a folder every client can already read.
+
 M1: friction-free loop — fixes from a real spawn-to-Case-Closed playthrough.
 
 - **Briefing is readable**: its text now fades in (it was left fully

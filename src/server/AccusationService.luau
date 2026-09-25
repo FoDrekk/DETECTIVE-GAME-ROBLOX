@@ -193,6 +193,32 @@ function AccusationService.getResolution(player: Player): Types.AccusationResolu
 	}
 end
 
+-- The case's true answer measured against this player's committed
+-- accusation (M2). Nil until they have accused, or if the case authors no
+-- solution -- the answer never leaves the server before the player commits.
+function AccusationService.getVerdict(player: Player): Types.CaseVerdict?
+	local data = PlayerDataService.get(player)
+	if not data then
+		return nil
+	end
+	local accusationId = data.caseState.accusationId
+	if not accusationId then
+		return nil
+	end
+	local caseDef = CaseService.getCase(data.caseState.caseId)
+	local solution = caseDef and caseDef.solution
+	local accusation = findAccusation(data.caseState.caseId, accusationId)
+	if not solution or not accusation then
+		return nil
+	end
+	local culprit = CaseService.getSuspect(data.caseState.caseId, solution.culpritSuspectId)
+	return {
+		correct = accusation.suspectId == solution.culpritSuspectId,
+		culpritName = if culprit then culprit.name else solution.culpritSuspectId,
+		reveal = solution.reveal,
+	}
+end
+
 --[[
 	Make a formal accusation. Server-authoritative and idempotent:
 

@@ -25,7 +25,7 @@ return function(t)
 	local ConversationService = require(Server:WaitForChild("ConversationService"))
 	local PlayerDataService = require(Server:WaitForChild("PlayerDataService"))
 	local StoryEvents = require(Server:WaitForChild("StoryEvents"))
-	local CaseRegistry = require(ReplicatedStorage:WaitForChild("Config"):WaitForChild("CaseRegistry"))
+	local CaseRegistry = require(game:GetService("ServerStorage"):WaitForChild("Config"):WaitForChild("CaseRegistry"))
 	local expect = t.expect
 
 	-- Synthetic fixture: two evidence items, one suspect with a one-line
@@ -597,5 +597,29 @@ return function(t)
 
 		local payload = ReasoningService.getPayload(player)
 		expect.equal(#payload.deductions, 0)
+	end)
+
+	----------------------------------------------------------------------
+	-- DEDUCT-002 (M2): motive, from the laptop draft and the midnight agenda.
+	----------------------------------------------------------------------
+
+	t.test("DEDUCT-002 stays locked with only the laptop known", function()
+		local player = makeRealPlayer()
+		EvidenceService.discover(player, "EV-002")
+		ReasoningService.evaluate(player)
+		local data = PlayerDataService.get(player)
+		expect.falsy(data.caseState.unlockedDeductions["DEDUCT-002"])
+	end)
+
+	t.test("DEDUCT-002 unlocks once the laptop and the agenda are known", function()
+		local player = makeRealPlayer()
+		EvidenceService.discover(player, "EV-002")
+		EvidenceService.discover(player, "EV-003")
+		ReasoningService.evaluate(player)
+
+		local payload = ReasoningService.getPayload(player)
+		expect.equal(#payload.deductions, 1)
+		expect.equal(payload.deductions[1].id, "DEDUCT-002")
+		expect.deepEqual(payload.deductions[1].basedOn, { "Laptop", "Document" })
 	end)
 end
