@@ -84,6 +84,16 @@ print `[PASS]` / `[FAIL]` / `[TIMEOUT]` plus a `[SUMMARY]` line.
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for the forward plan (M1–M4).
 
+M4: a complete session.
+
+- **The ending has a next step**: the closing screen offers
+  `[E] Investigate again`. The server accepts it only from `CaseClosed`
+  (`GameStateService.requestReplay`), wipes that player's case state,
+  returns to the briefing through the phase graph's own edges, respawns the
+  investigator in the lobby, and pushes the same fresh state a newly joined
+  player receives. The second run starts genuinely clean (verified: evidence
+  counter back to 1/4, empty Case File, OBJ-001 unchecked).
+
 M3: the office tells the story.
 
 - **Daniel's office reads as a crime scene**: crossed scene tape across its

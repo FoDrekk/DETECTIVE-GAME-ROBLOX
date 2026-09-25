@@ -553,6 +553,26 @@ Statement"), gated behind `OBJ-002`, with a single requirement:
 it `OBJ-004`/`DEDUCT-001` as its first real content (see "First real
 deduction (Phase 2M)" above).
 
+## Replay (M4)
+
+`GameStateService.requestReplay(player)` is the inverse of `requestConclude`:
+valid only while the phase is `CaseClosed` and only for a player with case
+data. It walks the graph's own edges (`CaseClosed -> MainMenu ->
+CaseBriefing`, which re-grants the case via the existing `CaseBriefing`
+onEnter hook), then `PlayerDataService.clear` + `initialize` wipe that
+player's entire `PlayerCaseState` — evidence, timeline, statements,
+reasoning, objectives, accusation — since every service keeps its per-player
+state there. It fires `GameStateService.onReplay()`, a `BindableEvent`; the
+bootstrap bridge respawns the character (`LoadCharacter`) and re-pushes
+objectives/timeline/reasoning/accusation, exactly as `onPlayerAdded` does.
+The bridge ignores non-Instance players (the unit harness's mock tables).
+
+There is no new remote: a `RequestPhaseChange("CaseBriefing")` received while
+the phase is `CaseClosed` is dispatched to `requestReplay`, the same way
+`"CaseClosed"` is dispatched to `requestConclude`. The client sends it from
+`[E] Investigate again` on the closing screen, and clears its own
+`investigationComplete`/last-summary flags whenever `CaseBriefing` begins.
+
 ## Case Closed: formal conclusion (Phase 2L)
 
 `GameStateMachine` has allowed `Investigation -> CaseClosed` since Phase 2E,

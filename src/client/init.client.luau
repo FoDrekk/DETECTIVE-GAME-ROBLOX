@@ -94,8 +94,15 @@ end
 
 local function applyPhase(phase: Types.GamePhase)
 	currentPhase = phase
-	-- The E key is active during the briefing (to begin) and investigation.
-	local interactEnabled = phase == "CaseBriefing" or phase == "Investigation"
+	-- The E key is active during the briefing (to begin), the investigation,
+	-- and the closing screen (to investigate again, M4).
+	local interactEnabled = phase == "CaseBriefing" or phase == "Investigation" or phase == "CaseClosed"
+
+	if phase == "CaseBriefing" then
+		-- A fresh case (first join or a replay): forget the last one's ending.
+		investigationComplete = false
+		lastCaseClosedSummary = nil
+	end
 
 	InputController.setInteractEnabled(interactEnabled)
 	ObjectiveView.setActive(phase == "Investigation")
@@ -182,6 +189,9 @@ local function bootstrap()
 		elseif EvidencePanel.isOpen() then
 			-- [E] Continue: dismiss the readout and return to exploring.
 			closeOverlays()
+		elseif currentPhase == "CaseClosed" then
+			-- [E] Investigate again. The server validates and resets.
+			requestPhaseChange:FireServer("CaseBriefing")
 		elseif currentPhase == "CaseBriefing" then
 			requestPhaseChange:FireServer("Investigation")
 		elseif currentPhase == "Investigation" then

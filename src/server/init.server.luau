@@ -116,6 +116,21 @@ local function bootstrap()
 		caseClosedSummaryEvent:FireClient(player, summary)
 	end)
 
+	-- M4: a replay starts the investigator back in the lobby with a clean
+	-- case, pushing the same fresh state a newly joined player receives.
+	GameStateService.onReplay().Event:Connect(function(player: Player)
+		-- The unit harness replays with mock player tables; only a real
+		-- Player can be respawned or sent remotes.
+		if typeof(player) ~= "Instance" then
+			return
+		end
+		player:LoadCharacter()
+		ObjectiveService.sendCurrent(player)
+		TimelineService.sendCurrent(player)
+		ReasoningService.sendCurrent(player)
+		AccusationService.sendCurrent(player)
+	end)
+
 	-- 4. Phase machine (depends on cases + player data).
 	GameStateService.start()
 

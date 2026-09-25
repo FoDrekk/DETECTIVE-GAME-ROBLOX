@@ -46,6 +46,15 @@ function GameStateService.onCaseClosed(): BindableEvent
 	return caseClosedEvent
 end
 
+-- Fired with (player) once a replay is accepted (M4). The bootstrap bridge
+-- respawns the character and re-pushes the fresh state -- both need a real
+-- Player, so neither happens here (same reasoning as caseClosedEvent).
+local replayEvent: BindableEvent = Instance.new("BindableEvent")
+
+function GameStateService.onReplay(): BindableEvent
+	return replayEvent
+end
+
 local function broadcast(phase: Types.GamePhase)
 	phaseChanged:FireAllClients(phase)
 end
@@ -156,6 +165,36 @@ function GameStateService.requestConclude(player: Player): boolean
 	return true
 end
 
+--[[
+	M4: start the case over from the closing screen. Only valid from
+	CaseClosed, and only for a player with case data. Wipes this player's case
+	state (evidence, statements, reasoning, objectives, accusation) and returns
+	to the briefing via the graph's own edges (CaseClosed -> MainMenu ->
+	CaseBriefing). Like every other transition, the phase itself is the
+	server-wide singleton (single-player scope).
+]]
+function GameStateService.requestReplay(player: Player): boolean
+	if not PlayerDataService.get(player) then
+		return false
+	end
+	if GameStateService.getPhase() ~= "CaseClosed" then
+		return false
+	end
+	if not GameStateService.setPhase("MainMenu") or not GameStateService.setPhase("CaseBriefing") then
+		return false
+	end
+
+	PlayerDataService.clear(player)
+	PlayerDataService.initialize(player, ACTIVE_CASE)
+	PlayerDataService.setPhase(player, "CaseBriefing")
+	for _, p in ipairs(game:GetService("Players"):GetPlayers()) do
+		PlayerDataService.setPhase(p, "CaseBriefing")
+	end
+	broadcast("CaseBriefing")
+	replayEvent:Fire(player)
+	return true
+end
+
 local function grantCase(player: Player)
 	local payload = CaseService.buildClientPayload(player)
 	if payload then
@@ -195,6 +234,12 @@ function GameStateService.start()
 		-- independently-testable function that owns it.
 		if phase == "CaseClosed" then
 			GameStateService.requestConclude(player)
+			return
+		end
+		-- M4: asking for the briefing from the closing screen is a replay,
+		-- which also resets this player's case state.
+		if phase == "CaseBriefing" and GameStateService.getPhase() == "CaseClosed" then
+			GameStateService.requestReplay(player)
 			return
 		end
 		-- Only allow the shared, server-validated transition.

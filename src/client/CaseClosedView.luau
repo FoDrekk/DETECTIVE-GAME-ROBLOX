@@ -247,6 +247,19 @@ function CaseClosedView.start()
 		color = Theme.TextSecondary,
 		parent = root,
 	})
+
+	-- M4: the ending has a next step.
+	Components.text({
+		name = "ReplayHint",
+		text = `[{Config.Interaction.PrimaryKey}]  Investigate again`,
+		size = UDim2.new(1, 0, 0, 16),
+		position = UDim2.new(0, 0, 1, -20),
+		font = Theme.FontBold,
+		textSize = 12,
+		color = Theme.Accent,
+		xAlign = Enum.TextXAlignment.Right,
+		parent = root,
+	})
 end
 
 return CaseClosedView

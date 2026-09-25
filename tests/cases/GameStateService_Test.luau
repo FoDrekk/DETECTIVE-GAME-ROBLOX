@@ -242,6 +242,49 @@ return function(t)
 		expect.equal(summary.verdict.culpritName, "Victor Lane")
 	end)
 
+	-- M4: replay is only offered from the closing screen.
+	t.test("replay is rejected outside CaseClosed", function()
+		resetToInvestigation()
+		local player = makePlayer()
+		completeObj001(player)
+		expect.falsy(GameStateService.requestReplay(player))
+		expect.equal(GameStateService.getPhase(), "Investigation")
+		local data = PlayerDataService.get(player)
+		expect.truthy(data.caseState.completedObjectives["OBJ-001"]) -- untouched
+	end)
+
+	t.test("a player with no case data cannot replay", function()
+		resetToInvestigation()
+		local player = makePlayer()
+		completeAndAccuse(player)
+		expect.truthy(GameStateService.requestConclude(player))
+		local stranger = { UserId = t.nextUserId(), Name = "ReplayStranger" }
+		expect.falsy(GameStateService.requestReplay(stranger :: any))
+		expect.equal(GameStateService.getPhase(), "CaseClosed")
+	end)
+
+	-- After concluding, replay returns to the briefing with a clean case:
+	-- no evidence, no accusation, the first objective active again.
+	t.test("replay after concluding resets the case and returns to the briefing", function()
+		resetToInvestigation()
+		local player = makePlayer()
+		completeAndAccuse(player)
+		EvidenceService.discover(player, "EV-001")
+		expect.truthy(GameStateService.requestConclude(player))
+
+		expect.truthy(GameStateService.requestReplay(player))
+		expect.equal(GameStateService.getPhase(), "CaseBriefing")
+
+		local data = PlayerDataService.get(player)
+		expect.truthy(data)
+		expect.equal(data.phase, "CaseBriefing")
+		expect.falsy(next(data.caseState.discovered))
+		expect.falsy(next(data.caseState.completedObjectives))
+		expect.falsy(data.caseState.accusationId)
+		expect.equal(ObjectiveService.getActiveObjectiveId(player), "OBJ-001")
+		expect.falsy(AccusationService.getVerdict(player))
+	end)
+
 	-- Before an accusation exists there is nothing to judge, so no verdict.
 	t.test("closing summary carries no verdict without an accusation", function()
 		resetToInvestigation()

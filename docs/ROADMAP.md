@@ -89,11 +89,27 @@ recommended default; the product owner can redirect.)
 - Lighting: kept as tuned in Phase 2L-A (Daniel's office is already the
   warmest, brightest room); no change needed.
 
-### M4 — A complete session (flow & finish)
+### M4 — A complete session (flow & finish) — done
 
-- The ending has a next step (replay the case) instead of a dead end.
-- Final cross-cutting polish pass from a fresh playthrough.
-- Docs reconciled; performance spot-check.
+- The ending has a next step: `[E] Investigate again` resets the player's
+  case and returns to the briefing.
+- Fresh spawn-to-Case-Closed-to-replay playthrough: clean console, no stale
+  UI between runs.
+- Docs reconciled.
+
+## Known follow-ups (not blocking)
+
+- **Examine close-up framing** points from the object's own facing, which
+  often frames a wall; the centered evidence panel also covers the object.
+  Frame from the player's side and move the panel off-center.
+- **Keyboard only.** Every action is a key (E/T/C/Q); touch and gamepad
+  players have no way to play. Needs on-screen buttons before a public
+  release.
+- **Single-player scope.** The phase machine is server-wide, so a second
+  player in the same server shares one briefing/investigation/closing phase.
+  Fine for a 1-player server; per-player phases are needed for more.
+- **Running the unit suite inside a live play session** drives that shared
+  phase and broadcasts it to the real client; restart Play afterwards.
 
 ## Testing strategy
 
