@@ -21,7 +21,7 @@ return function(t)
 	local function makePlayer(): any
 		local id = t.nextUserId()
 		local player = { UserId = id, Name = `CONV{id}` }
-		PlayerDataService.initialize(player, "CASE-001")
+		PlayerDataService.initialize(player, "CASE-TEST-LEGACY")
 		return player
 	end
 
@@ -233,7 +233,7 @@ return function(t)
 		expect.equal(payload.speaker, "Mara Reyes")
 		-- The line matches the case's own authored start node -- never a
 		-- hardcoded prose copy, so dialogue can be authored freely.
-		local caseDef = CaseRegistry.get("CASE-001")
+		local caseDef = CaseRegistry.get("CASE-TEST-LEGACY")
 		local startNode = nil
 		for _, conversation in ipairs(caseDef.conversations) do
 			if conversation.suspectId == "SUS-001" then
@@ -282,7 +282,7 @@ return function(t)
 		ConversationService.begin(player, "SUS-001")
 		PlayerDataService.clear(player)
 		expect.falsy(PlayerDataService.get(player))
-		PlayerDataService.initialize(player, "CASE-001")
+		PlayerDataService.initialize(player, "CASE-TEST-LEGACY")
 		local data = PlayerDataService.get(player)
 		expect.falsy(data.caseState.activeConversation)
 	end)
@@ -392,7 +392,7 @@ return function(t)
 		ConversationService.advance(player)
 
 		local payload = ConversationService.getUnlockedStatement(player, "STMT-SUS-001-ALIBI")
-		local suspect = CaseService.getSuspect("CASE-001", "SUS-001")
+		local suspect = CaseService.getSuspect("CASE-TEST-LEGACY", "SUS-001")
 		expect.truthy(payload)
 		expect.truthy(suspect)
 		expect.equal(payload.text, suspect.alibi)
@@ -443,7 +443,7 @@ return function(t)
 		ConversationService.advance(player)
 
 		local payload = ConversationService.getUnlockedStatement(player, "STMT-SUS-002-ALIBI")
-		local suspect = CaseService.getSuspect("CASE-001", "SUS-002")
+		local suspect = CaseService.getSuspect("CASE-TEST-LEGACY", "SUS-002")
 		expect.truthy(payload)
 		expect.truthy(suspect)
 		expect.equal(payload.text, suspect.alibi)

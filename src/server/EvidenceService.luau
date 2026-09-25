@@ -122,6 +122,37 @@ function EvidenceService.discover(player: Player, evidenceId: string): (boolean,
 	return true, nil
 end
 
+--[[
+	Re-open an already-discovered clue's readout (the player examined it
+	again). Not a discovery: no state changes, no timeline reveal, no
+	StoryEvent -- the same payload shape, flagged `revisited`, so the client
+	can show it quietly. Returns false for evidence not yet discovered.
+]]
+function EvidenceService.review(player: Player, evidenceId: string): boolean
+	local data = PlayerDataService.get(player)
+	local caseDef = data and CaseService.getCase(data.caseState.caseId)
+	local discovered = data and data.caseState.discovered[evidenceId]
+	if not data or not caseDef or not discovered then
+		return false
+	end
+	local related: { string } = {}
+	for _, relatedId in ipairs(discovered.relatedEvidenceIds or {}) do
+		local relatedEvidence = data.caseState.discovered[relatedId]
+		if relatedEvidence then
+			table.insert(related, relatedEvidence.name)
+		end
+	end
+	local payload: Types.EvidencePayload = {
+		evidence = discovered,
+		totalDiscovered = Util.count(data.caseState.discovered),
+		totalEvidence = #caseDef.evidence,
+		related = if #related > 0 then related else nil,
+		revisited = true,
+	}
+	evidenceDiscoveredEvent:Fire(player, payload)
+	return true
+end
+
 function EvidenceService.getState(player: Player): Types.EvidenceState
 	local data = PlayerDataService.get(player)
 	if not data then

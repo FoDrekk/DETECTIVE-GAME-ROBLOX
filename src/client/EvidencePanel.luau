@@ -30,6 +30,7 @@ local detailsLabel: TextLabel? = nil
 local relatedLabel: TextLabel? = nil
 local importanceLabel: TextLabel? = nil
 local counterLabel: TextLabel? = nil
+local headerLabel: TextLabel? = nil
 local isOpen = false
 
 local openedEvent: BindableEvent = Instance.new("BindableEvent")
@@ -87,6 +88,9 @@ function EvidencePanel.show(payload: Types.EvidencePayload)
 	bodyLabel.Text = ev.description
 	importanceLabel.Text = string.upper(ev.importance)
 	counterLabel.Text = `{payload.totalDiscovered} / {payload.totalEvidence}`
+	if headerLabel then
+		headerLabel.Text = if payload.revisited then "EVIDENCE — ON FILE" else "EVIDENCE DISCOVERED"
+	end
 
 	-- Optional fields are only shown when authored, keeping the panel clean.
 	if timeLabel then
@@ -153,7 +157,7 @@ function EvidencePanel.start()
 	})
 	accent.BackgroundTransparency = 0
 
-	Components.text({
+	headerLabel = Components.text({
 		name = "Header",
 		text = "EVIDENCE DISCOVERED",
 		size = UDim2.new(1, 0, 0, 14),

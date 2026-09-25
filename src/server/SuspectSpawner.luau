@@ -61,7 +61,9 @@ local function describe(appearance: Types.SuspectAppearance?): HumanoidDescripti
 	else
 		log:warn("unknown body package", { body = appearance.body })
 	end
-	description.HairAccessory = tostring(appearance.hair)
+	if appearance.hair then
+		description.HairAccessory = tostring(appearance.hair)
+	end
 	return description
 end
 

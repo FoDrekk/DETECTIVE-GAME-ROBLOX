@@ -47,6 +47,9 @@ export type EvidenceDefinition = {
 	propPlacement: {
 		position: Vector3,
 		lookAt: Vector3?,
+		-- Which PropKit model to build for it (e.g. "Printout",
+		-- "EspressoCup"); absent builds a plain panel.
+		style: string?,
 	}?,
 }
 
@@ -71,13 +74,19 @@ export type SuspectDefinition = {
 
 export type SuspectAppearance = {
 	body: string,
-	hair: number,
+	-- Catalog hair accessory id; absent for a shaved head.
+	hair: number?,
 	hairColor: Color3,
 	skin: Color3,
 	-- Worn colours: shirt/jacket (torso and sleeves), trousers, shoes.
 	top: Color3,
 	bottom: Color3,
 	shoes: Color3,
+	-- Small, code-built wardrobe details that make a character readable at
+	-- a glance (keys into SuspectSpawner's detail builders, e.g. "Tie",
+	-- "Scarf", "SecurityPatch"), and the colour they use.
+	details: { string }?,
+	accent: Color3?,
 }
 
 export type LocationDefinition = {
@@ -171,17 +180,65 @@ export type ObjectiveDefinition = {
 	prerequisites: { string }?,
 }
 
--- A single line in a linear conversation. `next` is the following node's
--- id; nil marks the final line -- continuing past it completes the
--- conversation. `statementId` is unlocked (server-side) the moment this
--- node is reached. No branching/choices yet: this phase is deterministic
--- and linear only.
+-- A condition on what this player already knows or has done in dialogue.
+-- Evaluated server-side against the player's own state; `negate` inverts it
+-- (e.g. "only while this statement is still unknown").
+--   Evidence      : evidence id discovered
+--   Statement     : statement id unlocked
+--   Contradiction : contradiction id unlocked
+--   Deduction     : deduction id unlocked
+--   Flag          : a conversation flag set by an earlier node (setFlags)
+export type DialogueConditionKind = "Evidence" | "Statement" | "Contradiction" | "Deduction" | "Flag"
+
+export type DialogueCondition = {
+	kind: DialogueConditionKind,
+	id: string,
+	negate: boolean?,
+}
+
+-- Something the investigator can say. Offered only while every `requires`
+-- condition holds; a `once` choice disappears after it has been chosen.
+-- Choosing it moves the conversation to `next`.
+export type DialogueChoiceDefinition = {
+	id: string,
+	text: string,
+	next: string,
+	requires: { DialogueCondition }?,
+	once: boolean?,
+}
+
+-- A single line of a conversation. `next` is the following node's id; nil
+-- marks the final line -- continuing past it completes the conversation.
+-- `statementId` is unlocked (server-side) the moment this node is reached.
+--
+-- Branching: a node with `choices` (or `choicesFrom`, which borrows another
+-- node's choices so a topic can return to the question list without an
+-- extra "anything else?" line) waits for the investigator to pick one of
+-- the choices currently available to them. If none is available the node
+-- behaves like a linear one (`next`, or the end). `setFlags`/`clearFlags`
+-- let the conversation remember what happened (e.g. the investigator
+-- pressed too hard) for later entries, choices and lines. `isPlayer` marks
+-- a line spoken by the investigator.
 export type DialogueNodeDefinition = {
 	id: string,
 	speaker: string,
 	text: string,
 	next: string?,
 	statementId: string?,
+	choices: { DialogueChoiceDefinition }?,
+	choicesFrom: string?,
+	setFlags: { string }?,
+	clearFlags: { string }?,
+	isPlayer: boolean?,
+}
+
+-- Where a conversation starts when its `requires` all hold. Entries are
+-- checked in order; the first match wins, otherwise `startNodeId` is used.
+-- This is how a character greets the investigator differently the second
+-- time, or after being accused of lying.
+export type ConversationEntry = {
+	node: string,
+	requires: { DialogueCondition },
 }
 
 -- A suspect's conversation: a small graph of DialogueNodeDefinitions.
@@ -189,16 +246,18 @@ export type ConversationDefinition = {
 	suspectId: string,
 	startNodeId: string,
 	nodes: { [string]: DialogueNodeDefinition },
+	entries: { ConversationEntry }?,
 }
 
 -- A single piece of unlockable investigative information tied to a suspect.
--- Content is never duplicated here: the client payload is built by reading
--- the suspect's own authored fields (e.g. alibi) at unlock time, so a
--- statement can never drift from the suspect data it comes from.
+-- `text` is what the Case File records. When absent it is resolved from the
+-- suspect's own `alibi` at unlock time (the original single-statement
+-- contract), so an alibi statement can never drift from the suspect data.
 export type StatementDefinition = {
 	id: string,
 	suspectId: string,
 	label: string,
+	text: string?,
 }
 
 -- A reference to an already-discovered/unlocked fact, by kind and id.
@@ -370,6 +429,15 @@ export type PlayerCaseState = {
 	-- The player's current conversation, if any. Authoritative; the client
 	-- never supplies or infers this.
 	activeConversation: { suspectId: string, nodeId: string }?,
+	-- Conversation memory: flags set by dialogue nodes, and the `once`
+	-- choices already used (keyed "<suspectId>/<choiceId>"). Owned by
+	-- ConversationService.
+	dialogueFlags: { [string]: boolean },
+	usedChoices: { [string]: boolean },
+	-- Suspect ids this player has spoken to at least once (a conversation
+	-- was started), so a "talk to X" objective can be credited even if the
+	-- conversation happened before that objective became active.
+	metSuspects: { [string]: boolean },
 	-- Suspect ids whose conversation has already been completed once, so
 	-- completion fires exactly once (mirrors completedObjectives).
 	completedConversations: { [string]: boolean },
@@ -421,6 +489,9 @@ export type EvidencePayload = {
 	-- player has already discovered. Presentational cross-reference only;
 	-- undiscovered related evidence is never included.
 	related: { string }?,
+	-- True when this is an already-discovered clue being looked at again
+	-- (not a new discovery).
+	revisited: boolean?,
 }
 
 -- Authored, non-evidence description shown when the player examines a
@@ -453,13 +524,28 @@ export type DialoguePayload = {
 	active: boolean,
 	suspectId: string?,
 	suspectName: string?,
+	-- The suspect's public role (e.g. "Night Security"), for the name plate.
+	suspectRole: string?,
 	nodeId: string?,
 	speaker: string?,
 	text: string?,
+	-- True when the investigator speaks this line.
+	isPlayer: boolean?,
 	canContinue: boolean,
 	completed: boolean,
 	-- Present only on the turn a statement is newly unlocked.
 	unlockedStatement: StatementPayload?,
+	-- The questions the investigator may ask now (ids + words only; never
+	-- where they lead). Present only while the line is waiting for a choice.
+	choices: { DialogueChoicePayload }?,
+	-- What the investigator just said to get this line, if it followed a
+	-- choice -- shown above the reply so the exchange reads as dialogue.
+	prompt: string?,
+}
+
+export type DialogueChoicePayload = {
+	id: string,
+	text: string,
 }
 
 -- An unlocked contradiction as sent to the client. `leftSummary`/

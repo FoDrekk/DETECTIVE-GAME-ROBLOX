@@ -342,7 +342,11 @@ local function bootstrap()
 		end
 		InteractionController.pauseScan()
 		EvidencePanel.show(payload)
-		SoundController.play("EvidenceDiscovered")
+		if payload.revisited then
+			SoundController.play("Tick")
+		else
+			SoundController.play("EvidenceDiscovered")
+		end
 	end)
 
 	timelineUpdated.OnClientEvent:Connect(function(payload: Types.TimelinePayload)

@@ -41,7 +41,7 @@ return function(t)
 	-- returned unchanged -- no invented content, no second schema.
 	t.test("getSuspects returns Case001's authored suspects unchanged", function()
 		local suspects = CaseService.getSuspects("CASE-001")
-		expect.equal(#suspects, 2)
+		expect.equal(#suspects, 3)
 		local byId = {}
 		for _, suspect in ipairs(suspects) do
 			byId[suspect.id] = suspect
@@ -50,12 +50,14 @@ return function(t)
 		expect.equal(byId["SUS-001"].name, "Mara Reyes")
 		expect.truthy(byId["SUS-002"])
 		expect.equal(byId["SUS-002"].name, "Victor Lane")
+		expect.truthy(byId["SUS-003"])
+		expect.equal(byId["SUS-003"].name, "Sam Okafor")
 	end)
 
 	t.test("getSuspect resolves a single suspect by id", function()
 		local suspect = CaseService.getSuspect("CASE-001", "SUS-001")
 		expect.truthy(suspect)
-		expect.equal(suspect and suspect.role, "Spouse")
+		expect.equal(suspect and suspect.role, "Daniel's Wife")
 	end)
 
 	t.test("getSuspect returns nil for an unknown suspect id", function()
@@ -111,7 +113,9 @@ return function(t)
 				expect.truthy(appearance)
 				if appearance then
 					expect.truthy(Config.Characters.Bodies[appearance.body])
-					expect.truthy(appearance.hair > 0)
+					-- Hair is optional (a shaved head); when present it is a
+					-- catalog id.
+					expect.truthy(appearance.hair == nil or (appearance.hair :: number) > 0)
 					for _, key in ipairs({ "hairColor", "skin", "top", "bottom", "shoes" }) do
 						expect.equal(typeof((appearance :: any)[key]), "Color3")
 					end

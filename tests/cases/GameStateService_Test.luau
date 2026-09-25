@@ -33,7 +33,7 @@ return function(t)
 	local function makePlayer(): any
 		local id = t.nextUserId()
 		local player = { UserId = id, Name = `GSS{id}` }
-		PlayerDataService.initialize(player, "CASE-001")
+		PlayerDataService.initialize(player, "CASE-TEST-LEGACY")
 		return player
 	end
 
@@ -290,7 +290,10 @@ return function(t)
 		expect.falsy(next(data.caseState.discovered))
 		expect.falsy(next(data.caseState.completedObjectives))
 		expect.falsy(data.caseState.accusationId)
-		expect.equal(ObjectiveService.getActiveObjectiveId(player), "OBJ-001")
+		-- A replay restarts the configured case from its first objective.
+		local CaseRegistry = require(game:GetService("ServerStorage"):WaitForChild("Config"):WaitForChild("CaseRegistry"))
+		local activeCase = CaseRegistry.get(data.caseState.caseId)
+		expect.equal(ObjectiveService.getActiveObjectiveId(player), activeCase.objectives[1].id)
 		expect.falsy(AccusationService.getVerdict(player))
 	end)
 

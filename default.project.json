@@ -38,6 +38,9 @@
         },
         "Cases": {
           "$path": "tests/cases"
+        },
+        "Fixtures": {
+          "$path": "tests/fixtures"
         }
       }
     },

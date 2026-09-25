@@ -84,7 +84,12 @@ end
 
 local function discover(descriptor: Descriptor, player: Player)
 	if descriptor.evidenceId then
-		EvidenceService.discover(player, descriptor.evidenceId)
+		local ok, reason = EvidenceService.discover(player, descriptor.evidenceId)
+		if not ok and reason == "already-discovered" then
+			-- Looking at a clue again re-opens its readout instead of doing
+			-- nothing.
+			EvidenceService.review(player, descriptor.evidenceId)
+		end
 	end
 end
 

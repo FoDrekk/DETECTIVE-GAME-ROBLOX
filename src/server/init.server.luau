@@ -205,6 +205,17 @@ local function bootstrap()
 		ConversationService.leave(player)
 	end)
 
+	-- The investigator picked a question. Only the choice id travels; the
+	-- server re-checks that it is on the current line and available to this
+	-- player before following it.
+	local requestDialogueChoose = Signals.get(Signals.Names.DialogueChoose)
+	requestDialogueChoose.OnServerEvent:Connect(function(player: Player, choiceId)
+		if type(choiceId) ~= "string" then
+			return
+		end
+		ConversationService.choose(player, choiceId)
+	end)
+
 	-- 10. Reasoning (Case File) sync requests (join-race guard).
 	local requestReasoning = Signals.get(Signals.Names.RequestReasoning)
 	requestReasoning.OnServerEvent:Connect(function(player: Player)

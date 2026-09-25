@@ -87,70 +87,76 @@ return function(t)
 		expect.truthy(CaseRegistry.get("CASE-001"))
 	end)
 
-	-- Phase 2I: both suspects are playable NPCs as of this phase.
-	t.test("both suspects have an npcPlacement", function()
+	-- Every character is a playable NPC: two suspects and the night guard.
+	t.test("every character has an npcPlacement", function()
 		local caseDef = CaseRegistry.get("CASE-001")
-		local byId = {}
+		expect.equal(#caseDef.suspects, 3)
 		for _, suspect in ipairs(caseDef.suspects) do
-			byId[suspect.id] = suspect
+			expect.truthy(suspect.npcPlacement)
 		end
-		expect.truthy(byId["SUS-001"].npcPlacement)
-		expect.truthy(byId["SUS-002"].npcPlacement)
 	end)
 
-	-- CASE-001 declares one conversation/statement per playable suspect.
-	t.test("declares both suspects' conversations and statements", function()
+	-- One conversation per character; every statement belongs to a real
+	-- character and every alibi statement exists.
+	t.test("declares a conversation per character and attributable statements", function()
 		local caseDef = CaseRegistry.get("CASE-001")
-		expect.equal(#caseDef.conversations, 2)
+		expect.equal(#caseDef.conversations, 3)
 		local suspectIds = {}
-		for _, conversation in ipairs(caseDef.conversations) do
-			suspectIds[conversation.suspectId] = true
+		for _, suspect in ipairs(caseDef.suspects) do
+			suspectIds[suspect.id] = true
 		end
-		expect.truthy(suspectIds["SUS-001"])
-		expect.truthy(suspectIds["SUS-002"])
-
-		expect.equal(#caseDef.statements, 2)
+		for _, conversation in ipairs(caseDef.conversations) do
+			expect.truthy(suspectIds[conversation.suspectId])
+		end
 		local statementIds = {}
 		for _, statement in ipairs(caseDef.statements) do
+			expect.truthy(suspectIds[statement.suspectId])
+			expect.falsy(statementIds[statement.id])
 			statementIds[statement.id] = statement
 		end
-		expect.truthy(statementIds["STMT-SUS-001-ALIBI"])
 		expect.equal(statementIds["STMT-SUS-001-ALIBI"].suspectId, "SUS-001")
-		expect.truthy(statementIds["STMT-SUS-002-ALIBI"])
 		expect.equal(statementIds["STMT-SUS-002-ALIBI"].suspectId, "SUS-002")
 	end)
 
-	-- Phase 2I: CASE-001 declares exactly one contradiction, referencing real
-	-- facts by id rather than duplicating their content.
-	t.test("declares exactly one contradiction, referencing real facts", function()
+	-- Contradictions reference real facts by id, never duplicated content.
+	t.test("declares its contradictions, referencing real facts", function()
 		local caseDef = CaseRegistry.get("CASE-001")
-		expect.equal(#caseDef.contradictions, 1)
-		local contradiction = caseDef.contradictions[1]
-		expect.equal(contradiction.id, "CONTRA-001")
-		expect.equal(contradiction.left.kind, "Statement")
-		expect.equal(contradiction.left.id, "STMT-SUS-002-ALIBI")
-		expect.equal(contradiction.right.kind, "Evidence")
-		expect.equal(contradiction.right.id, "EV-004")
+		local facts = { Evidence = {}, Statement = {} }
+		for _, ev in ipairs(caseDef.evidence) do
+			facts.Evidence[ev.id] = true
+		end
+		for _, statement in ipairs(caseDef.statements) do
+			facts.Statement[statement.id] = true
+		end
+		expect.equal(#caseDef.contradictions, 4)
+		for _, contradiction in ipairs(caseDef.contradictions) do
+			expect.truthy(facts[contradiction.left.kind][contradiction.left.id])
+			expect.truthy(facts[contradiction.right.kind][contradiction.right.id])
+		end
+		local first = caseDef.contradictions[1]
+		expect.equal(first.id, "CONTRA-001")
+		expect.equal(first.left.id, "STMT-SUS-002-ALIBI")
+		expect.equal(first.right.id, "EV-004")
 	end)
 
-	-- CASE-001 declares two deductions (opportunity via DEDUCT-001, motive via
-	-- DEDUCT-002), referencing real facts by id.
 	t.test("declares its deductions, referencing real facts", function()
 		local caseDef = CaseRegistry.get("CASE-001")
-		expect.equal(#caseDef.deductions, 2)
-		local deduction = caseDef.deductions[1]
-		expect.equal(deduction.id, "DEDUCT-001")
-		expect.equal(#deduction.requiredFacts, 3)
-		expect.equal(deduction.requiredFacts[1].kind, "Statement")
-		expect.equal(deduction.requiredFacts[1].id, "STMT-SUS-001-ALIBI")
-		expect.equal(deduction.requiredFacts[2].kind, "Statement")
-		expect.equal(deduction.requiredFacts[2].id, "STMT-SUS-002-ALIBI")
-		expect.equal(deduction.requiredFacts[3].kind, "Evidence")
-		expect.equal(deduction.requiredFacts[3].id, "EV-004")
-
+		local facts = { Evidence = {}, Statement = {} }
+		for _, ev in ipairs(caseDef.evidence) do
+			facts.Evidence[ev.id] = true
+		end
+		for _, statement in ipairs(caseDef.statements) do
+			facts.Statement[statement.id] = true
+		end
+		expect.equal(#caseDef.deductions, 4)
+		for _, deduction in ipairs(caseDef.deductions) do
+			expect.truthy(#deduction.requiredFacts >= 2)
+			for _, fact in ipairs(deduction.requiredFacts) do
+				expect.truthy(facts[fact.kind][fact.id])
+			end
+		end
 		local motive = caseDef.deductions[2]
 		expect.equal(motive.id, "DEDUCT-002")
-		expect.equal(#motive.requiredFacts, 2)
 		expect.equal(motive.requiredFacts[1].id, "EV-002")
 		expect.equal(motive.requiredFacts[2].id, "EV-003")
 	end)
