@@ -42,3 +42,6 @@ Desktop.ini
 *.env
 .env.*
 !/.env.example
+
+# Python bytecode from tools/headless
+__pycache__/

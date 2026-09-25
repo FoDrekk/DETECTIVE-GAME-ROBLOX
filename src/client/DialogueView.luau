@@ -469,6 +469,42 @@ local function showToast(text: string)
 	end)
 end
 
+-- A shallow depth of field while talking: the speaker sharp, the room
+-- soft. Lives under the local camera, so it only affects this player.
+local focus: DepthOfFieldEffect? = nil
+local function setFocus(on: boolean)
+	local camera = workspace.CurrentCamera
+	if not camera then
+		return
+	end
+	if not focus or focus.Parent ~= camera then
+		local created = Instance.new("DepthOfFieldEffect")
+		created.Name = "MysteryCase_DialogueFocus"
+		created.NearIntensity = 0
+		created.FarIntensity = 0
+		created.FocusDistance = Style.FocusDistance
+		created.InFocusRadius = Style.FocusRadius
+		created.Enabled = false
+		created.Parent = camera
+		focus = created
+	end
+	local effect = focus :: DepthOfFieldEffect
+	if on then
+		effect.Enabled = true
+	end
+	local tween = TweenService:Create(effect, TweenInfo.new(0.4, Enum.EasingStyle.Quad), {
+		FarIntensity = if on then Style.FocusBlur else 0,
+	})
+	if not on then
+		tween.Completed:Once(function()
+			if not isOpen then
+				effect.Enabled = false
+			end
+		end)
+	end
+	tween:Play()
+end
+
 local function setOpen(open: boolean)
 	if not gui or not panel or not letterTop or not letterBottom then
 		return
@@ -477,6 +513,7 @@ local function setOpen(open: boolean)
 		return
 	end
 	isOpen = open
+	setFocus(open)
 	local bar = UDim2.new(1, 0, Style.LetterboxHeight, 0)
 	if open then
 		gui.Enabled = true

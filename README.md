@@ -58,7 +58,8 @@ MysteryCaseRoblox/
 ├─ assets/
 │  └─ Office.rbxm           # Studio-authored office environment -> Workspace.Office
 ├─ docs/                    # design docs, case bible, localisation notes
-├─ tests/                   # headless unit tests -> ServerStorage.UnitTest
+├─ tests/                   # unit tests -> ServerStorage.UnitTest (cases + fixtures)
+├─ tools/headless/          # run the tests / a playthrough without Studio
 └─ src/
    ├─ server/               -> ServerScriptService.Server
    ├─ client/               -> StarterPlayer.StarterPlayerScripts.Client
@@ -93,6 +94,8 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for the forward plan (M1–M6).
 | Timeline | T | LB | Timeline button |
 | Name the suspect (once the investigation is complete) | Q | RB | Name Suspect button |
 | Close panels | Roblox menu | B | Tap the panel's button again |
+| Ask a question in a conversation | 1–9 or click | D-pad + A | Tap the question |
+| Finish the line being typed / continue | E | X | Main action button |
 | Choose a suspect in the accusation picker | Click ACCUSE | D-pad + A | Tap ACCUSE |
 
 Movement and camera use Roblox's standard controls on every device. On-screen
@@ -111,6 +114,27 @@ Mobile & gamepad support:
 - The objective panel now sits below Roblox's top-bar buttons (it was
   underneath them), following `GuiService.TopbarInset` since the top bar
   initialises after the game's client script.
+
+M7: interrogation and a lived-in office.
+
+- **Ask, don't read.** Conversations branch: you choose what to ask, and
+  what you can ask depends on what you've found and how the conversation has
+  gone. People hesitate, deflect, lie, revise the lie. Mara remembers if you
+  called her a liar.
+- **A new witness and new clues.** Sam, the night guard who found Daniel
+  (just a normal person); two espressos at 11:31; a second cup on the
+  visitor's side of the desk; dead lobby cameras with Victor's note on them.
+- **The dialogue looks like a game's**: letterbox, a live portrait of the
+  speaker, typewriter lines with real pauses, question lists by number key,
+  mouse, touch or gamepad.
+- **The office at 12:40 AM**: carpet, marble, walnut, a proper ceiling, most
+  lights off, Daniel's still on, city light through the blinds, furniture
+  instead of blocks, and small details that say what happened.
+- **Fixed**: the timeline's move buttons never reordered (since M5);
+  re-examining a found clue did nothing; Daniel's office door opened into the
+  pantry.
+- Needs a Studio playtest: it was built and verified headlessly (see
+  `tools/headless`), not in Studio. See `docs/ROADMAP.md` M7.
 
 M6: production presentation — it looks and sounds like a game.
 

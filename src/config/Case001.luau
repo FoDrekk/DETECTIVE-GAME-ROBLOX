@@ -93,10 +93,10 @@ local Case001: Types.CaseDefinition = {
 			name = "Victor Lane",
 			role = "Business Partner",
 			alibi = '"Half ten. Daniel was still at his desk. Whatever happened, it happened after I\'d gone."',
-			-- In the meeting room, at the table where the papers were to be
-			-- signed.
+			-- In the meeting room, at the end of the table where the papers
+			-- were to be signed.
 			npcPlacement = {
-				position = Vector3.new(24.5, 3, -17.8),
+				position = Vector3.new(26.8, 3, -16.6),
 				lookAt = Vector3.new(20, 3, -14),
 			},
 			-- Classic Male v2 hair (Roblox catalog), near black; still in the
@@ -120,10 +120,10 @@ local Case001: Types.CaseDefinition = {
 			name = "Sam Okafor",
 			role = "Night Security",
 			alibi = '"Ten past twelve, on my rounds. His light was on. It\'s always on."',
-			-- Just inside the office from the lobby, where the investigator
-			-- arrives, waiting to be asked something.
+			-- Just past the lobby partition, where the investigator arrives,
+			-- waiting to be asked something.
 			npcPlacement = {
-				position = Vector3.new(21.8, 3, 3.2),
+				position = Vector3.new(19.4, 3, 4.4),
 				lookAt = Vector3.new(18, 3, 10),
 			},
 			-- Close-shaved head (no hair accessory); navy guard's uniform.
@@ -272,8 +272,8 @@ local Case001: Types.CaseDefinition = {
 			timelineEventId = "TIMELINE-005",
 			relatedEvidenceIds = { "EV-006" },
 			propPlacement = {
-				position = Vector3.new(-25.6, 2.2, 2.9),
-				lookAt = Vector3.new(-25.6, 2.2, 8),
+				position = Vector3.new(-12.6, 3.0, -21.8),
+				lookAt = Vector3.new(-5, 3.0, -21.8),
 				style = "EspressoMachine",
 			},
 		},
@@ -301,8 +301,8 @@ local Case001: Types.CaseDefinition = {
 			importance = "Medium",
 			category = "Security",
 			propPlacement = {
-				position = Vector3.new(25.6, 3.2, 18.3),
-				lookAt = Vector3.new(25.6, 3.2, 10),
+				position = Vector3.new(25.8, 3.26, 18.4),
+				lookAt = Vector3.new(25.8, 3.26, 10),
 				style = "CameraMonitor",
 			},
 		},

@@ -129,7 +129,55 @@ recommended default; the product owner can redirect.)
 - Verified with a spawn-to-verdict-to-replay run in Studio (correct verdict
   sting, ducking, replay without the title) and the full suite (258 tests).
 
+### M7 — Interrogation and a lived-in office (story + visuals) — built, awaiting a Studio pass
+
+- **Interrogation, not exposition**: conversations branch. The investigator
+  picks questions; what is on offer depends on what they know (evidence,
+  statements, contradictions) and on how earlier conversations went (flags,
+  entry lines). Server-authoritative: the client only ever sees the words of
+  the choices it may pick. Linear conversations still work unchanged.
+- **CASE-001 rewritten** around the same culprit and ids: Sam Okafor, the
+  night guard (a normal person, not a suspect); three new clues (two
+  espressos at 11:31, a second cup on the visitor's side, the dead lobby
+  cameras with Victor's note); Victor's alibi breaks on the badge log, his
+  revised story breaks on the phone, and a confrontation follows; Mara's alibi
+  also breaks (a real contradiction with an innocent explanation), and
+  whether you ask gently or accuse her changes what she does next.
+- **Dialogue presentation**: letterbox, live speaker portrait, name and role,
+  typewriter that pauses on punctuation, player lines set apart, the question
+  echoed above the reply, choices by number key / mouse / touch / gamepad,
+  newly opened questions marked NEW, depth of field while talking.
+- **The office**: finishes by zone, a suspended ceiling, after-hours
+  lighting that tells the story (Daniel's light on, most of the floor dark,
+  the meeting room set for a midnight signing, a flickering records tube,
+  city glow through the windows), and every block desk/chair/table replaced
+  by furniture built from Roblox's own PBR materials (`PropKit`), plus room
+  dressing and three new interactable flavour props. Characters get small
+  wardrobe details (tie, scarf, security patch, lanyard, radio, watch).
+- **Fixes found on the way**: the timeline's move buttons never reordered
+  anything (since M5); re-examining a found clue did nothing; objective
+  progress could be stranded if a clue was found before its objective became
+  active; Daniel's office door opened into the pantry; the chalk "outline"
+  was a filled silhouette.
+- **Verification so far (no Studio in the authoring environment):** 288 unit
+  tests and an 81-check scripted playthrough (real server + real client
+  scripts, driven only through player inputs) under the headless shim in
+  `tools/headless`, luau-lsp type checks, and layout previews. **Still needs a
+  Studio playtest** for everything the shim cannot see: the look under
+  Realistic lighting, performance, camera/collision feel, fonts and UI
+  layout on real screens, NPC animation with the wardrobe details.
+- **No third-party models were used.** The environment could not reach the
+  Roblox Creator Store to find, license-check or inspect assets, so all new
+  furniture is built from parts and built-in materials. See "Known
+  follow-ups".
+
 ## Known follow-ups (not blocking)
+
+- **Creator Store assets.** The office furniture is code-built (PropKit)
+  because Creator Store access wasn't available when M7 was made. Swapping
+  hero props (chairs, monitors, plants, the espresso machine) for inspected,
+  script-free Creator Store meshes would raise fidelity; PropKit's builders
+  are the places to swap, one prop type at a time.
 
 - **Examine close-up framing** points from the object's own facing, which
   often frames a wall; the centered evidence panel also covers the object.
@@ -155,7 +203,10 @@ recommended default; the product owner can redirect.)
 ## Testing strategy
 
 - Server logic: unit/integration tests in the existing `RunUnitTest` harness,
-  run after every change (full suite, not just the touched file).
+  run after every change (full suite, not just the touched file). The same
+  suite also runs headlessly without Studio (`tools/headless`, see its
+  README), along with a scripted end-to-end playthrough through the real
+  client scripts.
 - Client UI: verified in a real Studio play session: screenshots plus
   inspection of live GUI state (text, transparency, layout), since the harness
   is server-side.

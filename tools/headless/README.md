@@ -18,6 +18,8 @@ and regressions in the test suite.
 | `build.js` | Recreates the Rojo project (`default.project.json`) on top of the shim, including `assets/Office.rbxm` converted to instances, and appends an entry script. Output is one Luau file. |
 | `entry_tests.luau` | Entry: runs the server bootstrap (as Studio Play would), then the unit-test suite (`tests/cases`). |
 | `entry_playthrough.luau` | Entry: a scripted end-to-end playthrough with a real (shim) `Player`, driving the game only through its `RemoteEvent`s, like a client. |
+| `entry_scene_dump.luau` | Entry: boots the server and prints every visible part and light (for layout previews). |
+| `render_scene.py` | Rough layout previews from a scene dump: a top-down plan and a few ray-cast perspective shots (numpy + pillow). Not Roblox's renderer: boxes, no shadows, flat materials -- for catching floating/overlapping/misplaced props, not for judging the look. |
 | `sourcemap.js` | Writes a Rojo-compatible `sourcemap.json` so `luau-lsp analyze` can resolve Roblox-style requires without Rojo. |
 
 ## Requirements
@@ -38,6 +40,11 @@ luau /tmp/tests.luau
 # End-to-end playthrough through the remotes
 node tools/headless/build.js tools/headless/entry_playthrough.luau /tmp/play.luau
 luau /tmp/play.luau
+
+# Layout previews
+node tools/headless/build.js tools/headless/entry_scene_dump.luau /tmp/dump.luau
+luau /tmp/dump.luau > /tmp/scene.txt
+python3 tools/headless/render_scene.py /tmp/scene.txt /tmp/previews
 
 # Type check
 node tools/headless/sourcemap.js > sourcemap.json

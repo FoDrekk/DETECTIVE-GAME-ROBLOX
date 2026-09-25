@@ -17,6 +17,7 @@
 local Shim = {}
 
 local realPrint = print
+Shim.rawPrint = realPrint
 local unexpectedErrors: { string } = {}
 Shim.errors = unexpectedErrors
 Shim.warnings = {} :: { string }
