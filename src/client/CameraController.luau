@@ -123,7 +123,8 @@ local function frame(part: BasePart, target: CFrame)
 	player.CameraMinZoomDistance = 4
 end
 
--- Blend to a framed view of a target part.
+-- Blend to a framed view of a target part, framed from the player's side so
+-- the shot shows the object against the room rather than against a wall.
 function CameraController.examine(part: BasePart)
 	if not part then
 		return
@@ -131,8 +132,35 @@ function CameraController.examine(part: BasePart)
 
 	local size = part.Size
 	local distance = math.max(size.Magnitude * 0.9, 4)
-	local focus = part.Position
-	frame(part, CFrame.lookAt(focus + Vector3.new(0, size.Y * 0.4, 0) - (part.CFrame.LookVector * distance), focus))
+	local focus = part.Position + Vector3.new(0, size.Y * 0.4, 0)
+
+	-- Choose the approach direction: from the player toward the object, so the
+	-- camera sits on the player's side. Falls back to the object's own
+	-- LookVector only when no character is available.
+	local character = player.Character
+	local playerRoot = character and character:FindFirstChild("HumanoidRootPart")
+	local toward: Vector3
+	if playerRoot and playerRoot:IsA("BasePart") then
+		toward = Vector3.new(part.Position.X - playerRoot.Position.X, 0, part.Position.Z - playerRoot.Position.Z)
+	else
+		toward = part.CFrame.LookVector
+	end
+	if toward.Magnitude < 0.1 then
+		toward = part.CFrame.LookVector
+	end
+	toward = toward.Unit
+
+	-- Offset slightly to one side (like a three-quarter view) so the object
+	-- is not dead-centre and the evidence panel can sit beside it.
+	local side = toward:Cross(Vector3.yAxis)
+	if side.Magnitude > 0.01 then
+		side = side.Unit
+	else
+		side = Vector3.xAxis
+	end
+
+	local eye = focus - toward * distance + side * (distance * 0.18) + Vector3.new(0, size.Y * 0.25, 0)
+	frame(part, CFrame.lookAt(eye, focus))
 end
 
 -- M6: frame a person's face for a conversation. The shot is taken from the

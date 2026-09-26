@@ -136,8 +136,11 @@ function EvidencePanel.start()
 	root = Components.frame({
 		name = "EvidencePanel",
 		size = UDim2.fromOffset(470, 310),
-		position = UDim2.fromScale(0.5, 0.5),
-		anchor = Vector2.new(0.5, 0.5),
+		-- Offset to the left so the panel sits beside the examined object rather
+		-- than covering it. The examine camera frames the object slightly right
+		-- of centre, keeping both readable.
+		position = UDim2.new(0, 40, 0.5, 0),
+		anchor = Vector2.new(0, 0.5),
 		color = Theme.Panel,
 		transparency = 0.08,
 		radius = 8,
