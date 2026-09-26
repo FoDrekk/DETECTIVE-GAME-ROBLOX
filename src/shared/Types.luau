@@ -339,6 +339,10 @@ export type CaseBriefing = {
 	id: string,
 	title: string,
 	description: string,
+	-- M8: the briefing's time/place line ("12:40 AM", "Reyes & Lane,
+	-- ninth floor"). Optional: absent means the line is not shown.
+	time: string?,
+	place: string?,
 }
 
 export type CasePayload = {
@@ -348,7 +352,10 @@ export type CasePayload = {
 export type CaseDefinition = {
 	id: string,
 	title: string,
+	-- The briefing's story hook: a sentence or two, not a summary.
 	description: string,
+	-- M8: when and where the case opens, shown under the hook.
+	setting: { time: string, place: string }?,
 	suspects: { SuspectDefinition },
 	locations: { LocationDefinition },
 	-- Authored flavour text for non-evidence interactables, applied at

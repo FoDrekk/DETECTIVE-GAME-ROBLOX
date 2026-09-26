@@ -82,6 +82,8 @@ function CaseService.buildClientPayload(player: Player)
 			id = caseDef.id,
 			title = caseDef.title,
 			description = caseDef.description,
+			time = if caseDef.setting then caseDef.setting.time else nil,
+			place = if caseDef.setting then caseDef.setting.place else nil,
 		},
 	}
 	return payload

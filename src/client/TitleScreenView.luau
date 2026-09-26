@@ -30,7 +30,6 @@ local fade: Frame? = nil
 local fadeables: { GuiObject } = {}
 local caseLabel: TextLabel? = nil
 local titleLabel: TextLabel? = nil
-local playButton: TextButton? = nil
 local open = false
 local dismissing = false
 
@@ -233,7 +232,6 @@ function TitleScreenView.start()
 	button.MouseLeave:Connect(function()
 		button.BackgroundColor3 = Theme.Accent
 	end)
-	playButton = button
 
 	local footer = Components.text({
 		name = "Footer",
@@ -256,11 +254,6 @@ function TitleScreenView.start()
 	})
 	black.ZIndex = 10
 	fade = black
-end
-
--- For gamepad GUI navigation: the button to select while the title is up.
-function TitleScreenView.getPlayButton(): TextButton?
-	return playButton
 end
 
 return TitleScreenView

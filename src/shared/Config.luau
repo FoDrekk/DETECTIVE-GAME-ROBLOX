@@ -8,7 +8,6 @@
 local Config = {}
 
 Config.Game = {
-	DefaultPhase = "MainMenu" :: string,
 	AutoStartCase = "CASE-001",
 }
 
@@ -149,10 +148,7 @@ Config.Characters = {
 }
 
 Config.Camera = {
-	DefaultDistance = 12,
-	DefaultHeight = 2.5,
 	ExamineBlendTime = 0.6,
-	TransitionBlendTime = 0.35,
 	-- M6: conversation shot, relative to the suspect's face (studs).
 	Conversation = {
 		Distance = 4.2,
@@ -179,6 +175,14 @@ Config.Presentation = {
 		To = { Position = Vector3.new(-3, 5.6, -12.5), LookAt = Vector3.new(-4.2, 5.2, -24) },
 		Duration = 26,
 	},
+	-- M8: the case briefing opens on the scene: from the far corner of
+	-- Daniel's office across the chalk outline to his desk (lamp still on,
+	-- the second cup, the visitor's chair pushed back) and the taped door.
+	BriefingShot = {
+		From = { Position = Vector3.new(-15.6, 6.2, -12.6), LookAt = Vector3.new(-24.5, 2.2, -6.5) },
+		To = { Position = Vector3.new(-16.9, 5.4, -11.4), LookAt = Vector3.new(-24.4, 2.3, -6.6) },
+		Duration = 30,
+	},
 }
 
 Config.UI = {}
@@ -193,6 +197,25 @@ Config.UI.Theme = {
 	PromptBackground = Color3.fromRGB(10, 11, 13),
 	Font = Enum.Font.Gotham,
 	FontBold = Enum.Font.GothamBold,
+}
+
+-- M8: case briefing presentation (CaseBriefingView).
+Config.UI.Briefing = {
+	-- Fraction of the screen height each letterbox bar covers.
+	Letterbox = 0.07,
+	-- The text column: distance from the left edge, gap above the bottom
+	-- bar, and widths.
+	Margin = 72,
+	BottomGap = 36,
+	MaxWidth = 640,
+	HookWidth = 500,
+	TitleSize = 54,
+	HookSize = 18,
+	HookColor = Color3.fromRGB(208, 208, 202),
+	ButtonWidth = 250,
+	FadeIn = 1.4,
+	-- Delay between each line arriving.
+	Stagger = 0.18,
 }
 
 -- Conversation presentation (DialogueView).

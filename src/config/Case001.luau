@@ -58,9 +58,9 @@ end
 local Case001: Types.CaseDefinition = {
 	id = "CASE-001",
 	title = "THE LAST CALL",
-	description = "12:40 AM. Reyes & Lane, ninth floor. The night guard found Daniel Reyes dead in his office. "
-		.. "His phone shows one last call, placed minutes before he died. "
-		.. "It was never answered.",
+	description = "Daniel Reyes never went home. The night guard found him on his office floor. "
+		.. "His phone shows one last call, minutes before he died. It was never answered.",
+	setting = { time = "12:40 AM", place = "Reyes & Lane · Ninth floor" },
 
 	suspects = {
 		{

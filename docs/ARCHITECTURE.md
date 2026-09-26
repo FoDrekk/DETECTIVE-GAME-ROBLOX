@@ -182,7 +182,8 @@ validates that the authored interactables satisfy the gameplay contract.
 - **ObservationPanel** (Phase 2O) — lightweight, transient flavour-text
   readout for non-evidence interactables; visually distinct from the evidence
   panel, auto-dismisses, and carries no discovery.
-- **CaseBriefingView** — cinematic case briefing overlay.
+- **CaseBriefingView** — the case briefing, as a shot of the crime scene with
+  the case number, title, hook and time/place over it (M8, see below).
 - **ObjectiveView** — minimal current-objective checklist + completion banner.
   Only shown during `Investigation`. The server sends a completed objective
   and its successor in the same frame, so a non-final completion is held on
@@ -221,7 +222,7 @@ validates that the authored interactables satisfy the gameplay contract.
   timeMinutes, title, description, sourceEvidenceIds. Only discovered events are
   ever sent to clients.
 - `CaseService.buildClientPayload` returns only `Types.CaseBriefing` (id, title,
-  description) so undiscovered evidence/timeline facts never reach the client.
+  description, and since M8 the optional time/place of `CaseDefinition.setting`) so undiscovered evidence/timeline facts never reach the client.
 - Objectives follow `Types.ObjectiveDefinition`: id, title, description,
   requiredEvidence, requiredInteractions, generic `requirements`, and optional
   `prerequisites` (objective ids that must already be complete). Each
@@ -1027,6 +1028,38 @@ the interior receive their text) → `CitySkyline` → `SuspectSpawner`.
   materials, no scripts, no asset ids). Characters keep the verified catalog
   body/hair ids from M6, plus welded wardrobe details from
   `SuspectAppearance.details`.
+
+## Stabilisation (M8)
+
+- **Case briefing**: no panel. `CaseBriefingView` plays
+  `Config.Presentation.BriefingShot` (a slow drift from the far corner of
+  Daniel's office across the chalk outline to his desk) through
+  `CameraController.playCinematic`, with thin letterbox bars, a shade in the
+  lower-left corner only, and a text column: case number, title, the
+  one-to-two-sentence hook (`CaseDefinition.description`), the time and place
+  (`CaseDefinition.setting`), and a real **Begin investigation** button (also
+  the primary input and the touch primary). It hands the camera back only
+  when the server moves the phase on (`hide`: a short dip to black). Styling
+  lives in `Config.UI.Briefing`.
+- **Movement during cinematics**: `CameraController.playCinematic` disables
+  the default character controls until `stopCinematic` (title screen and
+  briefing), so the player can't walk off while the camera is elsewhere. A
+  second shot started while one plays keeps the camera type saved before
+  the first, so `stopCinematic` can't restore `Scriptable`.
+- **Stale copies in the base place**: `MysteryCaseRoblox.rbxl` (read-only)
+  still carries an old `ReplicatedStorage.Config` (the pre-M7 case,
+  solution included, where every client can read it) and an old
+  `ReplicatedStorage.Signals`. Nothing requires either, and Rojo kept them
+  because `ReplicatedStorage` has no `$path`. The project now sets
+  `"$ignoreUnknownInstances": false` on `ReplicatedStorage`, so connecting
+  Rojo removes anything there that the project doesn't define. The
+  `Signals` folder is recreated at runtime.
+- **Removed as unused** (no references in src, tests, tools or the project):
+  the `InteractionPrompt`/`PromptCleared` remote names,
+  `Config.Game.DefaultPhase`, `Config.Camera.DefaultDistance`/`DefaultHeight`/
+  `TransitionBlendTime`, `DialogueView.onLineShown`,
+  `TitleScreenView.getPlayButton`, `PropKit.filingCabinet`, and the
+  `.gitkeep` files in folders that have content.
 
 ## Headless verification
 
