@@ -18,6 +18,44 @@ Config.Environment = {
 	-- Root objects removed at runtime so the authored environment is the only
 	-- ground. Names, not references, so this stays data-driven.
 	DefaultGroundNames = { "Baseplate", "SpawnLocation" },
+	-- 12:40 AM, after hours (OfficeRoom). Readability first: the local lights
+	-- carry the mood, ambient and exposure keep every room playable.
+	Night = {
+		ClockTime = 0.67,
+		Brightness = 0.6,
+		Ambient = Color3.fromRGB(40, 42, 50),
+		OutdoorAmbient = Color3.fromRGB(38, 44, 62),
+		EnvironmentDiffuseScale = 0.25,
+		EnvironmentSpecularScale = 0.45,
+		ExposureCompensation = 0.4,
+		ShadowSoftness = 0.22,
+		-- Colour grade: a touch of contrast, slightly desaturated, warm.
+		Contrast = 0.1,
+		Saturation = -0.12,
+		Tint = Color3.fromRGB(255, 247, 238),
+		-- Bloom only for things that actually glow (screens, signs, lamps).
+		BloomIntensity = 0.5,
+		BloomSize = 24,
+		BloomThreshold = 1.35,
+	},
+	-- Interior lighting plan (OfficeInterior). Brightness/Range per fixture;
+	-- `shadows` only where a shadow tells you something.
+	Interior = {
+		Lights = {
+			DanielOffice = { brightness = 1.3, range = 18, color = Color3.fromRGB(255, 232, 204), shadows = true },
+			MeetingRoom = { brightness = 0.5, range = 16, color = Color3.fromRGB(255, 240, 222) },
+			MeetingPendant = { brightness = 2.0, range = 16 },
+			Reception = { brightness = 1.1, range = 16, color = Color3.fromRGB(255, 226, 190), shadows = true },
+			Lobby = { brightness = 0.7, range = 16, color = Color3.fromRGB(255, 226, 190) },
+			OpenPlan = { brightness = 0.7, range = 18, color = Color3.fromRGB(255, 240, 222), shadows = true },
+			EastDesks = { brightness = 0.55, range = 16, color = Color3.fromRGB(255, 240, 222) },
+			Corridor = { brightness = 0.45, range = 14, color = Color3.fromRGB(230, 232, 255) },
+			WestHall = { brightness = 0.5, range = 14, color = Color3.fromRGB(255, 236, 214) },
+			Records = { brightness = 0.9, range = 16, color = Color3.fromRGB(206, 222, 255), shadows = true },
+		},
+		-- The city's light through the north windows.
+		CityGlow = { Brightness = 0.55, Range = 16, Color = Color3.fromRGB(150, 172, 226) },
+	},
 }
 
 Config.Logging = {
@@ -106,6 +144,8 @@ Config.Characters = {
 	IdleAnimation = "rbxassetid://507766388",
 	-- Seconds for a suspect to turn toward the player who speaks to them.
 	TurnTime = 0.45,
+	-- Name tags show only within this many studs.
+	NameTagDistance = 26,
 }
 
 Config.Camera = {
@@ -132,11 +172,11 @@ Config.Presentation = {
 		Footer = "Best played with headphones.",
 	},
 	IntroShot = {
-		-- Inside the meeting room, drifting from the doorway toward the table
-		-- where the two suspects wait (south wall z = -6, table centre
-		-- (20, 2.6, -14)).
-		From = { Position = Vector3.new(23.5, 6.4, -6.9), LookAt = Vector3.new(20, 3.9, -17) },
-		To = { Position = Vector3.new(18.5, 5.4, -9.4), LookAt = Vector3.new(20.5, 4, -17) },
+		-- Down the dark corridor toward the north window, where Mara stands
+		-- with her back to the room and the city beyond the glass (window
+		-- centre (-4, 7, -23.8)).
+		From = { Position = Vector3.new(-1.5, 6.2, -6), LookAt = Vector3.new(-4.5, 5.4, -24) },
+		To = { Position = Vector3.new(-3, 5.6, -12.5), LookAt = Vector3.new(-4.2, 5.2, -24) },
 		Duration = 26,
 	},
 }
@@ -153,6 +193,42 @@ Config.UI.Theme = {
 	PromptBackground = Color3.fromRGB(10, 11, 13),
 	Font = Enum.Font.Gotham,
 	FontBold = Enum.Font.GothamBold,
+}
+
+-- Conversation presentation (DialogueView).
+Config.UI.Dialogue = {
+	PanelHeight = 178,
+	PanelMaxWidth = 860,
+	PanelBottomOffset = 34,
+	PanelTransparency = 0.06,
+	-- Fraction of the screen height each letterbox bar covers.
+	LetterboxHeight = 0.075,
+	BodyTop = 30,
+	BodyTopWithPrompt = 54,
+	BodyTextSize = 19,
+	ChoiceHeight = 40,
+	ChoiceHover = Color3.fromRGB(34, 32, 28),
+	-- Typewriter: characters per second, and holds after punctuation.
+	CharactersPerSecond = 52,
+	SentencePause = 0.32,
+	EllipsisPause = 0.22,
+	CommaPause = 0.1,
+	DashPause = 0.22,
+	-- The investigator's own lines.
+	PlayerText = Color3.fromRGB(196, 204, 214),
+	PlayerFont = Enum.Font.GothamMedium,
+	-- Speaker portrait (a still copy of the NPC in a ViewportFrame).
+	PortraitSize = 126,
+	PortraitDistance = 3.1,
+	PortraitFieldOfView = 26,
+	PortraitAimDrop = 0.35,
+	PortraitBackdrop = Color3.fromRGB(24, 26, 32),
+	PortraitAmbient = Color3.fromRGB(120, 118, 124),
+	PortraitLight = Color3.fromRGB(255, 226, 190),
+	-- Depth of field while talking (the speaker is ~4 studs away).
+	FocusDistance = 4.4,
+	FocusRadius = 3,
+	FocusBlur = 0.3,
 }
 
 return Config

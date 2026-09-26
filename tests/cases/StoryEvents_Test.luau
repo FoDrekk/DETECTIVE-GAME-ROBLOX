@@ -30,7 +30,7 @@ return function(t)
 	local function makePlayer(): any
 		local id = t.nextUserId()
 		local player = { UserId = id, Name = `SE{id}` }
-		PlayerDataService.initialize(player, "CASE-001")
+		PlayerDataService.initialize(player, "CASE-TEST-LEGACY")
 		return player
 	end
 

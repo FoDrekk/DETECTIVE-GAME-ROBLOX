@@ -24,7 +24,7 @@ ServerScriptService.Server    <- src/server  (Script, children = services)
 StarterPlayer...Client        <- src/client  (LocalScript, children = modules)
 Workspace.Office              <- assets/Office.rbxm  (Studio-authored world)
 ServerStorage.Config          <- src/config  (case data; server-only, M2)
-ServerStorage.UnitTest        <- tests/      (RunUnitTest + Cases)
+ServerStorage.UnitTest        <- tests/      (RunUnitTest + Cases + Fixtures)
 ServerScriptService.UnitTestRunner <- tests/UnitTestRunner.server.luau (Disabled)
 ```
 
@@ -136,8 +136,20 @@ validates that the authored interactables satisfy the gameplay contract.
   (Phase 2L) gates the Investigation -> CaseClosed edge with a player-specific
   gameplay authorization check on top of the state machine's own graph
   validation (see below).
-- **OfficeRoom** — runtime lighting/spawn cleanup and authored-content validation
-  for the Studio-built `Workspace.Office` environment.
+- **OfficeRoom** — runtime lighting/spawn cleanup, evidence props (look from
+  `PropKit` by `propPlacement.style`), location signs, and (in `finalize`,
+  after every environment module has built) observations and authored-content
+  validation for the Studio-built `Workspace.Office` environment.
+- **OfficeDetailing** — runtime corrections and crime-scene staging on the
+  authored office: spawn, Daniel's desk settled onto the floor, reception
+  partition, meeting-room glazing, dropped ceilings, scene tape, chalk
+  outline, evidence markers, desk-prop styling.
+- **OfficeInterior** (M7) — finishes, suspended ceiling, after-hours
+  lighting plan, furniture (replacing the shell's block furniture) and room
+  dressing; tags three flavour props as interactables.
+- **PropKit** (M7) — the furniture/fixture builders OfficeInterior and
+  OfficeRoom use: parts + Roblox built-in PBR materials only, one palette,
+  one invisible collider per prop, shadows only on large parts.
 - **SuspectSpawner** (Phase 2G) — runtime placement of a physical NPC for each
   suspect that authors an `npcPlacement` (see below).
 - **StoryEvents** (Phase 2F) — minimal, generic server-only publish/subscribe
@@ -176,8 +188,13 @@ validates that the authored interactables satisfy the gameplay contract.
   and its successor in the same frame, so a non-final completion is held on
   screen for ~2 s before the next objective replaces it.
 - **TimelineView** — case timeline overlay (discovered events only), T to open.
-- **DialogueView** (Phase 2G) — full-screen conversation presentation; renders
-  only the single server-authorized dialogue step it is given.
+- **DialogueView** (Phase 2G, rewritten M7) — cinematic conversation
+  presentation: letterbox, live speaker portrait (a still copy of the NPC in a
+  ViewportFrame), name/role plate, typewriter reveal with punctuation pauses,
+  player lines set apart, the asked question echoed, a choice list (number
+  keys / mouse / touch / gamepad selection, NEW marks), statement toasts and a
+  camera-local depth of field. Renders only the server-authorized step it is
+  given and reports a picked choice id.
 - **CaseFileView** (Phase 2H) — persistent investigation notes panel
   (unlocked statements/contradictions/deductions), C to open.
 - **AccusationView** (Phase 2N) — the formal accusation picker, opened with
@@ -329,10 +346,9 @@ player (`PlayerCaseState`): `activeConversation: { suspectId, nodeId }?`,
 
 Conversations are authored per case as `Types.ConversationDefinition`: a
 `suspectId`, a `startNodeId`, and a map of `Types.DialogueNodeDefinition`
-(`id`, `speaker`, `text`, `next: string?`, `statementId: string?`). This
-phase's conversations are deterministic and linear (`next` forms a single
-chain); no branching/choice contract exists, since nothing in Case001
-justifies one yet.
+(`id`, `speaker`, `text`, `next: string?`, `statementId: string?`). Phase 2G's
+conversations were linear; M7 adds branching (see "Interrogation (M7)"),
+and a linear graph still behaves exactly as described here.
 
 - `ConversationService.begin(player, suspectId)` — rejects if the player
   already has an active conversation, the suspect doesn't exist, or the
@@ -953,6 +969,79 @@ Presentation only: no service, payload or case-state contract changed.
   interactable by distance × a facing weight (1 ahead → 2.8 behind the camera
   heading); the range check itself is unchanged.
 
+## Interrogation (M7)
+
+Conversations branch. The contract extends `Types.DialogueNodeDefinition`
+and `Types.ConversationDefinition` additively:
+
+- `choices: { DialogueChoiceDefinition }?` — what the investigator can say
+  at this line (`id`, `text`, `next`, `requires?`, `once?`). `choicesFrom`
+  borrows another node's list, so an answer returns straight to the question
+  list without an extra "anything else?" line.
+- `requires: { DialogueCondition }` — `{ kind, id, negate? }` with kinds
+  `Evidence`, `Statement`, `Contradiction`, `Deduction` (the player's own
+  state) and `Flag` (conversation memory). Evaluated server-side only.
+- `setFlags`/`clearFlags` on a node remember what happened (e.g. the
+  investigator called someone a liar); `entries` (`{ node, requires }`, first
+  match wins) choose where a conversation starts, so a character can greet
+  you differently, or stay cold until you apologise.
+- `isPlayer` marks the investigator's own lines.
+- `StatementDefinition.text` (optional) lets one suspect own several
+  statements; absent, the text still resolves from the suspect's `alibi`.
+
+`ConversationService.choose(player, choiceId)` honours a choice only if it is
+on the current line and available to that player (conditions hold, a `once`
+choice unused); `advance` refuses to skip a line that is waiting for a
+choice (`"choice-required"`). The payload gains `choices` (id + words only —
+never `next` or `requires`), `prompt` (the question just asked),
+`isPlayer` and `suspectRole`. The client sends `DialogueChoose(choiceId)`.
+
+Authoring rule used in CASE-001: a question that unlocks a statement is
+hidden *once that statement is known* (a negated `Statement` condition), not
+with `once` — so walking away mid-answer can never lose a fact.
+`ConversationService.validate(caseDef)` reports dangling nodes/choices,
+unknown ids and never-set flags; it runs at startup (warnings) and in tests.
+
+Objective progress also became state-aware: an evidence requirement counts
+evidence already discovered, and a Talk+target requirement counts a suspect
+already spoken to (`PlayerCaseState.metSuspects`), so a clue found before
+its objective became active is never stranded (a clue can't be rediscovered).
+When the active objective changes, known facts are credited immediately.
+Re-examining a found clue re-opens its readout (`EvidenceService.review`,
+payload `revisited = true`), with no new discovery.
+
+## Environment (M7)
+
+Built at runtime, like every earlier environment change (the binary office
+asset is never edited from code). Boot order: `OfficeRoom.start` (lighting,
+evidence props, signs) → `OfficeDetailing.start` → `OfficeInterior.start` →
+`OfficeRoom.finalize` (observations + validation, so flavour props built by
+the interior receive their text) → `CitySkyline` → `SuspectSpawner`.
+
+- **Lighting**: `Lighting.LightingStyle = Realistic` and
+  `PrioritizeLightingQuality` are set by script (they are scriptable;
+  `Lighting.Technology` is not). The clock is 00:40. Values live in
+  `Config.Environment.Night` and `Config.Environment.Interior`. 19 interior
+  lights, of which only a handful cast shadows.
+- **No third-party models.** All furniture is PropKit (parts + built-in
+  materials, no scripts, no asset ids). Characters keep the verified catalog
+  body/hair ids from M6, plus welded wardrobe details from
+  `SuspectAppearance.details`.
+
+## Headless verification
+
+`tools/headless` runs the game's Luau without Studio on a small engine
+stand-in (see its README): the unit suite (with the server bootstrap first,
+as in Play), a scripted end-to-end playthrough driving the real client
+scripts through player inputs, a scene dump for layout previews, and a
+Rojo-compatible sourcemap for `luau-lsp analyze`. It complements, and does
+not replace, a Studio playtest.
+
+The service tests pin themselves to `tests/fixtures/LegacyCase.luau` (the
+pre-M7 CASE-001, frozen), registered by `RunUnitTest` before any test runs,
+so they keep testing the mechanics they were written for; CASE-001's live
+content is covered by `Case001_Test` and `BranchingDialogue_Test`.
+
 ## Deliberately not implemented
 
 Phase 2G shipped a one-suspect vertical slice; Phase 2H added the reasoning
@@ -968,14 +1057,11 @@ voices, linked related evidence, restated the case at the close, and
 surfaced each objective's own description as a hint; M2 gave the case an
 authored answer and a verdict on the player's own accusation.
 
-Explicitly still out of scope: any suspect beyond SUS-001/SUS-002, branching
-dialogue/choices, interrogation, confrontation, NPC AI/movement/animation,
-voice acting, cinematic cutscenes, additional locations, persistence, and
-multiplayer/per-session state. (M6 added only an idle animation, a turn to
-face the speaker, and a title-screen camera drift — no NPC movement, AI or
-cutscenes.) `Types.DialogueNodeDefinition.next` still
-supports a linear chain only — a real choice/branch contract remains future
-work, added only once a case's content actually needs it.
+Explicitly still out of scope: NPC AI/movement, voice acting, cinematic
+cutscenes, additional locations, persistence, and multiplayer/per-session
+state. (M6 added only an idle animation, a turn to face the speaker, and a
+title-screen camera drift; M7 added branching interrogation and a third
+character, the night guard, who is not a suspect.)
 
 ## Extension points (future phases)
 

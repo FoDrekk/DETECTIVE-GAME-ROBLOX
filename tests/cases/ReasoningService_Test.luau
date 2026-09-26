@@ -367,7 +367,7 @@ return function(t)
 	local function makeRealPlayer(): any
 		local id = t.nextUserId()
 		local player = { UserId = id, Name = `REALREASON{id}` }
-		PlayerDataService.initialize(player, "CASE-001")
+		PlayerDataService.initialize(player, "CASE-TEST-LEGACY")
 		return player
 	end
 

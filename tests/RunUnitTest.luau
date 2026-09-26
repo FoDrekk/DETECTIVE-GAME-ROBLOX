@@ -150,6 +150,23 @@ return function(filter: string?, timeout: number?)
 		return nextMockUserId
 	end
 
+	-- Fixture cases (tests/fixtures) are registered before any test runs, so
+	-- service tests can pin themselves to a frozen case definition.
+	local fixtures = ServerStorage.UnitTest:FindFirstChild("Fixtures")
+	if fixtures then
+		local CaseRegistry = require(ServerStorage:WaitForChild("Config"):WaitForChild("CaseRegistry")) :: any
+		for _, module in ipairs(fixtures:GetChildren()) do
+			if module:IsA("ModuleScript") then
+				local ok, caseDef = pcall(require, module)
+				if ok and type(caseDef) == "table" and caseDef.id then
+					CaseRegistry.register(caseDef)
+				else
+					warn(string.format("[UnitTest] fixture %s failed to load: %s", module.Name, tostring(caseDef)))
+				end
+			end
+		end
+	end
+
 	for _, module in ipairs(cases:GetDescendants()) do
 		if module:IsA("ModuleScript") and (filter == nil or string.find(module.Name, filter, 1, true)) then
 			local okRequire, caseFn = pcall(require, module)

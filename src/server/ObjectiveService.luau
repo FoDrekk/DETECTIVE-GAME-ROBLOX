@@ -85,13 +85,23 @@ local function requirementSatisfied(
 	evidenceId: string?,
 	targetName: string?
 ): boolean
-	if requirement.evidence and requirement.evidence ~= evidenceId then
+	-- Evidence already discovered counts even when it was found before this
+	-- objective became active: a clue cannot be discovered twice, so an
+	-- event-only check would strand it. Its authored interaction kind is
+	-- implied (evidence is only ever discovered through that interaction).
+	local evidenceKnown = requirement.evidence ~= nil and data.caseState.discovered[requirement.evidence] ~= nil
+	-- Likewise a suspect already spoken to (Talk + target = suspect id, the
+	-- name SuspectSpawner gives the suspect's interactable).
+	local alreadyTalked = requirement.interaction == "Talk"
+		and requirement.target ~= nil
+		and data.caseState.metSuspects[requirement.target] == true
+	if requirement.evidence and requirement.evidence ~= evidenceId and not evidenceKnown then
 		return false
 	end
-	if requirement.interaction and requirement.interaction ~= kind then
+	if requirement.interaction and requirement.interaction ~= kind and not evidenceKnown and not alreadyTalked then
 		return false
 	end
-	if requirement.target and requirement.target ~= targetName then
+	if requirement.target and requirement.target ~= targetName and not alreadyTalked then
 		return false
 	end
 	if requirement.contradiction and not data.caseState.unlockedContradictions[requirement.contradiction] then
@@ -212,7 +222,8 @@ end
 	`requirementSatisfied` for why contradiction/deduction gates don't need
 	their own event payload here).
 ]]
-local function evaluateObjectives(
+local evaluateObjectives
+function evaluateObjectives(
 	player: Player,
 	data: Types.PlayerData,
 	kind: Types.InteractionKind?,
@@ -270,6 +281,10 @@ local function evaluateObjectives(
 			-- Completion unlocked a different active objective; push its
 			-- initial state now instead of waiting for the next interaction.
 			ObjectiveService.sendCurrent(player)
+			-- The newly active objective may already be (partly) satisfied
+			-- by facts the player learned earlier; credit them now.
+			-- Terminates: each pass either advances a requirement or stops.
+			evaluateObjectives(player, data, nil, nil, nil)
 		end
 	end
 

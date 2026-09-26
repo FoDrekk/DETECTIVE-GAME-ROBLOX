@@ -26,6 +26,7 @@ local Logger = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Lo
 local Interactable = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Interactable"))
 local Types = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Types"))
 local CaseRegistry = require(game:GetService("ServerStorage"):WaitForChild("Config"):WaitForChild("CaseRegistry"))
+local PropKit = require(script.Parent:WaitForChild("PropKit"))
 
 local log = Logger.scoped("OfficeRoom")
 
@@ -43,41 +44,75 @@ local function clearDefaultGround()
 	end
 end
 
-local function applyEveningLighting()
-	-- Evening / late-night office mood. Bright enough to play comfortably.
-	Lighting.ClockTime = 20.5
-	Lighting.TimeOfDay = "20:30:00"
-	Lighting.Ambient = Color3.fromRGB(46, 46, 54)
-	Lighting.OutdoorAmbient = Color3.fromRGB(30, 32, 44)
-	Lighting.Brightness = 1.2
-	Lighting.EnvironmentDiffuseScale = 0.35
-	Lighting.EnvironmentSpecularScale = 0.25
+-- 12:40 AM, after hours. Realistic lighting (local lights cast shadows and
+-- read as physical), a restrained colour grade, bloom only on what glows.
+local function applyNightLighting()
+	local night = Config.Environment.Night
+	-- LightingStyle/PrioritizeLightingQuality are the unified-lighting
+	-- controls (Lighting.Technology itself is not settable from a script).
+	pcall(function()
+		local unified: any = Lighting
+		unified.LightingStyle = Enum.LightingStyle.Realistic
+		unified.PrioritizeLightingQuality = true
+	end)
+	Lighting.ClockTime = night.ClockTime
+	Lighting.Brightness = night.Brightness
+	Lighting.Ambient = night.Ambient
+	Lighting.OutdoorAmbient = night.OutdoorAmbient
+	Lighting.EnvironmentDiffuseScale = night.EnvironmentDiffuseScale
+	Lighting.EnvironmentSpecularScale = night.EnvironmentSpecularScale
 	Lighting.GlobalShadows = true
-	Lighting.ShadowSoftness = 0.35
-	Lighting.FogEnd = 220
-	Lighting.FogStart = 60
-	Lighting.FogColor = Color3.fromRGB(24, 26, 36)
-	Lighting.ExposureCompensation = 0.15
+	Lighting.ShadowSoftness = night.ShadowSoftness
+	Lighting.ExposureCompensation = night.ExposureCompensation
+	Lighting.FogStart = 80
+	Lighting.FogEnd = 400
+	Lighting.FogColor = Color3.fromRGB(24, 28, 40)
 
 	local existingAtmo = Lighting:FindFirstChildOfClass("Atmosphere")
 	if existingAtmo then
 		existingAtmo:Destroy()
 	end
 	local atmo = Instance.new("Atmosphere")
-	atmo.Density = 0.35
-	atmo.Offset = 0.1
-	atmo.Color = Color3.fromRGB(30, 32, 44)
-	atmo.Decay = Color3.fromRGB(20, 22, 32)
+	atmo.Density = 0.3
+	atmo.Offset = 0.05
+	atmo.Color = Color3.fromRGB(52, 60, 84)
+	atmo.Decay = Color3.fromRGB(24, 26, 38)
 	atmo.Glare = 0
-	atmo.Haze = 1.2
+	atmo.Haze = 1.4
 	atmo.Parent = Lighting
 
+	local grade = Lighting:FindFirstChild("MysteryCase_Grade")
+	if not grade then
+		local created = Instance.new("ColorCorrectionEffect")
+		created.Name = "MysteryCase_Grade"
+		created.Parent = Lighting
+		grade = created
+	end
+	local cc = grade :: ColorCorrectionEffect
+	cc.Brightness = 0
+	cc.Contrast = night.Contrast
+	cc.Saturation = night.Saturation
+	cc.TintColor = night.Tint
+
+	local hasBloom = false
 	for _, child in ipairs(Lighting:GetChildren()) do
 		if child:IsA("BloomEffect") then
-			child.Intensity = 0.35
-			child.Size = 18
-			child.Threshold = 1.4
+			hasBloom = true
+			child.Intensity = night.BloomIntensity
+			child.Size = night.BloomSize
+			child.Threshold = night.BloomThreshold
+		elseif child:IsA("SunRaysEffect") or child:IsA("DepthOfFieldEffect") then
+			-- No sun at midnight; depth of field is the dialogue camera's
+			-- (client-side) choice, not a permanent blur.
+			child.Enabled = false
 		end
+	end
+	if not hasBloom then
+		local bloom = Instance.new("BloomEffect")
+		bloom.Intensity = night.BloomIntensity
+		bloom.Size = night.BloomSize
+		bloom.Threshold = night.BloomThreshold
+		bloom.Parent = Lighting
 	end
 end
 
@@ -129,28 +164,40 @@ end
 	evidence without it simply has none (must already exist as a Studio prop,
 	as EV-001/002/003 do).
 ]]
-local function buildEvidenceProp(evidence: Types.EvidenceDefinition): BasePart?
+local function buildEvidenceProp(evidence: Types.EvidenceDefinition, folder: Instance): BasePart?
 	local placement = evidence.propPlacement
 	if not placement then
 		return nil
 	end
 
-	local part = Instance.new("Part")
-	part.Name = evidence.id
-	part.Size = Vector3.new(2, 3, 0.3)
-	part.Color = Color3.fromRGB(52, 58, 74)
-	part.Material = Enum.Material.Metal
-	part.Anchored = true
-	part.CanCollide = false
-
 	local target = if placement.lookAt
 		then CFrame.lookAt(placement.position, Vector3.new(placement.lookAt.X, placement.position.Y, placement.lookAt.Z))
 		else CFrame.new(placement.position)
-	part.CFrame = target
+
+	-- The look comes from PropKit (by style); the Interactable contract lives
+	-- on a part named after the evidence id -- the visible body when there is
+	-- a style, a plain panel otherwise.
+	local part: BasePart
+	if placement.style then
+		local model, body = PropKit.evidence(placement.style, folder, target)
+		model.Name = `{evidence.id}_Look`
+		part = body
+	else
+		local panel = Instance.new("Part")
+		panel.Size = Vector3.new(2, 3, 0.3)
+		panel.Color = Color3.fromRGB(52, 58, 74)
+		panel.Material = Enum.Material.Metal
+		panel.Anchored = true
+		panel.CanCollide = false
+		panel.CFrame = target
+		part = panel
+	end
+	part.Name = evidence.id
 
 	CollectionService:AddTag(part, Interactable.TAG)
 	part:SetAttribute(Interactable.AttributeName.Kind, "Read")
-	part:SetAttribute(Interactable.AttributeName.PromptLabel, `Read {evidence.name}`)
+	local verb = if placement.style == "Printout" then "Read" else "Examine"
+	part:SetAttribute(Interactable.AttributeName.PromptLabel, `{verb} {evidence.name}`)
 	part:SetAttribute(Interactable.AttributeName.EvidenceId, evidence.id)
 
 	return part
@@ -174,7 +221,7 @@ local function spawnEvidenceProps()
 
 	local spawned = 0
 	for _, evidence in ipairs(caseDef.evidence) do
-		local prop = buildEvidenceProp(evidence)
+		local prop = buildEvidenceProp(evidence, folder)
 		if prop then
 			prop.Parent = folder
 			spawned += 1
@@ -302,12 +349,17 @@ function OfficeRoom.start()
 		log:warn(`Workspace.{Config.Environment.OfficeModelName} not found; run Rojo sync to load the authored environment`)
 	end
 
-	applyEveningLighting()
+	applyNightLighting()
 	spawnEvidenceProps()
 	buildLocationSigns()
+	log:info("environment ready", { office = office ~= nil })
+end
+
+-- Runs once every environment module has built its props (the interior
+-- adds interactable flavour objects), so authored observations find them.
+function OfficeRoom.finalize()
 	applyObservations()
 	validateInteractables()
-	log:info("environment ready", { office = office ~= nil })
 end
 
 return OfficeRoom

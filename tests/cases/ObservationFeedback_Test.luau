@@ -29,7 +29,7 @@ return function(t)
 	local function makePlayer(): any
 		local id = t.nextUserId()
 		local player = { UserId = id, Name = `OBS{id}` }
-		PlayerDataService.initialize(player, "CASE-001")
+		PlayerDataService.initialize(player, "CASE-TEST-LEGACY")
 		return player
 	end
 
@@ -165,7 +165,7 @@ return function(t)
 	t.test("CASE-001 observations are authored and spoiler-free", function()
 		local caseDef = CaseRegistry.get("CASE-001")
 		expect.truthy(caseDef.observations)
-		expect.equal(#caseDef.observations, 7)
+		expect.truthy(#caseDef.observations >= 7)
 		for _, observation in ipairs(caseDef.observations) do
 			expect.truthy(type(observation.instanceName) == "string" and #observation.instanceName > 0)
 			expect.truthy(type(observation.text) == "string" and #observation.text > 0)

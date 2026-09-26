@@ -51,8 +51,8 @@ return function(t)
 	-- fatal includes structured context in the message.
 	t.test("fatal includes context", function()
 		local message = expect.throws(function()
-			Logger.fatal("TestScope", "bad config", { caseId = "CASE-001" })
+			Logger.fatal("TestScope", "bad config", { caseId = "CASE-TEST-LEGACY" })
 		end)
-		expect.truthy(string.find(message, "caseId=CASE-001", 1, true))
+		expect.truthy(string.find(message, "caseId=CASE-TEST-LEGACY", 1, true))
 	end)
 end

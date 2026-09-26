@@ -84,6 +84,7 @@ Signals.Names = table.freeze({
 	RequestPhaseChange = "RequestPhaseChange",
 	DialogueAdvance = "DialogueAdvance",
 	DialogueClose = "DialogueClose",
+	DialogueChoose = "DialogueChoose",
 	RequestReasoning = "RequestReasoning",
 	RequestAccusation = "RequestAccusation",
 	SubmitAccusation = "SubmitAccusation",

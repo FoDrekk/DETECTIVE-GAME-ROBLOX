@@ -29,6 +29,7 @@ local InteractionService = require(Services:WaitForChild("InteractionService"))
 local GameStateService = require(Services:WaitForChild("GameStateService"))
 local OfficeRoom = require(Services:WaitForChild("OfficeRoom"))
 local OfficeDetailing = require(Services:WaitForChild("OfficeDetailing"))
+local OfficeInterior = require(Services:WaitForChild("OfficeInterior"))
 local CitySkyline = require(Services:WaitForChild("CitySkyline"))
 local SuspectSpawner = require(Services:WaitForChild("SuspectSpawner"))
 
@@ -52,6 +53,8 @@ local function bootstrap()
 	-- 0. Environment integration (lighting, ground, authored-content validation).
 	OfficeRoom.start()
 	OfficeDetailing.start()
+	OfficeInterior.start()
+	OfficeRoom.finalize()
 	CitySkyline.start()
 	SuspectSpawner.start()
 
@@ -203,6 +206,17 @@ local function bootstrap()
 	local requestDialogueClose = Signals.get(Signals.Names.DialogueClose)
 	requestDialogueClose.OnServerEvent:Connect(function(player: Player)
 		ConversationService.leave(player)
+	end)
+
+	-- The investigator picked a question. Only the choice id travels; the
+	-- server re-checks that it is on the current line and available to this
+	-- player before following it.
+	local requestDialogueChoose = Signals.get(Signals.Names.DialogueChoose)
+	requestDialogueChoose.OnServerEvent:Connect(function(player: Player, choiceId)
+		if type(choiceId) ~= "string" then
+			return
+		end
+		ConversationService.choose(player, choiceId)
 	end)
 
 	-- 10. Reasoning (Case File) sync requests (join-race guard).

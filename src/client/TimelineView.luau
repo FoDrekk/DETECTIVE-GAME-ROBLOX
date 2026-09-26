@@ -208,12 +208,24 @@ function TimelineView.update(payload: Types.TimelinePayload)
 		for _, event in ipairs(payload.events) do
 			table.insert(workingOrder, event.id)
 		end
-	elseif not wasEstablished or #workingOrder == 0 then
-		-- Fresh puzzle: start from the authored order the server sent.
+	elseif wasEstablished or #workingOrder == 0 then
+		-- Fresh puzzle (first render, or a replay after an established
+		-- run): start from the authored order the server sent. Any other
+		-- update keeps the player's arrangement -- resetting here on every
+		-- update used to undo each move-up/move-down as it was made.
 		workingOrder = {}
 		for _, event in ipairs(payload.events) do
 			table.insert(workingOrder, event.id)
 		end
+	else
+		-- Drop anything no longer in the payload (never submit a stale id).
+		local kept = {}
+		for _, id in ipairs(workingOrder) do
+			if eventById[id] then
+				table.insert(kept, id)
+			end
+		end
+		workingOrder = kept
 	end
 	-- While unconfirmed and already arranging, keep the player's working
 	-- order even if a redundant update arrives (e.g. a sync request).
