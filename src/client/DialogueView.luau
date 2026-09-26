@@ -82,16 +82,10 @@ local portraitFor: string? = nil
 local seenChoices: { [string]: { [string]: boolean } } = {}
 
 local choiceSelectedEvent = Instance.new("BindableEvent")
-local lineShownEvent = Instance.new("BindableEvent")
 
 -- Fired with the chosen choice id.
 function DialogueView.onChoiceSelected(): BindableEvent
 	return choiceSelectedEvent
-end
-
--- Fired whenever a new line starts (for a quiet audio cue).
-function DialogueView.onLineShown(): BindableEvent
-	return lineShownEvent
 end
 
 function DialogueView.isOpen(): boolean
@@ -602,7 +596,6 @@ function DialogueView.update(payload: Types.DialoguePayload)
 
 	typeOut(payload.text or "")
 	setHint()
-	lineShownEvent:Fire(payload)
 end
 
 --[[

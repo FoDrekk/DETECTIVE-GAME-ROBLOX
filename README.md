@@ -12,6 +12,12 @@ lives on disk and is synchronised into Studio with **Rojo**.
 read-only. It is committed to the repository intentionally. Do not overwrite,
 rebuild over, or delete it. Generated places go to `/build/` (git-ignored).
 
+The place still holds early copies of the scripts. Rojo replaces the ones the
+project maps. It also removes the stale `ReplicatedStorage.Config` and
+`ReplicatedStorage.Signals` left in the place, because `ReplicatedStorage`
+is marked `"$ignoreUnknownInstances": false`. Always play with Rojo
+connected (or from a `rojo build`), never the bare base place.
+
 ## Toolchain
 
 Tools are pinned in `rokit.toml` and managed by

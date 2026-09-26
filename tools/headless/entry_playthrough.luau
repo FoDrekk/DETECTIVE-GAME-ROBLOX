@@ -121,11 +121,33 @@ check(TitleScreenView.isOpen(), "title screen is showing on join")
 pressInteract()
 Shim.advance(1.5) -- the title fades to black, then out
 check(not TitleScreenView.isOpen(), "E dismisses the title screen")
-local briefingGui = playerGui:FindFirstChild("MysteryCase_Briefing", true)
-pressInteract() -- Begin investigation
-Shim.advance(1)
+-- The briefing: words over a shot of the crime scene, and a Begin button.
+local briefingGui = playerGui:FindFirstChild("MysteryCase_Briefing", true) :: ScreenGui
+Shim.advance(3) -- the lines arrive one after another
+local function briefingText(name: string): string
+	local label = briefingGui:FindFirstChild(name, true)
+	return if label and (label:IsA("TextLabel") or label:IsA("TextButton")) then label.Text else ""
+end
+check(briefingGui.Enabled, "the briefing shows once the title is gone")
+check(briefingText("CaseNumber") == "CASE 001", "briefing: case number")
+check(briefingText("Title") == "THE LAST CALL", "briefing: title")
+check(string.find(briefingText("Hook"), "never answered", 1, true) ~= nil, "briefing: story hook")
+local settingLine = briefingText("Setting")
+check(
+	string.find(settingLine, "12:40 AM", 1, true) and string.find(settingLine, "Reyes &amp; Lane", 1, true),
+	"briefing: time and place (rich text, escaped)"
+)
+local camera = workspace.CurrentCamera :: Camera
+check(camera.CameraType == Enum.CameraType.Scriptable, "briefing: the camera holds the crime-scene shot")
+say(`  [BRIEFING] {briefingText("CaseNumber")} / {briefingText("Title")} / {briefingText("Hook")}`)
+local beginButton = briefingGui:FindFirstChild("Begin", true) :: TextButton
+check(beginButton and beginButton.Text ~= "", "briefing: the Begin button is labelled")
+Shim.fireSignal(beginButton.Activated) -- click Begin investigation
+Shim.advance(1.5)
 local phase = lastSent("PhaseChanged")
-check(phase and phase[1] == "Investigation", "E begins the investigation (phase Investigation)")
+check(phase and phase[1] == "Investigation", "clicking Begin starts the investigation (phase Investigation)")
+check(camera.CameraType == Enum.CameraType.Custom, "the camera is back with the player")
+check(not briefingGui.Enabled, "the briefing is gone")
 
 --------------------------------------------------------------------------
 -- Moving around
@@ -182,7 +204,7 @@ local function examine(target: Instance, label: string): boolean
 	check(answered, `examining {label} gets a response`)
 	if EvidencePanel.isOpen() then
 		pressInteract() -- [E] Continue
-		check(not EvidencePanel.isOpen(), `the {label} readout closes with E`)
+		check(not EvidencePanel.isOpen(), `{label}: the readout closes with E`)
 	end
 	Shim.advance(0.5)
 	return answered
@@ -363,7 +385,10 @@ check(hasFact("deductions", "Daniel Wasn't Alone"), "coffee machine + second cup
 local discoveries = sentCount("EvidenceDiscovered")
 examine(evidenceProp("EV-005"), "the coffee machine again")
 local again = lastSent("EvidenceDiscovered")
-check(sentCount("EvidenceDiscovered") == discoveries + 1 and again and again[1].revisited, "a found clue re-opens as 'on file'")
+check(
+	sentCount("EvidenceDiscovered") == discoveries + 1 and again and again[1].revisited,
+	"a found clue re-opens as 'on file'"
+)
 
 converse("SUS-002", "Victor Lane", { "When did you leave", "confirm", "dissolving" }, "That's all")
 converse("SUS-001", "Mara Reyes", { "sorry", "Where were you", "ending the partnership" }, "let you be")
@@ -487,6 +512,17 @@ pressInteract()
 Shim.advance(2)
 local replayPhase = lastSent("PhaseChanged")
 check(replayPhase and replayPhase[1] == "CaseBriefing", "E on the closing screen starts again at the briefing")
+check(
+	briefingGui.Enabled and camera.CameraType == Enum.CameraType.Scriptable,
+	"the replay opens on the briefing shot again"
+)
+pressInteract() -- [E] Begin investigation
+Shim.advance(1.5)
+local secondRun = lastSent("PhaseChanged")
+check(
+	secondRun and secondRun[1] == "Investigation" and camera.CameraType == Enum.CameraType.Custom,
+	"E begins the second run, camera back with the player"
+)
 
 print("\n---- TRANSCRIPT ----")
 print(table.concat(transcript, "\n"))

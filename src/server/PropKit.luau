@@ -587,22 +587,6 @@ end
 -- Storage
 --------------------------------------------------------------------------
 
-function PropKit.filingCabinet(parent: Instance, at: CFrame, drawers: number, color: Color3?): Model
-	local b = begin(parent, "FilingCabinet", at)
-	local c = color or P.Graphite
-	local height = drawers * 1.05 + 0.2
-	box(b, "Body", Vector3.new(1.55, height, 2.1), 0, height / 2, 0.02, c, M.Metal)
-	for i = 1, drawers do
-		local y = 0.2 + (i - 0.5) * 1.05
-		box(b, "Drawer", Vector3.new(1.45, 0.97, 0.05), 0, y, -1.04, c, M.Metal)
-		box(b, "Handle", Vector3.new(0.6, 0.07, 0.1), 0, y + 0.18, -1.1, P.Steel, M.Metal)
-		local slot = box(b, "Label", Vector3.new(0.45, 0.2, 0.02), 0, y + 0.36, -1.07, P.Paper, M.SmoothPlastic)
-		slot.CastShadow = false
-	end
-	collider(b, Vector3.new(1.55, height, 2.1), 0, height / 2, 0)
-	return finish(b)
-end
-
 export type ShelvingOptions = { frame: Color3?, material: Enum.Material?, depth: number?, sparse: boolean? }
 
 -- Open shelving with binders, boxes and books, filled deterministically.

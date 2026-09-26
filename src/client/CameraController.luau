@@ -167,15 +167,40 @@ end
 -- screen's backdrop). Ping-pongs with sine easing until stopCinematic.
 local cinematicToken = 0
 
+-- M8: while a cinematic holds the camera, the character stays put: moving
+-- with the camera elsewhere would walk the player somewhere they can't see.
+-- The default PlayerModule may be absent (a custom character setup), in
+-- which case movement is simply left alone.
+local function setMovementEnabled(enabled: boolean)
+	local scripts = player:FindFirstChildOfClass("PlayerScripts")
+	local module = scripts and scripts:FindFirstChild("PlayerModule")
+	if not module or not module:IsA("ModuleScript") then
+		return
+	end
+	pcall(function()
+		local controls = (require :: any)(module):GetControls()
+		if enabled then
+			controls:Enable()
+		else
+			controls:Disable()
+		end
+	end)
+end
+
 function CameraController.playCinematic(from: CFrame, to: CFrame, duration: number)
 	setExplore()
-	savedCameraType = getCamera().CameraType
+	-- A new shot while one is already playing keeps the camera type saved
+	-- before the first, or stopCinematic would restore Scriptable.
+	if mode ~= "Cinematic" then
+		savedCameraType = getCamera().CameraType
+	end
 	mode = "Cinematic"
 	cinematicToken += 1
 	local token = cinematicToken
 	local cam = getCamera()
 	cam.CameraType = Enum.CameraType.Scriptable
 	cam.CFrame = from
+	setMovementEnabled(false)
 	local startClock = os.clock()
 	task.spawn(function()
 		while token == cinematicToken do
@@ -197,6 +222,7 @@ function CameraController.stopCinematic()
 	mode = "Explore"
 	getCamera().CameraType = savedCameraType or Enum.CameraType.Custom
 	savedCameraType = nil
+	setMovementEnabled(true)
 end
 
 function CameraController.stopExamining()

@@ -172,6 +172,23 @@ recommended default; the product owner can redirect.)
   furniture is built from parts and built-in materials. See "Known
   follow-ups".
 
+### M8 — Stabilise and polish — built, awaiting a Studio pass
+
+- **Cinematic case briefing**: the dark centred panel is gone. The briefing
+  is a slow shot across Daniel's office (chalk outline, desk lamp still on,
+  the second cup, the taped door) with a small type stack in the lower left
+  (case number, title, a two-sentence hook, time and place) and a real
+  Begin investigation button. The hook was tightened to match the case.
+- **Character stays put during cinematics** (title and briefing).
+- **Cleanup**: a stale copy of the old case, with its solution, lived in the
+  base place's `ReplicatedStorage`, readable by clients. Rojo now removes it.
+  Unused remotes, config values, hooks and a prop builder were removed (see
+  ARCHITECTURE "Stabilisation (M8)").
+- **Verification**: 288 unit tests, a 92-check scripted playthrough (now
+  covering the briefing, its Begin button, the camera handoff and the
+  replay), and a luau-lsp type check. **Not played in Roblox Studio**: the
+  authoring environment has no Studio. See the Studio checklist in the PR.
+
 ## Known follow-ups (not blocking)
 
 - **Creator Store assets.** The office furniture is code-built (PropKit)

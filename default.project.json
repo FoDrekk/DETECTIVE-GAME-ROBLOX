@@ -5,6 +5,7 @@
 
     "ReplicatedStorage": {
       "$className": "ReplicatedStorage",
+      "$ignoreUnknownInstances": false,
       "Shared": {
         "$path": "src/shared"
       },
