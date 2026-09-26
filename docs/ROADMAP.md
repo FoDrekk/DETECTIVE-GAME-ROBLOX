@@ -220,6 +220,29 @@ recommended default; the product owner can redirect.)
   early, which grades as Wrong. **Not played in Roblox Studio** (not available
   in the authoring environment).
 
+### M10 — Studio verification & polish — in progress
+
+- **Floor z-fighting eliminated.** The authored `Shell.Floor` and the runtime
+  carpet sat within 0.075 studs of each other across the same 59×47 footprint,
+  flickering in the depth buffer. The shell floor is now sunk 0.10 studs below
+  the carpet; room finish slabs sit a clear gap above it; every pair is
+  separated by ≥0.03 studs. The shell's occluded 16-stud warehouse ceiling is
+  removed.
+- **Examine close-up frames from the player's side.** The camera now positions
+  itself between the player and the object (like `faceSubject` already does
+  for conversations), so evidence is shown against the room rather than the
+  nearest wall. A slight side offset gives a three-quarter view.
+- **Evidence panel offset.** The panel shifts from dead-centre to the left
+  edge, so the examined object is visible beside it.
+- **Headless tests on Windows without VS build tools.** A pure-JS shim
+  (`tools/headless/lz4-shim.js`) replaces the native `lz4` bindings so
+  `rbxm-parser` works without Visual Studio C++ build tools. The existing
+  `build.js` works unchanged; the shim is applied by patching
+  `node_modules/lz4/lib/utils.js` after `npm install --ignore-scripts`.
+- **Verification:** 299 unit tests and a 168-check scripted playthrough,
+  both green. **Awaiting a Roblox Studio playtest** for rendering, camera
+  feel, collision, UI layout, NPC animation, and audio.
+
 ## Known follow-ups (not blocking)
 
 - **Creator Store assets.** The office furniture is code-built (PropKit)
@@ -228,10 +251,10 @@ recommended default; the product owner can redirect.)
   script-free Creator Store meshes would raise fidelity; PropKit's builders
   are the places to swap, one prop type at a time.
 
-- **Examine close-up framing** points from the object's own facing, which
+- ~~**Examine close-up framing** points from the object's own facing, which
   often frames a wall; the centered evidence panel also covers the object.
-  Frame from the player's side and move the panel off-center. (Conversations
-  already do this since M6 via `CameraController.faceSubject`.)
+  Frame from the player's side and move the panel off-center.~~ Resolved in
+  M10: examine now frames from the player's side; evidence panel offset left.
 - **The office asset itself still has Daniel's desk 4 studs up**; M6 corrects
   it at runtime. Fixing `assets/Office.rbxm` directly would let that
   correction be removed.

@@ -45,3 +45,8 @@ Desktop.ini
 
 # Python bytecode from tools/headless
 __pycache__/
+
+# Node.js dependencies for tools/headless (rbxm-parser, lz4js)
+node_modules/
+package.json
+package-lock.json
