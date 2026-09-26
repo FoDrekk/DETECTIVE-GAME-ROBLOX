@@ -160,6 +160,12 @@ Config.Camera = {
 
 -- M6: title screen and the camera drift behind it (world coordinates of the
 -- authored office; the shot ping-pongs between From and To).
+-- M9: connections the investigator makes.
+Config.Reasoning = {
+	-- Seconds before another pairing or answer is taken after a miss.
+	MissCooldown = 2,
+}
+
 Config.Presentation = {
 	Title = {
 		Kicker = "A MYSTERY CASE",

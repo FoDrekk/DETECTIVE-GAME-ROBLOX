@@ -1061,6 +1061,63 @@ the interior receive their text) → `CitySkyline` → `SuspectSpawner`.
   `TitleScreenView.getPlayButton`, `PropKit.filingCabinet`, and the
   `.gitkeep` files in folders that have content.
 
+## The detective decides (M9)
+
+The reasoning layer used to conclude for the player: a contradiction
+unlocked the moment both facts were known. M9 hands those moments to the
+player, without changing who owns what.
+
+- **ReasoningService** still owns `unlockedContradictions` and
+  `unlockedDeductions`. `evaluate` skips anything authored with `claim`
+  (contradictions) or `question` (deductions). New entry points:
+  `claimContradiction(player, a, b)` (two fact references, either order,
+  both known to the player, must match an authored pair) and
+  `answerDeduction(player, id, optionId)` (the question must be open, i.e.
+  all its facts known). Each fires `onFeedback` with a
+  `ReasoningFeedbackPayload` (`claimed`/`correct`/`already`/`no-conflict`/
+  `wrong`/`cooldown`/`invalid`). Misses increment
+  `caseState.reasoningMistakes` and set a short lockout
+  (`Config.Reasoning.MissCooldown`, in memory, not case state). The payload
+  gains `evidence` (discovered, for pairing) and `openQuestions` (prompt,
+  options and basis, never the answer).
+- **ConversationService**: a choice with `present` does not move on. It
+  sets `activeConversation.presenting` and re-sends the line with a
+  `present` block (the heading, plus the ids and names of the found
+  evidence). `present(player, evidenceId | nil)` backs out (nil) or shows
+  something the player has found. Outcomes are checked in order; the first
+  whose evidence and conditions hold leads to its node, and anything else
+  leads to the choice's `next`. Listeners registered with `onPresented` run
+  synchronously before the reaction line is sent. ReasoningService registers
+  one to unlock the contradiction an outcome `claims` (it can't be required
+  from ConversationService, which it depends on). `validate` checks the
+  outcomes too.
+- **AccusationService**: `isOpen(player)` replaces "no active objective" in
+  both `accuse` and `GameStateService.canConclude`. With
+  `accusationRules.opensAfter` it is that objective being complete. With
+  `requiresCase`, `accuse(player, id, motiveId, proofId)` only accepts a
+  motive and proof the player has established, and stores them.
+  `getVerdict` grades them: Solved when both are in the accusation's
+  `motives`/`proofs`, Unproven when the suspect is right but the case isn't,
+  Wrong otherwise, with `solution.solvedEpilogue`/`unprovenEpilogue` or the
+  accusation's `wrongEpilogue`. The payload gains `open`, `requiresCase`, and
+  the established `motives`/`proofs` (labels only). It is re-sent when
+  objectives complete or reasoning changes.
+- **Remotes**: `DialoguePresent`, `ClaimContradiction`, `AnswerDeduction`
+  (client → server; ids only, all re-validated) and `ReasoningFeedback`
+  (server → client).
+- **Client**:
+  - DialogueView turns a `present` payload into the choice list (evidence,
+    marked EVIDENCE, then "Never mind."), so keys, mouse, touch and gamepad
+    work unchanged. It echoes "You show: …" above the reaction.
+  - CaseFileView is rebuilt around open questions, a two-column "what people
+    said / what you found" selection with a claim button, and the
+    established facts, with a stamp on success.
+  - AccusationView has three sections (who, why, what proves it) and ACCUSE
+    enabled only when complete.
+  - CaseClosedView shows the grade, the epilogue and the missteps.
+  - The Q/touch accusation gate follows the payload's `open`, announced
+    once per case.
+
 ## Headless verification
 
 `tools/headless` runs the game's Luau without Studio on a small engine

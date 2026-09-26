@@ -81,6 +81,14 @@ Shim.clientHandlers.DialogueUpdated = function(_, payload)
 		if payload.prompt then
 			say(`    > YOU: {payload.prompt}`)
 		end
+		if payload.present then
+			-- The line is held while the investigator picks what to show.
+			say(`    ({payload.present.prompt} {#payload.present.options} items found)`)
+			return
+		end
+		if payload.presented then
+			say(`    [shows: {payload.presented}]`)
+		end
 		local who = if payload.isPlayer then "YOU" else payload.speaker
 		say(`    {who}: {payload.text}`)
 		if payload.unlockedStatement then
@@ -358,6 +366,101 @@ end
 -- The case
 --------------------------------------------------------------------------
 
+--------------------------------------------------------------------------
+-- M9: the case file and the accusation, through their own buttons
+--------------------------------------------------------------------------
+
+local function gui(name: string): Instance?
+	return playerGui:FindFirstChild(name)
+end
+
+local function find(root: Instance?, name: string): Instance?
+	return if root then root:FindFirstChild(name, true) else nil
+end
+
+local function click(button: Instance?, label: string): boolean
+	if check(button and button:IsA("GuiButton"), `{label}: the button is there`) then
+		Shim.fireSignal((button :: GuiButton).Activated)
+		Shim.advance(0.5)
+		return true
+	end
+	return false
+end
+
+local function withCaseFile(fn: (Instance) -> ())
+	InputController.invoke("CaseFile")
+	Shim.advance(0.8)
+	local file = gui("MysteryCase_CaseFile") :: Instance
+	fn(file)
+	InputController.invoke("CaseFile")
+	Shim.advance(0.5)
+end
+
+local function feedback(): string
+	local label = find(gui("MysteryCase_CaseFile"), "Feedback")
+	return if label and label:IsA("TextLabel") then label.Text else ""
+end
+
+-- Set two facts side by side and press "These don't add up".
+local function claimPair(a: string, b: string, label: string): string
+	local result = ""
+	withCaseFile(function(file)
+		click(find(file, a), `{label}: select {a}`)
+		click(find(file, b), `{label}: select {b}`)
+		click(find(file, "Claim"), `{label}: claim`)
+		Shim.advance(1)
+		result = feedback()
+	end)
+	say(`  [CASE FILE] {label}: {result}`)
+	return result
+end
+
+local function answerQuestion(deductionId: string, optionId: string, label: string): string
+	local result = ""
+	withCaseFile(function(file)
+		local question = find(file, "Question_" .. deductionId)
+		if check(question, `{label}: the question is open`) then
+			click(find(question, "Option_" .. optionId), `{label}: answer`)
+			Shim.advance(1)
+			result = feedback()
+		end
+	end)
+	say(`  [CASE FILE] {label}: {result}`)
+	return result
+end
+
+local function isOpenQuestion(deductionId: string): boolean
+	local payload = reasoning()
+	for _, question in ipairs(payload and payload.openQuestions or {}) do
+		if question.id == deductionId then
+			return true
+		end
+	end
+	return false
+end
+
+local function accuse(accusationId: string, motiveId: string, proofId: string)
+	InputController.invoke("Accuse")
+	Shim.advance(1)
+	local accuseGui = gui("MysteryCase_Accusation")
+	if check(accuseGui and (accuseGui :: ScreenGui).Enabled, "Q opens the accusation") then
+		click(find(accuseGui, "Suspect_" .. accusationId), "accusation: who")
+		click(find(accuseGui, "Motive_" .. motiveId), "accusation: why")
+		click(find(accuseGui, "Proof_" .. proofId), "accusation: proof")
+		click(find(accuseGui, "Accuse"), "accusation: ACCUSE")
+	end
+	Shim.advance(3)
+end
+
+local function closingText(name: string): string
+	local label = find(gui("MysteryCase_CaseClosed"), name)
+	return if label and label:IsA("TextLabel") then label.Text else ""
+end
+
+--------------------------------------------------------------------------
+-- The case: first run, solved properly
+--------------------------------------------------------------------------
+
 say("== The lobby ==")
 check(objective() == "OBJ-000", "first objective: the night guard")
 converse("SUS-003", "Sam Okafor", { "You found him?", "anyone else", "get in after hours", "cameras" }, "That's all")
@@ -380,7 +483,9 @@ check(objective() == "OBJ-002", "searching the office moves on to the suspects")
 
 say("\n== Around the floor ==")
 examine(evidenceProp("EV-005"), "the coffee machine")
-check(hasFact("deductions", "Daniel Wasn't Alone"), "coffee machine + second cup: 'Daniel Wasn't Alone'")
+Shim.advance(1)
+check(not hasFact("deductions", "Daniel Wasn't Alone"), "nothing concludes itself: no deduction yet")
+check(isOpenQuestion("DEDUCT-003") and isOpenQuestion("DEDUCT-002"), "two questions open in the case file")
 -- Re-examining a found clue re-opens it quietly.
 local discoveries = sentCount("EvidenceDiscovered")
 examine(evidenceProp("EV-005"), "the coffee machine again")
@@ -389,32 +494,66 @@ check(
 	sentCount("EvidenceDiscovered") == discoveries + 1 and again and again[1].revisited,
 	"a found clue re-opens as 'on file'"
 )
-
-converse("SUS-002", "Victor Lane", { "When did you leave", "confirm", "dissolving" }, "That's all")
-converse("SUS-001", "Mara Reyes", { "sorry", "Where were you", "ending the partnership" }, "let you be")
-Shim.advance(3)
-check(objective() == "OBJ-003", "both spoken to: test Victor's story")
-check(hasFact("contradictions", "Mara's Missed Call"), "Mara's alibi breaks against the phone (red herring)")
+check(
+	string.find(answerQuestion("DEDUCT-003", "visitor", "the two espressos"), "DANIEL WASN'T ALONE", 1, true) ~= nil,
+	"answering the espresso question: 'Daniel Wasn't Alone'"
+)
+check(
+	string.find(answerQuestion("DEDUCT-002", "dissolve", "the midnight meeting"), "ENDING THE PARTNERSHIP", 1, true)
+		~= nil,
+	"answering the meeting question: 'Daniel Was Ending the Partnership'"
+)
 
 say("\n== Reception ==")
 examine(evidenceProp("EV-004"), "the badge log")
 examine(evidenceProp("EV-007"), "the camera monitor")
+
+converse(
+	"SUS-002",
+	"Victor Lane",
+	{ "When did you leave", "confirm", "dissolving", "Take a look", "Camera Monitor" },
+	"That's all"
+)
+Shim.advance(1)
+check(hasFact("contradictions", "The Footage"), "showing Victor his own note: 'The Footage'")
+converse("SUS-001", "Mara Reyes", { "sorry", "Where were you", "ending the partnership" }, "let you be")
 Shim.advance(3)
-check(hasFact("contradictions", "Half Past Ten"), "badge log breaks Victor's alibi")
-check(hasFact("contradictions", "The Footage"), "the monitor note breaks 'pull the footage'")
+check(objective() == "OBJ-003", "both spoken to: test Victor's story")
+check(not hasFact("contradictions", "Half Past Ten"), "the badge log alone proves nothing")
+check(not hasFact("contradictions", "Mara's Missed Call"), "the phone alone proves nothing")
+check(
+	string.find(
+		claimPair("Fact_Statement_STMT-SUS-002-ALIBI", "Fact_Evidence_EV-004", "Victor's 'half ten' × the badge log"),
+		"HALF PAST TEN",
+		1,
+		true
+	) ~= nil,
+	"setting his alibi against the badge log: 'Half Past Ten'"
+)
+Shim.advance(3)
 check(objective() == "OBJ-004", "then: the call nobody answered")
 
--- Mara, pressed too hard first: she shuts down, then an apology.
-converse("SUS-001", "Mara Reyes (pressed)", { "declined", "Why lie" }, nil)
+-- Mara, shown the phone and pressed too hard: she shuts down, then an
+-- apology.
+converse("SUS-001", "Mara Reyes (pressed)", { "look at something", "Phone", "Why lie" }, nil)
+check(hasFact("contradictions", "Mara's Missed Call"), "showing Mara the phone: 'Mara's Missed Call'")
 converse("SUS-001", "Mara Reyes (again)", { "I'm sorry. I need to understand" }, "let you be")
+Shim.advance(2)
+check(
+	string.find(answerQuestion("DEDUCT-001", "victor", "who came back"), "VICTOR CAME BACK", 1, true) ~= nil,
+	"answering who came back: 'Victor Came Back'"
+)
 Shim.advance(3)
-check(hasFact("deductions", "Victor Came Back"), "Mara's lead + badge log: 'Victor Came Back'")
 check(objective() == "OBJ-005", "then: the last ten minutes")
 
-converse("SUS-002", "Victor Lane (badge)", { "Your badge came back in" }, "That's all")
+converse("SUS-002", "Victor Lane (the log)", { "Take a look", "Badge Log" }, "That's all")
+converse("SUS-002", "Victor Lane (the phone)", { "Take a look", "Phone" }, nil)
 Shim.advance(2)
-check(hasFact("contradictions", "A Call That Never Connected"), "his revised story breaks against the phone")
-converse("SUS-002", "Victor Lane (confrontation)", { "never connected" }, nil)
+check(hasFact("contradictions", "A Call That Never Connected"), "showing him the phone: 'A Call That Never Connected'")
+check(
+	string.find(answerQuestion("DEDUCT-004", "after", "when he left"), "THERE AT THE END", 1, true) ~= nil,
+	"answering when he left: 'Victor Was There at the End'"
+)
 Shim.advance(3)
 check(objective() == "OBJ-006", "confrontation done: reconstruct the night")
 
@@ -475,37 +614,20 @@ end
 --------------------------------------------------------------------------
 
 say("\n== Accusation ==")
-InputController.invoke("Accuse")
-Shim.advance(1)
-local accuseGui = playerGui:FindFirstChild("MysteryCase_Accusation")
-local accused = false
-if check(accuseGui, "Q opens the accusation picker") then
-	for _, d in ipairs((accuseGui :: Instance):GetDescendants()) do
-		if d:IsA("TextButton") and d.Text == "ACCUSE" then
-			local row = d.Parent :: Instance
-			local texts = {}
-			for _, t in ipairs(row:GetDescendants()) do
-				if t:IsA("TextLabel") then
-					table.insert(texts, t.Text)
-				end
-			end
-			if string.find(string.upper(table.concat(texts, " ")), "VICTOR", 1, true) then
-				Shim.fireSignal(d.Activated)
-				accused = true
-				break
-			end
-		end
-	end
-end
-check(accused, "clicked ACCUSE beside Victor Lane")
-Shim.advance(3)
+accuse("ACC-001", "DEDUCT-002", "CONTRA-002")
 local summary = lastSent("CaseClosedSummary")
-check(summary and summary[1].verdict and summary[1].verdict.correct, "the verdict: correct")
-if summary and summary[1].verdict then
-	say("  [VERDICT] " .. summary[1].verdict.reveal)
+local verdict = summary and summary[1].verdict
+check(verdict and verdict.grade == "Solved", "the verdict: solved")
+check(summary and summary[1].mistakes == 0, "no missteps on the clean run")
+if verdict then
+	say(`  [VERDICT] {verdict.grade}: {verdict.epilogue or ""}`)
+	say("  [WHAT HAPPENED] " .. verdict.reveal)
 end
 local closedPhase = lastSent("PhaseChanged")
 check(closedPhase and closedPhase[1] == "CaseClosed", "phase CaseClosed")
+Shim.advance(3)
+check(closingText("Title") == "Case solved.", "the closing screen: 'Case solved.'")
+check(string.find(closingText("Epilogue"), "unsigned", 1, true) ~= nil, "the closing screen tells what happened next")
 
 -- Investigate again: a clean second run.
 pressInteract()
@@ -523,6 +645,78 @@ check(
 	secondRun and secondRun[1] == "Investigation" and camera.CameraType == Enum.CameraType.Custom,
 	"E begins the second run, camera back with the player"
 )
+
+--------------------------------------------------------------------------
+-- Second run: sloppy, and an early accusation of the wrong person
+--------------------------------------------------------------------------
+
+say("\n== Second run: in a hurry ==")
+converse("SUS-003", "Sam Okafor (second run)", {}, "That's all")
+examine(evidenceProp("EV-001"), "the phone")
+examine(evidenceProp("EV-002"), "the laptop")
+examine(evidenceProp("EV-003"), "the agenda")
+examine(evidenceProp("EV-006"), "the second cup")
+converse("SUS-002", "Victor Lane (second run)", { "Take a look", "Laptop" }, "That's all")
+check(sentCount("DialogueUpdated") > 0, "shown something that means nothing, Victor shrugs")
+converse("SUS-001", "Mara Reyes (second run)", { "Where were you" }, "let you be")
+Shim.advance(3)
+local accusationState = lastSent("AccusationUpdated")
+check(accusationState and accusationState[1].open, "with both suspects spoken to, accusing is open")
+local observation = gui("MysteryCase_Observation")
+local announced = false
+for _, d in ipairs(observation and observation:GetDescendants() or {}) do
+	if d:IsA("TextLabel") and string.find(string.lower(d.Text), "accusation", 1, true) then
+		announced = true
+	end
+end
+check(announced, "the player is told, once, that they can accuse")
+
+check(
+	claimPair("Fact_Statement_STMT-SUS-001-ALIBI", "Fact_Evidence_EV-002", "Mara's alibi × the laptop")
+		== "Those two don't conflict.",
+	"a pairing that doesn't conflict is only told so"
+)
+Shim.advance(2.5)
+check(
+	string.find(
+		claimPair("Fact_Statement_STMT-SUS-001-ALIBI", "Fact_Evidence_EV-001", "Mara's alibi × the phone"),
+		"MARA'S MISSED CALL",
+		1,
+		true
+	) ~= nil,
+	"then a pairing that holds: 'Mara's Missed Call'"
+)
+Shim.advance(2.5)
+-- A guess, then straight away the right answer: the second has to wait.
+local guessed, rushed = "", ""
+withCaseFile(function(file)
+	local question = find(file, "Question_DEDUCT-002")
+	if check(question, "the meeting question is open") then
+		click(find(question, "Option_client"), "a guess")
+		guessed = feedback()
+		click(find(file, "Option_dissolve"), "straight away, the right answer")
+		rushed = feedback()
+	end
+end)
+say(`  [CASE FILE] a guess: {guessed} / straight away: {rushed}`)
+check(guessed == "That doesn't hold up.", "a wrong answer is only told so")
+check(rushed == "Take a moment. Look again.", "straight after a miss, the next try waits")
+Shim.advance(2.5)
+answerQuestion("DEDUCT-002", "dissolve", "the midnight meeting")
+
+say("\n== Accusation (second run) ==")
+accuse("ACC-002", "DEDUCT-002", "CONTRA-003")
+summary = lastSent("CaseClosedSummary")
+verdict = summary and summary[1].verdict
+check(verdict and verdict.grade == "Wrong", "accusing Mara: the wrong person")
+check(summary and summary[1].mistakes == 2, "two missteps on the record")
+check(summary and summary[1].objectivesCompleted < summary[1].objectivesTotal, "accused with the case still open")
+if verdict then
+	say(`  [VERDICT] {verdict.grade}: {verdict.epilogue or ""}`)
+end
+Shim.advance(3)
+check(closingText("Title") == "The wrong person was charged.", "the closing screen: 'The wrong person was charged.'")
+check(string.find(closingText("Stats"), "Missteps 2", 1, true) ~= nil, "the closing screen counts the missteps")
 
 print("\n---- TRANSCRIPT ----")
 print(table.concat(transcript, "\n"))

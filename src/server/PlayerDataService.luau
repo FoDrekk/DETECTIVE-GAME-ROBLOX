@@ -36,6 +36,9 @@ local function createCaseState(caseId: string): Types.PlayerCaseState
 		unlockedContradictions = {},
 		unlockedDeductions = {},
 		accusationId = nil,
+		accusationMotive = nil,
+		accusationProof = nil,
+		reasoningMistakes = 0,
 		timelineEstablished = nil,
 	}
 end

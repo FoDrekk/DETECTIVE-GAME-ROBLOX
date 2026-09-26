@@ -98,11 +98,14 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for the forward plan (M1–M6).
 | Interact / continue / begin / investigate again | E | X | Main action button (bottom-right, labelled with what it will do) |
 | Case File | C | Y | Case File button |
 | Timeline | T | LB | Timeline button |
-| Name the suspect (once the investigation is complete) | Q | RB | Name Suspect button |
+| Make an accusation (once it opens: CASE-001, after both suspects are spoken to) | Q | RB | Name Suspect button |
 | Close panels | Roblox menu | B | Tap the panel's button again |
 | Ask a question in a conversation | 1–9 or click | D-pad + A | Tap the question |
 | Finish the line being typed / continue | E | X | Main action button |
-| Choose a suspect in the accusation picker | Click ACCUSE | D-pad + A | Tap ACCUSE |
+| Show evidence in a conversation ("Take a look at this.") | 1–9 or click | D-pad + A | Tap the evidence |
+| Set two facts side by side in the Case File | Click both, then THESE DON'T ADD UP | D-pad + A | Tap both, then the button |
+| Answer an open question in the Case File | Click the answer | D-pad + A | Tap the answer |
+| Make the accusation (who, why, what proves it) | Click one of each, then ACCUSE | D-pad + A | Tap one of each, then ACCUSE |
 
 Movement and camera use Roblox's standard controls on every device. On-screen
 hints follow whichever device was used last (`[E]`, `(X)`, or no key on
@@ -120,6 +123,25 @@ Mobile & gamepad support:
 - The objective panel now sits below Roblox's top-bar buttons (it was
   underneath them), following `GuiService.TopbarInset` since the top bar
   initialises after the game's client script.
+
+M9: the detective decides.
+
+- **Nothing concludes itself.** Finding the badge log no longer announces
+  that Victor lied. You notice it: show the log to Victor, or open the Case
+  File, set his "half ten" beside the log and press *These don't add up*. A
+  pairing that doesn't conflict is only told so.
+- **Show people things.** Every character has "Take a look at this." Pick a
+  piece of evidence; the right one, at the right moment, breaks a story (the
+  badge log, then the phone, for Victor). The rest gets a shrug.
+- **Questions, not answers.** Conclusions ("Daniel wasn't alone") are open
+  questions in the Case File once their facts are known. You pick the
+  answer.
+- **Make a case.** You can accuse once you've spoken to both suspects, with
+  the rest still to find. Name who, why and what proves it. Three endings:
+  solved, unproven (the right man walks), or the wrong person.
+- Built and verified headlessly (299 unit tests, a 168-check playthrough
+  that solves the case once properly and once badly); **not yet played in
+  Studio**. See `docs/ROADMAP.md` M9.
 
 M7: interrogation and a lived-in office.
 

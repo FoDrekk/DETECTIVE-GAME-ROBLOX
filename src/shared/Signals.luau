@@ -74,6 +74,7 @@ Signals.Names = table.freeze({
 	AccusationUpdated = "AccusationUpdated",
 	ObservationShown = "ObservationShown",
 	CaseClosedSummary = "CaseClosedSummary",
+	ReasoningFeedback = "ReasoningFeedback",
 	-- Client -> Server
 	InteractionRequest = "InteractionRequest",
 	RequestCase = "RequestCase",
@@ -87,6 +88,9 @@ Signals.Names = table.freeze({
 	RequestAccusation = "RequestAccusation",
 	SubmitAccusation = "SubmitAccusation",
 	SubmitTimelineOrder = "SubmitTimelineOrder",
+	DialoguePresent = "DialoguePresent",
+	ClaimContradiction = "ClaimContradiction",
+	AnswerDeduction = "AnswerDeduction",
 })
 
 return Signals

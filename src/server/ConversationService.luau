@@ -24,6 +24,18 @@
 	<id>" intent with no state of its own. A choice id is re-validated
 	against the player's own state before it is honoured.
 
+	Presenting evidence (M9): a choice with `present` asks the investigator
+	to show something instead of moving on. The line then waits with the
+	evidence they have found listed; they pick one (present) or back out.
+	The server matches it against the choice's authored outcomes -- the
+	first whose evidence and conditions hold wins -- and moves to that
+	outcome's node; anything else leads to the choice's own `next` (the
+	character's "and?"). A presentation that lands may claim a
+	contradiction: that is the investigator making the connection.
+	ReasoningService (which depends on this module, so it can't be required
+	from here) registers with onPresented and unlocks it synchronously,
+	before the reaction line is sent.
+
 	Conversation mode: while a conversation is active, the player's Humanoid
 	is speed/jump-locked server-side (see lockMovement/unlockMovement below).
 	This is what keeps a conversation from going stale if the player would
@@ -51,6 +63,15 @@ local dialogueUpdatedEvent: BindableEvent = Instance.new("BindableEvent")
 
 function ConversationService.onUpdated(): BindableEvent
 	return dialogueUpdatedEvent
+end
+
+-- M9: synchronous listeners for evidence shown in a conversation, called
+-- as (player, { suspectId, evidenceId, landed, claims }).
+type PresentedListener = (Player, { suspectId: string, evidenceId: string, landed: boolean, claims: string? }) -> ()
+local presentedListeners: { PresentedListener } = {}
+
+function ConversationService.onPresented(listener: PresentedListener)
+	table.insert(presentedListeners, listener)
 end
 
 --------------------------------------------------------------------------
@@ -237,8 +258,26 @@ local function availableChoices(
 	end
 	for _, choice in ipairs(choices) do
 		local used = choice.once and data.caseState.usedChoices[choiceKey(conversation.suspectId, choice.id)]
-		if not used and conditionsHold(data, choice.requires) then
+		-- Nothing to show yet: a presenting choice waits for evidence.
+		local nothingToShow = choice.present ~= nil and next(data.caseState.discovered) == nil
+		if not used and not nothingToShow and conditionsHold(data, choice.requires) then
 			table.insert(out, choice)
+		end
+	end
+	return out
+end
+
+-- The evidence this player can show, in case order (ids and names only).
+local function presentableEvidence(data: Types.PlayerData): { { id: string, name: string } }
+	local out = {}
+	local caseDef = CaseService.getCase(data.caseState.caseId)
+	if not caseDef then
+		return out
+	end
+	for _, evidence in ipairs(caseDef.evidence) do
+		local found = data.caseState.discovered[evidence.id]
+		if found then
+			table.insert(out, { id = found.id, name = found.name })
 		end
 	end
 	return out
@@ -249,7 +288,8 @@ local function buildNodePayload(
 	node: Types.DialogueNodeDefinition,
 	unlockedStatement: Types.StatementPayload?,
 	choices: { Types.DialogueChoiceDefinition },
-	prompt: string?
+	prompt: string?,
+	presented: string?
 ): Types.DialoguePayload
 	local offered: { Types.DialogueChoicePayload }? = nil
 	if #choices > 0 then
@@ -273,7 +313,22 @@ local function buildNodePayload(
 		unlockedStatement = unlockedStatement,
 		choices = offered,
 		prompt = prompt,
+		presented = presented,
 	}
+end
+
+-- The line again, waiting for the investigator to pick what to show.
+local function buildPresentingPayload(
+	data: Types.PlayerData,
+	suspect: Types.SuspectDefinition,
+	node: Types.DialogueNodeDefinition,
+	choice: Types.DialogueChoiceDefinition
+): Types.DialoguePayload
+	local present = choice.present :: Types.DialoguePresentDefinition
+	local payload = buildNodePayload(suspect, node, nil, {}, choice.text)
+	payload.canContinue = false
+	payload.present = { prompt = present.prompt, options = presentableEvidence(data) }
+	return payload
 end
 
 local function inactivePayload(completed: boolean): Types.DialoguePayload
@@ -313,7 +368,8 @@ local function enterNode(
 	suspect: Types.SuspectDefinition,
 	conversation: Types.ConversationDefinition,
 	node: Types.DialogueNodeDefinition,
-	prompt: string?
+	prompt: string?,
+	presented: string?
 )
 	data.caseState.activeConversation = { suspectId = suspect.id, nodeId = node.id }
 	if node.setFlags then
@@ -329,7 +385,7 @@ local function enterNode(
 	local unlocked = if node.statementId then unlockStatement(player, data, node.statementId) else nil
 	dialogueUpdatedEvent:Fire(
 		player,
-		buildNodePayload(suspect, node, unlocked, availableChoices(data, conversation, node), prompt)
+		buildNodePayload(suspect, node, unlocked, availableChoices(data, conversation, node), prompt, presented)
 	)
 end
 
@@ -423,9 +479,9 @@ function ConversationService.advance(player: Player): (boolean, string?)
 		return abandon(player, data)
 	end
 
-	-- A line that is waiting for the investigator to pick a question cannot
-	-- be skipped past with "continue".
-	if #availableChoices(data, conversation, currentNode) > 0 then
+	-- A line that is waiting for the investigator to pick a question (or a
+	-- piece of evidence to show) cannot be skipped past with "continue".
+	if active.presenting or #availableChoices(data, conversation, currentNode) > 0 then
 		return false, "choice-required"
 	end
 
@@ -470,6 +526,10 @@ function ConversationService.choose(player: Player, choiceId: string): (boolean,
 	if not conversation or not suspect or not currentNode then
 		return abandon(player, data)
 	end
+	if active.presenting then
+		-- Picking evidence (or backing out) comes first.
+		return false, "presenting"
+	end
 
 	local picked: Types.DialogueChoiceDefinition? = nil
 	for _, choice in ipairs(availableChoices(data, conversation, currentNode)) do
@@ -492,10 +552,114 @@ function ConversationService.choose(player: Player, choiceId: string): (boolean,
 		return abandon(player, data)
 	end
 
+	if picked.present then
+		-- Hold the line and ask what to show. `once` is only spent when a
+		-- presentation lands.
+		active.presenting = picked.id
+		dialogueUpdatedEvent:Fire(player, buildPresentingPayload(data, suspect, currentNode, picked))
+		return true, nil
+	end
+
 	if picked.once then
 		data.caseState.usedChoices[choiceKey(active.suspectId, picked.id)] = true
 	end
 	enterNode(player, data, suspect, conversation, target, picked.text)
+	return true, nil
+end
+
+--[[
+	M9: the investigator shows a piece of evidence (or, with nil, backs out
+	of showing anything and returns to the questions). Only evidence this
+	player has discovered can be shown, and only while a presenting choice
+	is waiting.
+]]
+function ConversationService.present(player: Player, evidenceId: string?): (boolean, string?)
+	local data = PlayerDataService.get(player)
+	if not data then
+		return false, "no-player-data"
+	end
+	local active = data.caseState.activeConversation
+	if not active or not active.presenting then
+		return false, "not-presenting"
+	end
+
+	local conversation = findConversation(data.caseState.caseId, active.suspectId)
+	local suspect = CaseService.getSuspect(data.caseState.caseId, active.suspectId)
+	local currentNode = conversation and conversation.nodes[active.nodeId]
+	if not conversation or not suspect or not currentNode then
+		return abandon(player, data)
+	end
+
+	local choice: Types.DialogueChoiceDefinition? = nil
+	for _, candidate in ipairs(nodeChoices(conversation, currentNode) or {}) do
+		if candidate.id == active.presenting then
+			choice = candidate
+			break
+		end
+	end
+	local present = choice and choice.present
+	if not choice or not present then
+		active.presenting = nil
+		return abandon(player, data)
+	end
+
+	if evidenceId == nil then
+		-- Backed out: the same line, with the questions again.
+		active.presenting = nil
+		dialogueUpdatedEvent:Fire(
+			player,
+			buildNodePayload(suspect, currentNode, nil, availableChoices(data, conversation, currentNode), nil)
+		)
+		return true, nil
+	end
+	if type(evidenceId) ~= "string" then
+		return false, "invalid-evidence"
+	end
+	local shown = data.caseState.discovered[evidenceId]
+	if not shown then
+		-- Never lets a client show something it hasn't found.
+		return false, "invalid-evidence"
+	end
+
+	local landed: Types.DialoguePresentOutcome? = nil
+	for _, outcome in ipairs(present.outcomes) do
+		if outcome.evidence == evidenceId and conditionsHold(data, outcome.requires) then
+			landed = outcome
+			break
+		end
+	end
+	local targetId = if landed then landed.next else choice.next
+	local target = conversation.nodes[targetId]
+	if not target then
+		log:warn("presentation leads to an unknown node", {
+			suspectId = active.suspectId,
+			choiceId = choice.id,
+			next = targetId,
+		})
+		active.presenting = nil
+		return abandon(player, data)
+	end
+
+	active.presenting = nil
+	if landed and choice.once then
+		data.caseState.usedChoices[choiceKey(active.suspectId, choice.id)] = true
+	end
+	log:info("evidence presented", {
+		player = player.Name,
+		suspectId = active.suspectId,
+		evidenceId = evidenceId,
+		landed = landed ~= nil,
+	})
+	local info = {
+		suspectId = active.suspectId,
+		evidenceId = evidenceId,
+		landed = landed ~= nil,
+		claims = if landed then landed.claims else nil,
+	}
+	for _, listener in ipairs(presentedListeners) do
+		listener(player, info)
+	end
+	enterNode(player, data, suspect, conversation, target, nil, shown.name)
 	return true, nil
 end
 
@@ -535,6 +699,13 @@ function ConversationService.getCurrentPayload(player: Player): Types.DialoguePa
 		return inactivePayload(false)
 	end
 
+	if active.presenting then
+		for _, choice in ipairs(nodeChoices(conversation, node) or {}) do
+			if choice.id == active.presenting and choice.present then
+				return buildPresentingPayload(data, suspect, node, choice)
+			end
+		end
+	end
 	return buildNodePayload(suspect, node, nil, availableChoices(data, conversation, node), nil)
 end
 
@@ -656,6 +827,24 @@ function ConversationService.validate(caseDef: Types.CaseDefinition): { string }
 					table.insert(problems, `{where}/{choice.id}: next '{choice.next}' is missing`)
 				end
 				checkConditions(`{where}/{choice.id}`, choice.requires)
+				if choice.present then
+					if #choice.present.outcomes == 0 then
+						table.insert(problems, `{where}/{choice.id}: presenting choice has no outcomes`)
+					end
+					for index, outcome in ipairs(choice.present.outcomes) do
+						local at = `{where}/{choice.id} outcome {index}`
+						if not known.Evidence[outcome.evidence] then
+							table.insert(problems, `{at}: unknown evidence '{outcome.evidence}'`)
+						end
+						if not nodes[outcome.next] then
+							table.insert(problems, `{at}: next '{outcome.next}' is missing`)
+						end
+						if outcome.claims and not known.Contradiction[outcome.claims] then
+							table.insert(problems, `{at}: claims unknown contradiction '{outcome.claims}'`)
+						end
+						checkConditions(at, outcome.requires)
+					end
+				end
 			end
 		end
 	end

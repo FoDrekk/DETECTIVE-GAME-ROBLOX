@@ -12,7 +12,6 @@ local GameStateMachine = require(ReplicatedStorage:WaitForChild("Shared"):WaitFo
 local Signals = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Signals"))
 local PlayerDataService = require(script.Parent:WaitForChild("PlayerDataService"))
 local CaseService = require(script.Parent:WaitForChild("CaseService"))
-local ObjectiveService = require(script.Parent:WaitForChild("ObjectiveService"))
 local AccusationService = require(script.Parent:WaitForChild("AccusationService"))
 local TimelineService = require(script.Parent:WaitForChild("TimelineService"))
 local ReasoningService = require(script.Parent:WaitForChild("ReasoningService"))
@@ -73,7 +72,8 @@ end
 	it).
 
 	Two conditions, both server-side:
-	  1. no active objective remains (every objective complete), and
+	  1. accusing is open for this player (every objective complete, or,
+	     M9, the case's `accusationRules.opensAfter` objective), and
 	  2. the player has made a formal accusation (AccusationService).
 ]]
 local function canConclude(player: Player): boolean
@@ -84,7 +84,10 @@ local function canConclude(player: Player): boolean
 	if not PlayerDataService.get(player) then
 		return false
 	end
-	if ObjectiveService.getActiveObjectiveId(player) ~= nil then
+	-- M9: accusing may open before every objective is done
+	-- (accusationRules.opensAfter); without rules this is still "no
+	-- objective left".
+	if not AccusationService.isOpen(player) then
 		return false
 	end
 	-- Phase 2N: an investigation is only concluded on the player's own
@@ -124,6 +127,7 @@ function GameStateService.getClosingSummary(player: Player): Types.CaseClosedSum
 		timeline = TimelineService.getDiscovered(player),
 		contradiction = if #reasoning.contradictions > 0 then reasoning.contradictions[1] else nil,
 		verdict = AccusationService.getVerdict(player),
+		mistakes = data.caseState.reasoningMistakes or 0,
 	}
 end
 
