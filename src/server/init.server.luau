@@ -69,6 +69,7 @@ local function bootstrap()
 	local accusationEvent = Signals.get(Signals.Names.AccusationUpdated)
 	local observationEvent = Signals.get(Signals.Names.ObservationShown)
 	local caseClosedSummaryEvent = Signals.get(Signals.Names.CaseClosedSummary)
+	local reasoningFeedbackEvent = Signals.get(Signals.Names.ReasoningFeedback)
 	local requestObjectives = Signals.get(Signals.Names.RequestObjectives)
 	local requestTimeline = Signals.get(Signals.Names.RequestTimeline)
 
@@ -105,6 +106,10 @@ local function bootstrap()
 
 	ReasoningService.onUpdated().Event:Connect(function(player: Player, payload)
 		reasoningEvent:FireClient(player, payload)
+	end)
+
+	ReasoningService.onFeedback().Event:Connect(function(player: Player, payload)
+		reasoningFeedbackEvent:FireClient(player, payload)
 	end)
 
 	AccusationService.onUpdated().Event:Connect(function(player: Player, payload)
@@ -219,6 +224,30 @@ local function bootstrap()
 		ConversationService.choose(player, choiceId)
 	end)
 
+	-- M9: showing evidence in a conversation. Only the evidence id travels
+	-- (or nothing, to back out); the server checks the player has found it
+	-- and that a presenting choice is waiting.
+	local requestDialoguePresent = Signals.get(Signals.Names.DialoguePresent)
+	requestDialoguePresent.OnServerEvent:Connect(function(player: Player, evidenceId)
+		if evidenceId ~= nil and type(evidenceId) ~= "string" then
+			return
+		end
+		ConversationService.present(player, evidenceId)
+	end)
+
+	-- M9: the investigator pairs two facts in the case file, or answers an
+	-- open question. ReasoningService checks the facts are the player's own
+	-- and judges the connection against case data.
+	local requestClaim = Signals.get(Signals.Names.ClaimContradiction)
+	requestClaim.OnServerEvent:Connect(function(player: Player, a, b)
+		ReasoningService.claimContradiction(player, a, b)
+	end)
+
+	local requestAnswer = Signals.get(Signals.Names.AnswerDeduction)
+	requestAnswer.OnServerEvent:Connect(function(player: Player, deductionId, optionId)
+		ReasoningService.answerDeduction(player, deductionId, optionId)
+	end)
+
 	-- 10. Reasoning (Case File) sync requests (join-race guard).
 	local requestReasoning = Signals.get(Signals.Names.RequestReasoning)
 	requestReasoning.OnServerEvent:Connect(function(player: Player)
@@ -242,11 +271,15 @@ local function bootstrap()
 	end)
 
 	local submitAccusation = Signals.get(Signals.Names.SubmitAccusation)
-	submitAccusation.OnServerEvent:Connect(function(player: Player, accusationId)
+	submitAccusation.OnServerEvent:Connect(function(player: Player, accusationId, motiveId, proofId)
 		if type(accusationId) ~= "string" then
 			return
 		end
-		if AccusationService.accuse(player, accusationId) then
+		-- M9: the motive and proof, when the case asks for them. Anything
+		-- that isn't a string is treated as not given.
+		local motive = if type(motiveId) == "string" then motiveId else nil
+		local proof = if type(proofId) == "string" then proofId else nil
+		if AccusationService.accuse(player, accusationId, motive, proof) then
 			-- The accusation was accepted (all objectives complete, valid id).
 			-- Now — and only now — the case may conclude.
 			GameStateService.requestConclude(player)

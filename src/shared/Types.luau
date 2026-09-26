@@ -205,6 +205,30 @@ export type DialogueChoiceDefinition = {
 	next: string,
 	requires: { DialogueCondition }?,
 	once: boolean?,
+	-- M9: choosing this asks the investigator to show a piece of evidence
+	-- instead of moving on at once. See DialoguePresentDefinition; for a
+	-- presenting choice `next` is where evidence that means nothing to this
+	-- character leads.
+	present: DialoguePresentDefinition?,
+}
+
+-- M9: one piece of evidence that lands with this character. Showing
+-- `evidence` while `requires` holds moves the conversation to `next`, and,
+-- if `claims` names a contradiction, the investigator has just made that
+-- connection themselves (ReasoningService unlocks it).
+export type DialoguePresentOutcome = {
+	evidence: string,
+	next: string,
+	requires: { DialogueCondition }?,
+	claims: string?,
+}
+
+-- M9: "show them something". `prompt` heads the evidence picker. Outcomes
+-- are checked in order; evidence that matches none leads to the choice's
+-- own `next`.
+export type DialoguePresentDefinition = {
+	prompt: string,
+	outcomes: { DialoguePresentOutcome },
 }
 
 -- A single line of a conversation. `next` is the following node's id; nil
@@ -280,6 +304,11 @@ export type ContradictionDefinition = {
 	left: FactReference,
 	right: FactReference,
 	reason: string?,
+	-- M9: the investigator has to make this connection themselves -- by
+	-- pairing the two facts in the case file, or by showing the evidence to
+	-- the person who said it -- instead of it unlocking the moment both
+	-- facts are known.
+	claim: boolean?,
 }
 
 -- A conclusion unlocked once every one of `requiredFacts` is discovered/
@@ -289,6 +318,19 @@ export type DeductionDefinition = {
 	id: string,
 	label: string,
 	requiredFacts: { FactReference },
+	-- M9: instead of unlocking the moment its facts are known, the
+	-- deduction becomes an open question in the case file that the
+	-- investigator has to answer.
+	question: DeductionQuestion?,
+}
+
+-- M9: an open question in the case file. Offered once every required fact
+-- is known; `answer` is the id of the right option and never leaves the
+-- server.
+export type DeductionQuestion = {
+	prompt: string,
+	options: { { id: string, text: string } },
+	answer: string,
 }
 
 -- A suspect the player may formally accuse once every objective is complete.
@@ -306,6 +348,27 @@ export type AccusationDefinition = {
 		contradictions: { string }?,
 		deductions: { string }?,
 	}?,
+	-- M9 (cases with accusationRules.requiresCase): the deductions that
+	-- stand up as this suspect's motive, and the contradictions that prove
+	-- it. The investigator picks one of each from what they have
+	-- established; both must be listed here for the case to hold.
+	motives: { string }?,
+	proofs: { string }?,
+	-- M9: what happens after accusing this suspect when they are not the
+	-- culprit.
+	wrongEpilogue: string?,
+}
+
+-- M9: when an accusation may be made and what it needs.
+--   opensAfter   : objective id; once it is complete the investigator may
+--                  accuse, even with objectives left (absent: only once
+--                  every objective is complete, as before M9).
+--   requiresCase : an accusation names a motive (an established deduction)
+--                  and a proof (an established contradiction) as well as a
+--                  suspect, and the verdict is graded on them.
+export type AccusationRules = {
+	opensAfter: string?,
+	requiresCase: boolean?,
 }
 
 export type ObjectiveRequirementProgress = {
@@ -379,6 +442,7 @@ export type CaseDefinition = {
 	-- complete. Optional: a case without any accusation data simply cannot be
 	-- concluded by accusation (Phase 2N).
 	accusations: { AccusationDefinition }?,
+	accusationRules: AccusationRules?,
 	-- The true answer (M2). Server-only: case definitions live in
 	-- ServerStorage and this is only ever sent inside the closing summary,
 	-- after the player has committed to an accusation.
@@ -389,6 +453,10 @@ export type CaseSolution = {
 	culpritSuspectId: string,
 	-- What actually happened, told to the player at the close.
 	reveal: string,
+	-- M9: what happened next, when the culprit was named with a case that
+	-- holds (solvedEpilogue) or one that doesn't (unprovenEpilogue).
+	solvedEpilogue: string?,
+	unprovenEpilogue: string?,
 }
 
 export type DiscoveredEvidence = EvidenceDefinition & {
@@ -435,7 +503,9 @@ export type PlayerCaseState = {
 	startedAt: number,
 	-- The player's current conversation, if any. Authoritative; the client
 	-- never supplies or infers this.
-	activeConversation: { suspectId: string, nodeId: string }?,
+	-- `presenting` is the id of a presenting choice waiting for the
+	-- investigator to pick the evidence to show (M9).
+	activeConversation: { suspectId: string, nodeId: string, presenting: string? }?,
 	-- Conversation memory: flags set by dialogue nodes, and the `once`
 	-- choices already used (keyed "<suspectId>/<choiceId>"). Owned by
 	-- ConversationService.
@@ -458,6 +528,15 @@ export type PlayerCaseState = {
 	-- AccusationService (Phase 2N); never set directly by any other system.
 	-- Once set it is permanent (an accusation is a commitment).
 	accusationId: string?,
+	-- M9: the motive (deduction id) and proof (contradiction id) named with
+	-- the accusation, when the case requires them. Owned by
+	-- AccusationService.
+	accusationMotive: string?,
+	accusationProof: string?,
+	-- M9: connections that didn't hold in the case file -- pairings that
+	-- don't conflict, wrong answers. Owned by ReasoningService; reported at
+	-- the close.
+	reasoningMistakes: number,
 	-- Whether this player has successfully reconstructed the case timeline
 	-- (M5). Owned by TimelineService; never set directly by any other system.
 	-- Once true it stays true (a solved ordering is not un-solved).
@@ -548,6 +627,17 @@ export type DialoguePayload = {
 	-- What the investigator just said to get this line, if it followed a
 	-- choice -- shown above the reply so the exchange reads as dialogue.
 	prompt: string?,
+	-- M9: the name of the evidence the investigator just showed, if this
+	-- line is the reaction to it.
+	presented: string?,
+	-- M9: present while the investigator is choosing what to show: the
+	-- picker's heading and the evidence they have (ids and names only).
+	present: DialoguePresentPayload?,
+}
+
+export type DialoguePresentPayload = {
+	prompt: string,
+	options: { { id: string, name: string } },
 }
 
 export type DialogueChoicePayload = {
@@ -594,6 +684,38 @@ export type ReasoningPayload = {
 	-- Discovered evidence that authors `relatedEvidenceIds`, with the names of
 	-- the related items already discovered. Cross-reference only.
 	relatedEvidence: { RelatedEvidencePayload },
+	-- M9: the evidence this player has found (for pairing against a
+	-- statement), and the questions they can answer now.
+	evidence: { EvidenceFactPayload },
+	openQuestions: { DeductionQuestionPayload },
+}
+
+-- M9: a discovered piece of evidence as a fact the case file can pair.
+export type EvidenceFactPayload = {
+	id: string,
+	name: string,
+	details: string,
+}
+
+-- M9: an open question, without its answer.
+export type DeductionQuestionPayload = {
+	id: string,
+	prompt: string,
+	options: { { id: string, text: string } },
+	basedOn: { string },
+}
+
+-- M9: what the server made of a pairing or an answer.
+--   claimed / correct   : the connection holds (a new contradiction or
+--                         deduction; `label` names it)
+--   already             : it was already established
+--   no-conflict / wrong : it doesn't hold (no spoiler: nothing else said)
+--   cooldown            : too soon after a miss
+--   invalid             : not something this player can pair or answer
+export type ReasoningFeedbackPayload = {
+	kind: "Claim" | "Answer",
+	result: "claimed" | "correct" | "already" | "no-conflict" | "wrong" | "cooldown" | "invalid",
+	label: string?,
 }
 
 -- A single suspect option in the accusation picker (Phase 2N). `suspectId`/
@@ -616,6 +738,14 @@ export type AccusationOption = {
 export type AccusationPayload = {
 	options: { AccusationOption },
 	selected: AccusationOption?,
+	-- M9: whether this player may accuse now (server-decided).
+	open: boolean,
+	-- M9: when true the accusation also needs a motive and a proof, chosen
+	-- from what the player has established (the lists below). Neither list
+	-- says which entry fits which suspect.
+	requiresCase: boolean,
+	motives: { { id: string, label: string } },
+	proofs: { { id: string, label: string } },
 }
 
 -- How an accepted accusation relates to the facts the player actually
@@ -649,6 +779,8 @@ export type CaseClosedSummary = {
 	contradiction: ContradictionPayload?,
 	-- Present once the player has accused and the case authors a solution.
 	verdict: CaseVerdict?,
+	-- M9: connections that didn't hold along the way.
+	mistakes: number,
 }
 
 -- Whether the player's accusation named the culprit, and what happened.
@@ -656,6 +788,14 @@ export type CaseVerdict = {
 	correct: boolean,
 	culpritName: string,
 	reveal: string,
+	-- M9: how the case stood up.
+	--   Solved   : the culprit, with a motive and a proof that hold
+	--   Unproven : the culprit, but the case named doesn't hold
+	--   Wrong    : someone else
+	-- Cases without accusationRules.requiresCase grade Solved or Wrong.
+	grade: "Solved" | "Unproven" | "Wrong",
+	-- What happened next, for this grade (authored; may be absent).
+	epilogue: string?,
 }
 
 return {}

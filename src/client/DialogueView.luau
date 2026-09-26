@@ -22,8 +22,13 @@
 	    what the investigator has learned visibly opens new lines of
 	    questioning.
 
+	  * M9: when the investigator chooses to show something, the same list
+	    becomes the evidence they have found (marked EVIDENCE) plus "Never
+	    mind."; the reaction line echoes what was shown.
+
 	The view reports the investigator's pick through onChoiceSelected (an id
-	only); the server validates it.
+	only), or what they show through onPresentSelected (an evidence id, or
+	"" to back out); the server validates both.
 ]]
 
 local CollectionService = game:GetService("CollectionService")
@@ -76,16 +81,26 @@ local isOpen = false
 local typing = false
 local typeToken = 0
 local current: Types.DialoguePayload? = nil
+-- M9: true while `current.choices` is the evidence picker (built from
+-- `current.present`) rather than questions.
+local presenting = false
+local CANCEL_PRESENT = "__never_mind"
 local choiceButtons: { TextButton } = {}
 local portraitFor: string? = nil
 -- suspectId -> choice ids already shown, to mark newly available ones.
 local seenChoices: { [string]: { [string]: boolean } } = {}
 
 local choiceSelectedEvent = Instance.new("BindableEvent")
+local presentSelectedEvent = Instance.new("BindableEvent")
 
 -- Fired with the chosen choice id.
 function DialogueView.onChoiceSelected(): BindableEvent
 	return choiceSelectedEvent
+end
+
+-- M9: fired with the evidence id to show, or "" to back out.
+function DialogueView.onPresentSelected(): BindableEvent
+	return presentSelectedEvent
 end
 
 function DialogueView.isOpen(): boolean
@@ -275,7 +290,11 @@ local function pick(index: number)
 		return
 	end
 	clearChoices()
-	choiceSelectedEvent:Fire(choice.id)
+	if presenting then
+		presentSelectedEvent:Fire(if choice.id == CANCEL_PRESENT then "" else choice.id)
+	else
+		choiceSelectedEvent:Fire(choice.id)
+	end
 end
 
 local function styleButton(button: TextButton, highlighted: boolean)
@@ -305,8 +324,11 @@ local function showChoices(payload: Types.DialoguePayload)
 
 	local scheme = InputHints.scheme()
 	for index, choice in ipairs(choices) do
-		local isNew = not firstVisit and not (seen :: { [string]: boolean })[choice.id]
-		;(seen :: { [string]: boolean })[choice.id] = true
+		local isNew = not presenting and not firstVisit and not (seen :: { [string]: boolean })[choice.id]
+		if not presenting then
+			(seen :: { [string]: boolean })[choice.id] = true
+		end
+		local isEvidence = presenting and choice.id ~= CANCEL_PRESENT
 
 		local button = Instance.new("TextButton")
 		button.Name = `Choice{index}`
@@ -340,7 +362,7 @@ local function showChoices(payload: Types.DialoguePayload)
 		local label = Components.text({
 			name = "Label",
 			text = choice.text,
-			size = UDim2.new(1, if isNew then -94 else -46, 1, 0),
+			size = UDim2.new(1, if isNew or isEvidence then -130 else -46, 1, 0),
 			position = UDim2.fromOffset(38, 0),
 			textSize = 16,
 			color = Theme.TextPrimary,
@@ -349,12 +371,12 @@ local function showChoices(payload: Types.DialoguePayload)
 		label.TextTruncate = Enum.TextTruncate.AtEnd
 		label.ZIndex = 2
 
-		if isNew then
+		if isNew or isEvidence then
 			local tag = Components.text({
-				name = "New",
-				text = "NEW",
-				size = UDim2.new(0, 44, 1, 0),
-				position = UDim2.new(1, -52, 0, 0),
+				name = if isNew then "New" else "Evidence",
+				text = if isNew then "NEW" else "EVIDENCE",
+				size = UDim2.new(0, 80, 1, 0),
+				position = UDim2.new(1, -88, 0, 0),
 				font = Theme.FontBold,
 				textSize = 11,
 				color = Theme.Accent,
@@ -428,7 +450,8 @@ local function setHint()
 	elseif typing then
 		label.Text = InputHints.format("Interact", "Skip")
 	elseif payload.choices then
-		label.Text = if InputHints.scheme() == "Keyboard" then "Choose  [1-9]" else "Choose"
+		local verb = if presenting then "Show" else "Choose"
+		label.Text = if InputHints.scheme() == "Keyboard" then `{verb}  [1-9]` else verb
 	else
 		label.Text = InputHints.format("Interact", if payload.canContinue then "Continue" else "End conversation")
 	end
@@ -548,9 +571,28 @@ function DialogueView.update(payload: Types.DialoguePayload)
 	end
 
 	if not payload.active then
+		presenting = false
 		setOpen(false)
 		setPortrait(nil)
 		return
+	end
+
+	-- M9: showing evidence. The picker is the same choice list: the
+	-- evidence found so far, then a way to back out. The line becomes the
+	-- investigator's own "Show Victor…".
+	local present = payload.present
+	presenting = present ~= nil
+	if present then
+		local options = {}
+		for _, evidence in ipairs(present.options) do
+			table.insert(options, { id = evidence.id, text = evidence.name })
+		end
+		table.insert(options, { id = CANCEL_PRESENT, text = "Never mind." })
+		local picker = table.clone(payload)
+		picker.choices = options
+		picker.text = present.prompt
+		picker.isPlayer = true
+		payload = picker
 	end
 
 	current = payload
@@ -576,9 +618,14 @@ function DialogueView.update(payload: Types.DialoguePayload)
 	roleLabel.Position = UDim2.fromOffset(nameWidth + 12, 3)
 
 	setPortrait(payload.suspectId)
-	portraitFrame.Visible = not isPlayer
+	portraitFrame.Visible = not isPlayer or presenting
 
-	if payload.prompt and not isPlayer then
+	if payload.presented and not isPlayer then
+		-- The reaction to what was just shown.
+		promptLabel.Text = `You show: {payload.presented}`
+		promptLabel.Visible = true
+		bodyLabel.Position = UDim2.fromOffset(0, Style.BodyTopWithPrompt)
+	elseif payload.prompt and not isPlayer then
 		promptLabel.Text = `“{payload.prompt}”`
 		promptLabel.Visible = true
 		bodyLabel.Position = UDim2.fromOffset(0, Style.BodyTopWithPrompt)
@@ -631,6 +678,7 @@ function DialogueView.primaryLabel(): string?
 end
 
 function DialogueView.close()
+	presenting = false
 	setOpen(false)
 	setPortrait(nil)
 end

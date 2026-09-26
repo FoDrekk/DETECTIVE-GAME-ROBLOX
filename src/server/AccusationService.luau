@@ -22,6 +22,15 @@
 	actually unlocked -- "supported" is never a claim that an accusation is
 	the truth, only that the evidence this player gathered is consistent with
 	it, exactly as the case data defines.
+
+	M9: a case may set `accusationRules`. `opensAfter` lets the investigator
+	accuse once a given objective is done, with the rest of the case still
+	open, which is the risk of accusing early. `requiresCase` means an
+	accusation also names a motive (a deduction the player established) and
+	a proof (a contradiction the player established); the verdict is then
+	graded: Solved (culprit, and both hold for them), Unproven (culprit, but
+	the case named doesn't hold), or Wrong (someone else). Cases without
+	rules behave exactly as before.
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -117,6 +126,33 @@ local function isSupported(data: Types.PlayerData, accusation: Types.AccusationD
 	return true, basedOn
 end
 
+local function caseRules(caseId: string): Types.AccusationRules
+	local caseDef = CaseService.getCase(caseId)
+	return (caseDef and caseDef.accusationRules) or {}
+end
+
+local function labelFor(list: { any }, id: string?): string?
+	if not id then
+		return nil
+	end
+	for _, item in ipairs(list) do
+		if item.id == id then
+			return item.label
+		end
+	end
+	return nil
+end
+
+-- M9: does the named motive and proof hold for this accusation?
+local function caseHolds(data: Types.PlayerData, accusation: Types.AccusationDefinition): boolean
+	local motive = data.caseState.accusationMotive
+	local proof = data.caseState.accusationProof
+	if not motive or not proof then
+		return false
+	end
+	return table.find(accusation.motives or {}, motive) ~= nil and table.find(accusation.proofs or {}, proof) ~= nil
+end
+
 local function buildOption(caseId: string, accusation: Types.AccusationDefinition): Types.AccusationOption
 	local suspect = CaseService.getSuspect(caseId, accusation.suspectId)
 	return {
@@ -132,6 +168,20 @@ end
 -- Public API
 ----------------------------------------------------------------------
 
+-- M9: may this player accuse right now? Before M9 (and for any case without
+-- `accusationRules.opensAfter`) only once every objective is complete.
+function AccusationService.isOpen(player: Player): boolean
+	local data = PlayerDataService.get(player)
+	if not data then
+		return false
+	end
+	local opensAfter = caseRules(data.caseState.caseId).opensAfter
+	if opensAfter then
+		return data.caseState.completedObjectives[opensAfter] == true
+	end
+	return ObjectiveService.getActiveObjectiveId(player) == nil
+end
+
 -- Has this player already made an accusation?
 function AccusationService.hasAccusation(player: Player): boolean
 	local data = PlayerDataService.get(player)
@@ -144,13 +194,39 @@ end
 -- only once this player has already accused someone.
 function AccusationService.getPayload(player: Player): Types.AccusationPayload
 	local data = PlayerDataService.get(player)
-	local payload: Types.AccusationPayload = { options = {} }
+	local payload: Types.AccusationPayload = {
+		options = {},
+		open = false,
+		requiresCase = false,
+		motives = {},
+		proofs = {},
+	}
 	if not data then
 		return payload
 	end
 
 	for _, accusation in ipairs(caseAccusations(data.caseState.caseId)) do
 		table.insert(payload.options, buildOption(data.caseState.caseId, accusation))
+	end
+	payload.open = AccusationService.isOpen(player)
+
+	-- M9: the motives and proofs on offer are exactly what this player has
+	-- established, in case order; nothing says which fits whom.
+	if caseRules(data.caseState.caseId).requiresCase then
+		payload.requiresCase = true
+		local caseDef = CaseService.getCase(data.caseState.caseId)
+		if caseDef then
+			for _, deduction in ipairs(caseDef.deductions) do
+				if data.caseState.unlockedDeductions[deduction.id] then
+					table.insert(payload.motives, { id = deduction.id, label = deduction.label })
+				end
+			end
+			for _, contradiction in ipairs(caseDef.contradictions) do
+				if data.caseState.unlockedContradictions[contradiction.id] then
+					table.insert(payload.proofs, { id = contradiction.id, label = contradiction.label })
+				end
+			end
+		end
 	end
 
 	local selectedId = data.caseState.accusationId
@@ -183,6 +259,22 @@ function AccusationService.getResolution(player: Player): Types.AccusationResolu
 
 	local option = buildOption(data.caseState.caseId, accusation)
 	local supported, basedOn = isSupported(data, accusation)
+	if caseRules(data.caseState.caseId).requiresCase then
+		-- M9: the case the player actually made, not everything they found.
+		local caseDef = CaseService.getCase(data.caseState.caseId)
+		supported = caseHolds(data, accusation)
+		basedOn = {}
+		if caseDef then
+			local motive = labelFor(caseDef.deductions, data.caseState.accusationMotive)
+			local proof = labelFor(caseDef.contradictions, data.caseState.accusationProof)
+			if motive then
+				table.insert(basedOn, motive)
+			end
+			if proof then
+				table.insert(basedOn, proof)
+			end
+		end
+	end
 	return {
 		id = accusation.id,
 		suspectId = option.suspectId,
@@ -212,10 +304,24 @@ function AccusationService.getVerdict(player: Player): Types.CaseVerdict?
 		return nil
 	end
 	local culprit = CaseService.getSuspect(data.caseState.caseId, solution.culpritSuspectId)
+	local correct = accusation.suspectId == solution.culpritSuspectId
+	local grade: "Solved" | "Unproven" | "Wrong" = "Wrong"
+	local epilogue: string? = accusation.wrongEpilogue
+	if correct then
+		if caseRules(data.caseState.caseId).requiresCase and not caseHolds(data, accusation) then
+			grade = "Unproven"
+			epilogue = solution.unprovenEpilogue
+		else
+			grade = "Solved"
+			epilogue = solution.solvedEpilogue
+		end
+	end
 	return {
-		correct = accusation.suspectId == solution.culpritSuspectId,
+		correct = correct,
 		culpritName = if culprit then culprit.name else solution.culpritSuspectId,
 		reveal = solution.reveal,
+		grade = grade,
+		epilogue = epilogue,
 	}
 end
 
@@ -223,7 +329,11 @@ end
 	Make a formal accusation. Server-authoritative and idempotent:
 
 	  * rejects unless the player exists, the accusation id is authored, and
-	    every objective in the case is already complete;
+	    accusing is open (every objective complete, or the case's
+	    `opensAfter` objective, M9);
+	  * when the case requires it (M9), rejects unless `motiveId` names a
+	    deduction and `proofId` a contradiction this player has established
+	    (which ones fit is judged only in the verdict);
 	  * an already-recorded accusation is permanent -- repeating the same
 	    choice is a safe no-op (returns false), and a different choice is
 	    rejected. Nothing is ever re-published for an existing accusation.
@@ -231,7 +341,7 @@ end
 	Returns true only when this call recorded the accusation for the first
 	time. The client never supplies or influences eligibility.
 ]]
-function AccusationService.accuse(player: Player, accusationId: string): boolean
+function AccusationService.accuse(player: Player, accusationId: string, motiveId: string?, proofId: string?): boolean
 	local data = PlayerDataService.get(player)
 	if not data then
 		return false
@@ -243,9 +353,8 @@ function AccusationService.accuse(player: Player, accusationId: string): boolean
 		-- Already committed: permanent, and never re-published.
 		return false
 	end
-	if ObjectiveService.getActiveObjectiveId(player) ~= nil then
-		-- An accusation is only meaningful once there is nothing left to
-		-- investigate. Never trust any client-side claim of completion.
+	if not AccusationService.isOpen(player) then
+		-- Never trust any client-side claim of progress.
 		return false
 	end
 
@@ -254,11 +363,24 @@ function AccusationService.accuse(player: Player, accusationId: string): boolean
 		return false
 	end
 
+	if caseRules(data.caseState.caseId).requiresCase then
+		if type(motiveId) ~= "string" or not data.caseState.unlockedDeductions[motiveId] then
+			return false
+		end
+		if type(proofId) ~= "string" or not data.caseState.unlockedContradictions[proofId] then
+			return false
+		end
+		data.caseState.accusationMotive = motiveId
+		data.caseState.accusationProof = proofId
+	end
+
 	data.caseState.accusationId = accusationId
 	log:info("accusation made", {
 		player = player.Name,
 		accusationId = accusationId,
 		suspectId = accusation.suspectId,
+		motive = data.caseState.accusationMotive,
+		proof = data.caseState.accusationProof,
 	})
 	StoryEvents.publish("AccusationMade", player, { accusationId = accusationId })
 	AccusationService.sendCurrent(player)
@@ -270,6 +392,16 @@ function AccusationService.sendCurrent(player: Player)
 end
 
 function AccusationService.start()
+	-- M9: whether accusing is open, and the motives and proofs on offer,
+	-- change as the investigation moves; keep the client's picker current.
+	local function resend(player: Player, _data: { [string]: any })
+		if PlayerDataService.get(player) then
+			AccusationService.sendCurrent(player)
+		end
+	end
+	StoryEvents.on("ObjectiveCompleted", resend)
+	StoryEvents.on("ContradictionUnlocked", resend)
+	StoryEvents.on("DeductionUnlocked", resend)
 	log:debug("started")
 end
 

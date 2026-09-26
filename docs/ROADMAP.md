@@ -189,6 +189,37 @@ recommended default; the product owner can redirect.)
   replay), and a luau-lsp type check. **Not played in Roblox Studio**: the
   authoring environment has no Studio. See the Studio checklist in the PR.
 
+### M9 — The detective decides (player-driven reasoning) — built, awaiting a Studio pass
+
+- **Contradictions are claimed.** A contradiction authored with `claim`
+  never unlocks by itself. The player pairs the two facts in the Case File,
+  or shows the evidence to the person who said the other thing (a presenting
+  dialogue choice whose outcome `claims` it). All four CASE-001
+  contradictions work both ways.
+- **Deductions are answered.** A deduction with a `question` becomes an open
+  question once its facts are known, and only the right answer unlocks it.
+  Misses (pairings that don't conflict, wrong answers) are counted and
+  briefly lock out the next try. Showing someone the wrong thing is not a
+  miss.
+- **Showing evidence in conversation.** A `present` choice holds the line
+  and lists what the player has found. The first matching outcome wins;
+  anything else gets the character's shrug.
+- **Accusation as a case.** `accusationRules = { opensAfter = "OBJ-002",
+  requiresCase = true }`: accusing opens once both suspects have been spoken
+  to, and needs a motive (an established deduction) and a proof (an
+  established contradiction). The verdict is graded Solved, Unproven or
+  Wrong, each with its own epilogue, and the close reports the missteps.
+- **Objective text gives leads, not answers** (OBJ-003..OBJ-005 reworded).
+- **Old behaviour is kept** for anything without `claim`, `question` or
+  `accusationRules`: the frozen legacy case and its mechanism tests are
+  unchanged.
+- **Verification:** 299 unit tests (11 new) and a 168-check scripted
+  playthrough with two routes, both through the real UI buttons. The first
+  run solves the case properly. The second misses a pairing, gets a question
+  wrong, is locked out, shows Victor the wrong thing, and accuses Mara
+  early, which grades as Wrong. **Not played in Roblox Studio** (not available
+  in the authoring environment).
+
 ## Known follow-ups (not blocking)
 
 - **Creator Store assets.** The office furniture is code-built (PropKit)

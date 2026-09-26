@@ -58,16 +58,22 @@ local requestDialogueClose = Signals.wait(Signals.Names.DialogueClose)
 local requestDialogueChoose = Signals.wait(Signals.Names.DialogueChoose)
 local requestReasoning = Signals.wait(Signals.Names.RequestReasoning)
 local requestAccusation = Signals.wait(Signals.Names.RequestAccusation)
+local reasoningFeedback = Signals.wait(Signals.Names.ReasoningFeedback)
+local requestDialoguePresent = Signals.wait(Signals.Names.DialoguePresent)
+local requestClaim = Signals.wait(Signals.Names.ClaimContradiction)
+local requestAnswer = Signals.wait(Signals.Names.AnswerDeduction)
 local submitAccusation = Signals.wait(Signals.Names.SubmitAccusation)
 local submitTimelineOrder = Signals.wait(Signals.Names.SubmitTimelineOrder)
 
 local currentPhase: Types.GamePhase = "MainMenu"
 local lastBriefing: Types.CaseBriefing? = nil
 local lastCaseClosedSummary: Types.CaseClosedSummary? = nil
--- Set once the server has told us every objective is complete (Phase 2L).
--- Purely a UX gate for offering the conclude action -- the server
--- re-validates the actual request regardless of this flag.
-local investigationComplete = false
+-- Whether the server says this player may accuse now (M9: that can be
+-- before every objective is done). Purely a UX gate for offering the
+-- accusation -- the server re-validates the actual request regardless.
+local accusationOpen = false
+-- Announce the accusation opening once per case.
+local accusationAnnounced = false
 
 -- Close whichever overlay is open and return to exploration, so the examine
 -- camera and paused interaction scan can never get stuck. A dialogue close is
@@ -111,7 +117,8 @@ local function applyPhase(phase: Types.GamePhase)
 
 	if phase == "CaseBriefing" then
 		-- A fresh case (first join or a replay): forget the last one's ending.
-		investigationComplete = false
+		accusationOpen = false
+		accusationAnnounced = false
 		lastCaseClosedSummary = nil
 		reasoningFactCount = 0
 		timelineEstablished = false
@@ -209,7 +216,7 @@ local function bootstrap()
 			return currentPhase == "Investigation" and not DialogueView.isOpen()
 		end,
 		showAccuse = function(): boolean
-			return currentPhase == "Investigation" and investigationComplete and not DialogueView.isOpen()
+			return currentPhase == "Investigation" and accusationOpen and not DialogueView.isOpen()
 		end,
 	})
 
@@ -278,12 +285,12 @@ local function bootstrap()
 	end)
 
 	-- Phase 2L/2N: player-initiated conclusion. [Q] only does anything once
-	-- the server has told us every objective is complete; it now opens the
-	-- accusation picker rather than concluding directly, and the server
-	-- re-validates both eligibility and the chosen accusation regardless of
-	-- what this client believes.
+	-- the server has said accusing is open (M9: possibly before every
+	-- objective is done); it opens the accusation, and the server
+	-- re-validates both eligibility and the case made regardless of what
+	-- this client believes.
 	InputController.onConcludeInvestigation(function()
-		if currentPhase ~= "Investigation" or not investigationComplete then
+		if currentPhase ~= "Investigation" or not accusationOpen then
 			return
 		end
 		if DialogueView.isOpen() or TimelineView.isOpen() or CaseFileView.isOpen() then
@@ -302,8 +309,26 @@ local function bootstrap()
 
 	-- The player's chosen accusation. Only the id is sent; the server decides
 	-- whether the player is eligible and records the accusation.
-	AccusationView.onSelectionRequested().Event:Connect(function(accusationId: string)
-		submitAccusation:FireServer(accusationId)
+	AccusationView.onSelectionRequested().Event:Connect(function(accusationId: string, motive: string?, proof: string?)
+		submitAccusation:FireServer(accusationId, motive, proof)
+	end)
+
+	-- M9: evidence shown in a conversation ("" backs out). Only the id is
+	-- sent; the server checks the player has found it.
+	DialogueView.onPresentSelected().Event:Connect(function(evidenceId: string)
+		SoundController.play("Tick")
+		requestDialoguePresent:FireServer(if evidenceId == "" then nil else evidenceId)
+	end)
+
+	-- M9: the case file. Two facts the player says conflict, or an answer
+	-- to an open question; the server judges both.
+	CaseFileView.onClaimRequested().Event:Connect(function(a, b)
+		SoundController.play("Tick")
+		requestClaim:FireServer(a, b)
+	end)
+	CaseFileView.onAnswerRequested().Event:Connect(function(deductionId: string, optionId: string)
+		SoundController.play("Tick")
+		requestAnswer:FireServer(deductionId, optionId)
 	end)
 
 	-- The investigator's question. Only its id is sent; the server checks
@@ -386,7 +411,6 @@ local function bootstrap()
 	end)
 
 	objectiveCompleted.OnClientEvent:Connect(function(payload: Types.ObjectivePayload)
-		investigationComplete = payload.allComplete
 		ObjectiveView.showCompleted(payload)
 	end)
 
@@ -426,13 +450,32 @@ local function bootstrap()
 	end)
 
 	accusationUpdated.OnClientEvent:Connect(function(payload: Types.AccusationPayload)
+		accusationOpen = payload.open and payload.selected == nil
+		-- M9: accusing can open with the case still unfolding. Say so once,
+		-- quietly; it is the player's call when.
+		if accusationOpen and not accusationAnnounced and currentPhase == "Investigation" then
+			accusationAnnounced = true
+			ObservationPanel.show({
+				title = "You can make an accusation",
+				body = InputHints.format(
+					"Accuse",
+					"Whenever you're ready. Name who, why, and what proves it. It's final."
+				),
+			})
+		end
 		AccusationView.update(payload)
+	end)
+
+	-- M9: what the server made of a pairing or an answer in the case file.
+	reasoningFeedback.OnClientEvent:Connect(function(payload: Types.ReasoningFeedbackPayload)
+		CaseFileView.showFeedback(payload)
 	end)
 
 	caseClosedSummary.OnClientEvent:Connect(function(summary: Types.CaseClosedSummary)
 		lastCaseClosedSummary = summary
 		if summary.verdict then
-			SoundController.play(if summary.verdict.correct then "VerdictCorrect" else "VerdictWrong")
+			-- M9: only a case that held gets the resolved sting.
+			SoundController.play(if summary.verdict.grade == "Solved" then "VerdictCorrect" else "VerdictWrong")
 		end
 		if currentPhase == "CaseClosed" then
 			CaseClosedView.show(summary)

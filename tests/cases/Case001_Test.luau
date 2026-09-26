@@ -76,7 +76,17 @@ return function(t)
 		sync(player)
 		for _, question in ipairs(questions) do
 			expect.truthy(untilChoice(player))
-			local ok, reason = ConversationService.choose(player, question)
+			-- "show:EV-001" shows a piece of evidence (M9).
+			local evidenceId = string.match(question, "^show:(.+)$")
+			local ok, reason
+			if evidenceId then
+				ok, reason = ConversationService.choose(player, "show")
+				if ok then
+					ok, reason = ConversationService.present(player, evidenceId)
+				end
+			else
+				ok, reason = ConversationService.choose(player, question)
+			end
 			if not ok then
 				error(`could not ask '{question}' of {suspectId}: {reason}`)
 			end
@@ -102,6 +112,35 @@ return function(t)
 
 	local function active(player: any): string?
 		return ObjectiveService.getActiveObjectiveId(player)
+	end
+
+	local function answer(player: any, deductionId: string, optionId: string): string
+		local result = ReasoningService.answerDeduction(player, deductionId, optionId)
+		sync(player)
+		return result
+	end
+
+	local function claim(player: any, a: any, b: any): string
+		local result = ReasoningService.claimContradiction(player, a, b)
+		sync(player)
+		return result
+	end
+
+	local function openQuestion(player: any, deductionId: string): any
+		for _, question in ipairs(ReasoningService.getPayload(player).openQuestions) do
+			if question.id == deductionId then
+				return question
+			end
+		end
+		return nil
+	end
+
+	local function mistakes(player: any): number
+		return (PlayerDataService.get(player) :: any).caseState.reasoningMistakes
+	end
+
+	local function nodeId(player: any): string?
+		return ConversationService.getCurrentPayload(player).nodeId
 	end
 
 	local function searchOffice(player: any)
@@ -152,6 +191,43 @@ return function(t)
 		end
 	end)
 
+	t.test("M9: every contradiction is the investigator's to claim, every deduction a question", function()
+		for _, contradiction in ipairs(caseDef.contradictions) do
+			expect.truthy(contradiction.claim)
+		end
+		for _, deduction in ipairs(caseDef.deductions) do
+			local question = deduction.question
+			expect.truthy(question)
+			local found = false
+			for _, option in ipairs(question.options) do
+				found = found or option.id == question.answer
+			end
+			if not found then
+				error(`{deduction.id}: the answer is not one of the options`)
+			end
+		end
+	end)
+
+	t.test("M9: every contradiction can be shown to the person who said it", function()
+		local claimed: { [string]: boolean } = {}
+		for _, conversation in ipairs(caseDef.conversations) do
+			for _, node in pairs(conversation.nodes) do
+				for _, choice in ipairs(node.choices or {}) do
+					for _, outcome in ipairs(choice.present and choice.present.outcomes or {}) do
+						if outcome.claims then
+							claimed[outcome.claims] = true
+						end
+					end
+				end
+			end
+		end
+		for _, contradiction in ipairs(caseDef.contradictions) do
+			if not claimed[contradiction.id] then
+				error(`{contradiction.id} can only be claimed in the case file`)
+			end
+		end
+	end)
+
 	t.test("the night guard is not accusable", function()
 		for _, accusation in ipairs(caseDef.accusations) do
 			expect.falsy(accusation.suspectId == "SUS-003")
@@ -159,7 +235,8 @@ return function(t)
 	end)
 
 	------------------------------------------------------------------
-	-- The investigation, end to end
+	-- The investigation, end to end (M9: the investigator makes every
+	-- connection)
 	------------------------------------------------------------------
 
 	t.test("the whole case can be solved: guard, scene, suspects, lies, confrontation, timeline, verdict", function()
@@ -173,43 +250,51 @@ return function(t)
 
 		searchOffice(player)
 		expect.equal(active(player), "OBJ-002")
-
-		-- The pantry machine: somebody else was drinking coffee.
 		inspect(player, "EV-005")
-		expect.truthy(unlocked(player, "Deductions", "DEDUCT-003"))
-		expect.truthy(unlocked(player, "Deductions", "DEDUCT-002"))
+		-- Nothing is concluded for the investigator: two questions are open.
+		expect.falsy(unlocked(player, "Deductions", "DEDUCT-002"))
+		expect.falsy(unlocked(player, "Deductions", "DEDUCT-003"))
+		expect.truthy(openQuestion(player, "DEDUCT-002"))
+		expect.truthy(openQuestion(player, "DEDUCT-003"))
+		expect.equal(answer(player, "DEDUCT-002", "dissolve"), "correct")
+		expect.equal(answer(player, "DEDUCT-003", "visitor"), "correct")
+		expect.falsy(openQuestion(player, "DEDUCT-002"))
 
-		-- Victor: the alibi and the footage line.
-		talk(player, "SUS-002", { "left", "confirm", "dissolve" }, "bye")
-		-- Mara: her account (the call question needs the alibi first).
+		-- Victor: the alibi, the footage line, and his own note shown back
+		-- to him.
+		inspect(player, "EV-007")
+		talk(player, "SUS-002", { "left", "confirm", "dissolve", "show:EV-007" }, "bye")
+		expect.truthy(unlocked(player, "Contradictions", "CONTRA-004"))
+		-- Mara: her account.
 		talk(player, "SUS-001", { "sorry", "where", "dissolve" }, "bye")
 		expect.equal(active(player), "OBJ-003")
-		-- Her account already breaks against the phone -- the red herring.
-		expect.truthy(unlocked(player, "Contradictions", "CONTRA-003"))
+		-- The phone is found, her account is known: still nothing concluded.
+		expect.falsy(unlocked(player, "Contradictions", "CONTRA-003"))
 
-		-- The badge log breaks Victor's alibi.
+		-- The badge log, set against Victor's "half ten" in the case file.
 		inspect(player, "EV-004")
-		expect.truthy(unlocked(player, "Contradictions", "CONTRA-001"))
+		expect.falsy(unlocked(player, "Contradictions", "CONTRA-001"))
+		expect.equal(
+			claim(player, { kind = "Evidence", id = "EV-004" }, { kind = "Statement", id = "STMT-SUS-002-ALIBI" }),
+			"claimed"
+		)
 		expect.equal(active(player), "OBJ-004")
 
-		-- The monitor note breaks his "pull the footage".
-		inspect(player, "EV-007")
-		expect.truthy(unlocked(player, "Contradictions", "CONTRA-004"))
-
-		-- Mara, gently: the truth about the call, and the lead.
-		talk(player, "SUS-001", { "call", "gentle" }, "bye")
-		expect.truthy(knowsStatement(player, "STMT-SUS-001-ADMISSION"))
-		expect.truthy(unlocked(player, "Deductions", "DEDUCT-001"))
+		-- Mara, shown the phone and asked gently: the truth, and the lead.
+		talk(player, "SUS-001", { "show:EV-001", "gentle" }, "bye")
+		expect.truthy(unlocked(player, "Contradictions", "CONTRA-003"))
+		expect.truthy(knowsStatement(player, "STMT-SUS-001-VICTOR"))
+		expect.equal(answer(player, "DEDUCT-001", "victor"), "correct")
 		expect.equal(active(player), "OBJ-005")
 
-		-- Victor, cornered by the badge log, revises his story...
-		talk(player, "SUS-002", { "badge" }, nil)
+		-- Victor, shown the badge log, revises his story; shown the phone,
+		-- he breaks.
+		talk(player, "SUS-002", { "show:EV-004" }, nil)
 		expect.truthy(knowsStatement(player, "STMT-SUS-002-REVISED"))
-		-- ...which breaks against the phone.
+		talk(player, "SUS-002", { "show:EV-001" }, nil)
 		expect.truthy(unlocked(player, "Contradictions", "CONTRA-002"))
-		-- The confrontation.
-		talk(player, "SUS-002", { "confront" }, nil)
 		expect.truthy(knowsStatement(player, "STMT-SUS-002-BREAK"))
+		expect.equal(answer(player, "DEDUCT-004", "after"), "correct")
 		expect.equal(active(player), "OBJ-006")
 
 		-- Put the night in order.
@@ -223,48 +308,144 @@ return function(t)
 		sync(player)
 		expect.equal(active(player), nil)
 
-		expect.truthy(AccusationService.accuse(player, "ACC-001"))
+		expect.truthy(AccusationService.accuse(player, "ACC-001", "DEDUCT-002", "CONTRA-002"))
 		local resolution = AccusationService.getResolution(player) :: any
 		expect.truthy(resolution.supported)
 		local verdict = AccusationService.getVerdict(player) :: any
 		expect.truthy(verdict.correct)
+		expect.equal(verdict.grade, "Solved")
 		expect.equal(verdict.culpritName, "Victor Lane")
+		expect.truthy(verdict.epilogue)
+		expect.equal(mistakes(player), 0)
 	end)
 
 	------------------------------------------------------------------
-	-- Choices depend on what the investigator knows
+	-- The case file: claims and questions
 	------------------------------------------------------------------
 
-	t.test("Victor can't be confronted with the badge log before it is found", function()
+	t.test("a claim holds in either order, and only for facts the investigator has", function()
 		local player = makePlayer()
-		ConversationService.begin(player, "SUS-002")
-		untilChoice(player)
-		expect.falsy(choiceIds(player).badge)
-		ConversationService.choose(player, "left")
-		untilChoice(player)
-		expect.falsy(choiceIds(player).badge) -- alibi known, log not found
-		ConversationService.leave(player)
-		EvidenceService.discover(player, "EV-004")
-		ConversationService.begin(player, "SUS-002")
-		untilChoice(player)
-		expect.truthy(choiceIds(player).badge)
-		expect.falsy(choiceIds(player).confront)
+		talk(player, "SUS-002", { "left" }, "bye")
+		local alibi = { kind = "Statement", id = "STMT-SUS-002-ALIBI" }
+		local log = { kind = "Evidence", id = "EV-004" }
+		-- The log hasn't been found: not something they can pair.
+		expect.equal(claim(player, alibi, log), "invalid")
+		expect.equal(mistakes(player), 0)
+		inspect(player, "EV-004")
+		expect.equal(claim(player, log, alibi), "claimed")
+		expect.equal(claim(player, alibi, log), "already")
+		expect.truthy(unlocked(player, "Contradictions", "CONTRA-001"))
 	end)
 
-	t.test("the confrontation is only on offer once his revised story has broken", function()
+	t.test("a pairing that doesn't conflict says only that, counts, and locks out the next try", function()
 		local player = makePlayer()
-		EvidenceService.discover(player, "EV-004")
-		talk(player, "SUS-002", { "left", "badge" }, nil)
-		sync(player)
-		expect.falsy(unlocked(player, "Contradictions", "CONTRA-002")) -- phone not found yet
-		ConversationService.begin(player, "SUS-002")
-		untilChoice(player)
-		expect.falsy(choiceIds(player).confront)
-		ConversationService.leave(player)
+		talk(player, "SUS-002", { "left" }, "bye")
+		inspect(player, "EV-002")
+		inspect(player, "EV-004")
+		local result = claim(
+			player,
+			{ kind = "Statement", id = "STMT-SUS-002-ALIBI" },
+			{ kind = "Evidence", id = "EV-002" }
+		)
+		expect.equal(result, "no-conflict")
+		expect.equal(mistakes(player), 1)
+		-- Straight after a miss, even the right pairing has to wait.
+		result = claim(player, { kind = "Statement", id = "STMT-SUS-002-ALIBI" }, { kind = "Evidence", id = "EV-004" })
+		expect.equal(result, "cooldown")
+		expect.falsy(unlocked(player, "Contradictions", "CONTRA-001"))
+	end)
+
+	t.test("malformed claims are rejected without counting", function()
+		local player = makePlayer()
 		inspect(player, "EV-001")
+		expect.equal(claim(player, "EV-001", nil), "invalid")
+		expect.equal(
+			claim(player, { kind = "Evidence", id = "EV-001" }, { kind = "Evidence", id = "EV-001" }),
+			"invalid"
+		)
+		expect.equal(
+			claim(player, { kind = "Timeline", id = "EV-001" }, { kind = "Evidence", id = "EV-001" }),
+			"invalid"
+		)
+		expect.equal(mistakes(player), 0)
+	end)
+
+	t.test("a question opens once its facts are known, never carries its answer, and a wrong answer counts", function()
+		local player = makePlayer()
+		inspect(player, "EV-005")
+		expect.falsy(openQuestion(player, "DEDUCT-003"))
+		expect.equal(answer(player, "DEDUCT-003", "visitor"), "invalid")
+		inspect(player, "EV-006")
+		local question = openQuestion(player, "DEDUCT-003")
+		expect.truthy(question)
+		expect.equal(question.answer, nil)
+		expect.equal(#question.basedOn, 2)
+		expect.equal(answer(player, "DEDUCT-003", "awake"), "wrong")
+		expect.equal(mistakes(player), 1)
+		expect.falsy(unlocked(player, "Deductions", "DEDUCT-003"))
+		expect.truthy(openQuestion(player, "DEDUCT-003"))
+	end)
+
+	------------------------------------------------------------------
+	-- Showing evidence
+	------------------------------------------------------------------
+
+	t.test("evidence that means nothing to someone gets a shrug, not a mistake", function()
+		local player = makePlayer()
+		inspect(player, "EV-002")
+		talk(player, "SUS-002", { "show:EV-002" }, nil)
+		expect.equal(mistakes(player), 0)
 		ConversationService.begin(player, "SUS-002")
 		untilChoice(player)
-		expect.truthy(choiceIds(player).confront)
+		ConversationService.choose(player, "show")
+		ConversationService.present(player, "EV-002")
+		expect.equal(nodeId(player), "VIC-SHOW-NOTHING")
+		expect.equal(ConversationService.getCurrentPayload(player).presented, nil) -- a re-read drops the echo
+	end)
+
+	t.test("only found evidence can be shown, and backing out returns to the questions", function()
+		local player = makePlayer()
+		ConversationService.begin(player, "SUS-002")
+		untilChoice(player)
+		-- Nothing found yet: nothing to show.
+		expect.falsy(choiceIds(player).show)
+		ConversationService.leave(player)
+		inspect(player, "EV-002")
+		ConversationService.begin(player, "SUS-002")
+		untilChoice(player)
+		expect.truthy(ConversationService.choose(player, "show"))
+		local waiting = ConversationService.getCurrentPayload(player)
+		expect.truthy(waiting.present)
+		expect.equal(#waiting.present.options, 1)
+		expect.falsy(ConversationService.advance(player))
+		expect.falsy(ConversationService.present(player, "EV-004")) -- not found
+		expect.truthy(ConversationService.present(player, nil))
+		expect.truthy(ConversationService.getCurrentPayload(player).choices)
+	end)
+
+	t.test("the badge log only corners Victor once he has told you when he left", function()
+		local player = makePlayer()
+		inspect(player, "EV-004")
+		talk(player, "SUS-002", { "show:EV-004" }, nil)
+		expect.falsy(knowsStatement(player, "STMT-SUS-002-REVISED"))
+		expect.falsy(unlocked(player, "Contradictions", "CONTRA-001"))
+		talk(player, "SUS-002", { "left", "show:EV-004" }, nil)
+		expect.truthy(knowsStatement(player, "STMT-SUS-002-REVISED"))
+		expect.truthy(unlocked(player, "Contradictions", "CONTRA-001"))
+		-- Shown again, it's old news.
+		ConversationService.begin(player, "SUS-002")
+		untilChoice(player)
+		ConversationService.choose(player, "show")
+		ConversationService.present(player, "EV-004")
+		expect.equal(nodeId(player), "VIC-SHOW-AGAIN")
+	end)
+
+	t.test("the phone only breaks Victor once he has a story for it to break", function()
+		local player = makePlayer()
+		inspect(player, "EV-001")
+		talk(player, "SUS-002", { "show:EV-001" }, nil)
+		expect.falsy(knowsStatement(player, "STMT-SUS-002-BREAK"))
+		expect.falsy(unlocked(player, "Contradictions", "CONTRA-002"))
 	end)
 
 	t.test("asking Victor about the partnership changes once the draft is found", function()
@@ -309,13 +490,14 @@ return function(t)
 	local function readyForTheCall(player: any)
 		inspect(player, "EV-001")
 		talk(player, "SUS-001", { "where" }, "bye")
-		expect.truthy(unlocked(player, "Contradictions", "CONTRA-003"))
+		expect.falsy(unlocked(player, "Contradictions", "CONTRA-003"))
 	end
 
 	t.test("accusing Mara of lying makes her shut the conversation down", function()
 		local player = makePlayer()
 		readyForTheCall(player)
-		talk(player, "SUS-001", { "call", "harsh" }, nil)
+		talk(player, "SUS-001", { "show:EV-001", "harsh" }, nil)
+		expect.truthy(unlocked(player, "Contradictions", "CONTRA-003"))
 		expect.falsy(ConversationService.isTalking(player))
 		expect.falsy(knowsStatement(player, "STMT-SUS-001-ADMISSION"))
 		-- She stays cold until the investigator apologises.
@@ -335,14 +517,17 @@ return function(t)
 	t.test("asking gently gets the truth and the lead at once", function()
 		local player = makePlayer()
 		readyForTheCall(player)
-		talk(player, "SUS-001", { "call", "gentle" }, "bye")
+		talk(player, "SUS-001", { "show:EV-001", "gentle" }, "bye")
 		expect.truthy(knowsStatement(player, "STMT-SUS-001-ADMISSION"))
 		expect.truthy(knowsStatement(player, "STMT-SUS-001-VICTOR"))
-		-- Afterwards she greets you with what's on her mind.
+		-- Afterwards she greets you with what's on her mind, and the phone
+		-- is old news.
 		ConversationService.begin(player, "SUS-001")
 		expect.equal(ConversationService.getCurrentPayload(player).nodeId, "MARA-AFTER")
 		untilChoice(player)
-		expect.falsy(choiceIds(player).call)
+		ConversationService.choose(player, "show")
+		ConversationService.present(player, "EV-001")
+		expect.equal(nodeId(player), "MARA-PHONE-KNOWN")
 	end)
 
 	t.test("walking away mid-admission never loses the lead", function()
@@ -350,26 +535,81 @@ return function(t)
 		readyForTheCall(player)
 		ConversationService.begin(player, "SUS-001")
 		untilChoice(player)
-		ConversationService.choose(player, "call")
+		ConversationService.choose(player, "show")
+		ConversationService.present(player, "EV-001")
 		untilChoice(player)
 		ConversationService.choose(player, "gentle")
 		ConversationService.advance(player) -- ADMIT-2
 		ConversationService.leave(player)
 		expect.falsy(knowsStatement(player, "STMT-SUS-001-VICTOR"))
+		-- The phone still lands with her.
 		ConversationService.begin(player, "SUS-001")
 		untilChoice(player)
-		expect.truthy(choiceIds(player).call)
+		ConversationService.choose(player, "show")
+		ConversationService.present(player, "EV-001")
+		expect.equal(nodeId(player), "MARA-CALL-0")
+	end)
+
+	------------------------------------------------------------------
+	-- The accusation (M9)
+	------------------------------------------------------------------
+
+	local function establish(player: any, deductions: { string }, contradictions: { string })
+		local data = PlayerDataService.get(player) :: any
+		data.caseState.completedObjectives["OBJ-000"] = true
+		data.caseState.completedObjectives["OBJ-001"] = true
+		data.caseState.completedObjectives["OBJ-002"] = true
+		for _, id in ipairs(deductions) do
+			data.caseState.unlockedDeductions[id] = true
+		end
+		for _, id in ipairs(contradictions) do
+			data.caseState.unlockedContradictions[id] = true
+		end
+	end
+
+	t.test("accusing opens once both suspects have been spoken to, with the rest still open", function()
+		local player = makePlayer()
+		expect.falsy(AccusationService.isOpen(player))
+		expect.falsy(AccusationService.accuse(player, "ACC-001", "DEDUCT-002", "CONTRA-001"))
+		establish(player, { "DEDUCT-002" }, { "CONTRA-001" })
+		expect.truthy(ObjectiveService.getActiveObjectiveId(player))
+		expect.truthy(AccusationService.isOpen(player))
+		local payload = AccusationService.getPayload(player)
+		expect.truthy(payload.open)
+		expect.truthy(payload.requiresCase)
+		expect.equal(#payload.motives, 1)
+		expect.equal(#payload.proofs, 1)
+	end)
+
+	t.test("an accusation needs a motive and a proof the investigator has established", function()
+		local player = makePlayer()
+		establish(player, { "DEDUCT-002" }, { "CONTRA-001" })
+		expect.falsy(AccusationService.accuse(player, "ACC-001", nil, nil))
+		expect.falsy(AccusationService.accuse(player, "ACC-001", "DEDUCT-001", "CONTRA-001")) -- not established
+		expect.falsy(AccusationService.accuse(player, "ACC-001", "DEDUCT-002", "CONTRA-002")) -- not established
+		expect.truthy(AccusationService.accuse(player, "ACC-001", "DEDUCT-002", "CONTRA-001"))
+		expect.equal((AccusationService.getVerdict(player) :: any).grade, "Solved")
+	end)
+
+	t.test("the right man with a case that doesn't hold walks", function()
+		local player = makePlayer()
+		establish(player, { "DEDUCT-003" }, { "CONTRA-004" })
+		expect.truthy(AccusationService.accuse(player, "ACC-001", "DEDUCT-003", "CONTRA-004"))
+		local verdict = AccusationService.getVerdict(player) :: any
+		expect.truthy(verdict.correct)
+		expect.equal(verdict.grade, "Unproven")
+		expect.truthy(string.find(verdict.epilogue, "walks", 1, true))
+		expect.falsy((AccusationService.getResolution(player) :: any).supported)
 	end)
 
 	t.test("accusing Mara is a wrong verdict that still tells the truth", function()
 		local player = makePlayer()
-		local data = PlayerDataService.get(player) :: any
-		for _, objective in ipairs(caseDef.objectives) do
-			data.caseState.completedObjectives[objective.id] = true
-		end
-		expect.truthy(AccusationService.accuse(player, "ACC-002"))
+		establish(player, { "DEDUCT-003" }, { "CONTRA-003" })
+		expect.truthy(AccusationService.accuse(player, "ACC-002", "DEDUCT-003", "CONTRA-003"))
 		local verdict = AccusationService.getVerdict(player) :: any
 		expect.falsy(verdict.correct)
+		expect.equal(verdict.grade, "Wrong")
 		expect.equal(verdict.culpritName, "Victor Lane")
+		expect.truthy(string.find(verdict.epilogue, "Mara", 1, true))
 	end)
 end

@@ -31,6 +31,7 @@ local titleLabel: TextLabel? = nil
 local verdictLabel: TextLabel? = nil
 local revealHeader: TextLabel? = nil
 local revealLabel: TextLabel? = nil
+local epilogueLabel: TextLabel? = nil
 local timelineLabel: TextLabel? = nil
 local statsLabel: TextLabel? = nil
 
@@ -44,7 +45,15 @@ local function setVisible(visible: boolean)
 		root.BackgroundTransparency = 1
 		TweenService:Create(root, TweenInfo.new(0.5), { BackgroundTransparency = 0.08 }):Play()
 		-- Reveal the text top to bottom, like the briefing.
-		for index, label in ipairs({ titleLabel, verdictLabel, revealHeader, revealLabel, timelineLabel, statsLabel }) do
+		for index, label in ipairs({
+			titleLabel,
+			verdictLabel,
+			epilogueLabel,
+			revealHeader,
+			revealLabel,
+			timelineLabel,
+			statsLabel,
+		}) do
 			if label then
 				label.TextTransparency = 1
 				TweenService:Create(
@@ -78,28 +87,43 @@ local function buildTimelineText(summary: Types.CaseClosedSummary): string
 end
 
 local function applyHeadline(summary: Types.CaseClosedSummary)
-	if not titleLabel or not verdictLabel or not revealHeader or not revealLabel then
+	if not titleLabel or not verdictLabel or not revealHeader or not revealLabel or not epilogueLabel then
 		return
 	end
 	local accusation = summary.accusation
 	local verdict = summary.verdict
 	local accusedName = if accusation then accusation.suspectName else "no one"
+	-- M9: the motive and proof the player named, when the case asked.
+	local case = if accusation and #accusation.basedOn == 2
+		then `Why: {accusation.basedOn[1]}.  Proof: {accusation.basedOn[2]}.`
+		else nil
 
 	if verdict then
-		if verdict.correct then
+		if verdict.grade == "Solved" then
 			titleLabel.Text = "Case solved."
 			titleLabel.TextColor3 = Theme.Accent
-			verdictLabel.Text = `You accused {accusedName}. You were right.`
+			verdictLabel.Text = if case
+				then `You accused {accusedName}, and the case held. {case}`
+				else `You accused {accusedName}. You were right.`
+		elseif verdict.grade == "Unproven" then
+			titleLabel.Text = "The case didn't hold."
+			titleLabel.TextColor3 = Theme.TextPrimary
+			verdictLabel.Text = if case
+				then `You accused {accusedName}, and you were right. It wasn't enough. {case}`
+				else `You accused {accusedName}, and you were right. It wasn't enough.`
 		else
 			titleLabel.Text = "The wrong person was charged."
 			titleLabel.TextColor3 = Theme.TextPrimary
 			verdictLabel.Text = `You accused {accusedName}. The killer was {verdict.culpritName}.`
 		end
+		epilogueLabel.Text = verdict.epilogue or ""
+		epilogueLabel.Visible = verdict.epilogue ~= nil
 		revealHeader.Visible = true
 		revealLabel.Visible = true
 		revealLabel.Text = verdict.reveal
 		return
 	end
+	epilogueLabel.Visible = false
 
 	-- No authored solution: report only whether the evidence supports the
 	-- accusation.
@@ -125,6 +149,7 @@ function CaseClosedView.show(summary: Types.CaseClosedSummary)
 	statsLabel.Text = `Evidence {summary.evidenceExamined}/{summary.evidenceTotal}`
 		.. `   ·   Objectives {summary.objectivesCompleted}/{summary.objectivesTotal}`
 		.. `   ·   Contradictions {summary.contradictionsIdentified}`
+		.. `   ·   Missteps {summary.mistakes}`
 	setVisible(true)
 end
 
@@ -138,7 +163,7 @@ function CaseClosedView.start()
 
 	root = Components.frame({
 		name = "CaseClosed",
-		size = UDim2.fromOffset(600, 520),
+		size = UDim2.fromOffset(620, 580),
 		position = UDim2.fromScale(0.5, 0.5),
 		anchor = Vector2.new(0.5, 0.5),
 		color = Theme.Background,
@@ -181,22 +206,40 @@ function CaseClosedView.start()
 		parent = root,
 	})
 
-	verdictLabel = Components.text({
+	local verdict = Components.text({
 		name = "Verdict",
 		text = "",
-		size = UDim2.new(1, 0, 0, 20),
+		size = UDim2.new(1, 0, 0, 40),
 		position = UDim2.fromOffset(0, 80),
 		textSize = 15,
 		color = Theme.TextPrimary,
 		parent = root,
 	})
-	verdictLabel.TextWrapped = true
+	verdict.TextWrapped = true
+	verdict.TextYAlignment = Enum.TextYAlignment.Top
+	verdictLabel = verdict
+
+	-- M9: what happened next, for this ending.
+	epilogueLabel = Components.text({
+		name = "Epilogue",
+		text = "",
+		size = UDim2.new(1, 0, 0, 40),
+		position = UDim2.fromOffset(0, 126),
+		textSize = 14,
+		color = Theme.TextPrimary,
+		parent = root,
+	})
+	local epilogue = epilogueLabel :: TextLabel
+	epilogue.Font = Enum.Font.GothamMedium
+	epilogue.TextWrapped = true
+	epilogue.TextYAlignment = Enum.TextYAlignment.Top
+	epilogue.TextTransparency = 0.1
 
 	revealHeader = Components.text({
 		name = "RevealHeader",
 		text = "WHAT HAPPENED",
 		size = UDim2.new(1, 0, 0, 14),
-		position = UDim2.fromOffset(0, 120),
+		position = UDim2.fromOffset(0, 178),
 		font = Theme.FontBold,
 		textSize = 11,
 		color = Theme.Accent,
@@ -207,7 +250,7 @@ function CaseClosedView.start()
 		name = "Reveal",
 		text = "",
 		size = UDim2.new(1, 0, 0, 120),
-		position = UDim2.fromOffset(0, 140),
+		position = UDim2.fromOffset(0, 198),
 		textSize = 14,
 		color = Theme.TextSecondary,
 		parent = root,
@@ -220,7 +263,7 @@ function CaseClosedView.start()
 		name = "TimelineHeader",
 		text = "THE SEQUENCE OF EVENTS",
 		size = UDim2.new(1, 0, 0, 14),
-		position = UDim2.fromOffset(0, 274),
+		position = UDim2.fromOffset(0, 330),
 		font = Theme.FontBold,
 		textSize = 11,
 		color = Theme.Accent,
@@ -231,7 +274,7 @@ function CaseClosedView.start()
 		name = "Timeline",
 		text = "",
 		size = UDim2.new(1, 0, 0, 96),
-		position = UDim2.fromOffset(0, 294),
+		position = UDim2.fromOffset(0, 350),
 		textSize = 13,
 		color = Theme.TextPrimary,
 		parent = root,
