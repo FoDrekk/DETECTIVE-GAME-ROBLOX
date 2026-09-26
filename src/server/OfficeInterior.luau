@@ -54,6 +54,10 @@ local CEILING_Y = 12
 -- Underside of the dropped ceilings over Daniel's office and the meeting
 -- room (OfficeDetailing builds them at y = 11, 0.3 thick).
 local DROPPED_Y = 10.85
+-- Top of the walkable floor surface, set just above the old Y=0 so every
+-- floor-standing prop (placed at Y=0) still reads as resting on it. See
+-- finishShell for the full floor layering.
+local FLOOR_LIFT = 0.05
 
 local Style = Config.Environment.Interior
 
@@ -137,11 +141,46 @@ local function finishShell(office: Instance, folder: Instance)
 		end
 	end
 
-	-- Floors, by zone. A base carpet, then each room's finish just above it.
+	-- Floors.
+	--
+	-- The authored `Shell.Floor` (top at Y=0.00) and the decorative finishes
+	-- used to sit within 0.075 studs of each other across the same 59x47
+	-- footprint, so their surfaces fought in the depth buffer and flickered.
+	-- A single floor cannot both be coplanar with another opaque floor and be
+	-- free of flicker, so this establishes one clear physical surface:
+	--
+	--   * `Shell.Floor` is sunk well below the room and left only as a
+	--     backstop (it stays collidable/queryable, but nothing rests on it).
+	--   * The base `Carpet` becomes the real floor: built like every other
+	--     finish, then made CanCollide/CanQuery. Player collision and
+	--     SuspectSpawner.floorBelow's downward raycast both land on it.
+	--   * Room slabs are thin and sit a clear gap above the base carpet;
+	--     every decorative prop (placed at Y=0) rests on the carpet with a
+	--     negligible sink, exactly as it did on the shell floor before.
+	--
+	-- Clearances: shell-floor top is sunk to -0.10; carpet spans -0.01..0.05;
+	-- room slabs span 0.08..0.13. Every pair is separated by >= 0.03 and the
+	-- large flat surfaces (carpet vs shell) by 0.09, so nothing fights.
+
+	local shellFloor = find(office, { "Shell", "Floor" })
+	if shellFloor and shellFloor:IsA("BasePart") then
+		-- Sink the authored floor so its top is ~0.10 below the new surface.
+		shellFloor.Position = Vector3.new(
+			shellFloor.Position.X,
+			shellFloor.Position.Y - 0.6,
+			shellFloor.Position.Z
+		)
+	end
+
 	local floors = Instance.new("Folder")
 	floors.Name = "Floors"
 	floors.Parent = folder
-	slab(floors, "Carpet", -29.5, 29.5, -23.5, 23.5, 0.03, 0.06, Color3.fromRGB(58, 62, 70), M.Carpet)
+
+	-- The base carpet: the physical, walkable floor.
+	local carpet = slab(floors, "Carpet", -29.5, 29.5, -23.5, 23.5, FLOOR_LIFT - 0.03, 0.06, Color3.fromRGB(58, 62, 70), M.Carpet)
+	carpet.CanCollide = true
+	carpet.CanQuery = true
+
 	type Zone = { name: string, x0: number, x1: number, z0: number, z1: number, color: Color3, material: Enum.Material }
 	local zones: { Zone } = {
 		{ name = "Lobby", x0 = 10.5, x1 = 29.5, z0 = 7, z1 = 23.5, color = Color3.fromRGB(208, 202, 192), material = M.Marble },
@@ -150,11 +189,13 @@ local function finishShell(office: Instance, folder: Instance)
 		{ name = "Records", x0 = -29.5, x1 = -14.5, z0 = -23.5, z1 = -14.5, color = Color3.fromRGB(128, 126, 122), material = M.Concrete },
 		{ name = "Kitchenette", x0 = -13.5, x1 = -9.5, z0 = -23.5, z1 = -13.2, color = Color3.fromRGB(196, 194, 188), material = M.CeramicTiles },
 		{ name = "Runner", x0 = -7, x1 = 3, z0 = -23.5, z1 = 6, color = Color3.fromRGB(82, 84, 90), material = M.Carpet },
-		{ name = "Doormat", x0 = 14.8, x1 = 21.2, z0 = 21.4, z1 = 23.4, color = Color3.fromRGB(36, 36, 38), material = M.Fabric },
 	}
+	-- Room finishes: thin, disjoint, a clear gap above the base carpet.
 	for _, zone in ipairs(zones) do
-		slab(floors, zone.name, zone.x0, zone.x1, zone.z0, zone.z1, 0.04, 0.07, zone.color, zone.material)
+		slab(floors, zone.name, zone.x0, zone.x1, zone.z0, zone.z1, FLOOR_LIFT + 0.055, 0.05, zone.color, zone.material)
 	end
+	-- The doormat sits on the lobby finish, not on the base carpet.
+	slab(floors, "Doormat", 14.8, 21.2, 21.4, 23.4, FLOOR_LIFT + 0.115, 0.03, Color3.fromRGB(36, 36, 38), M.Fabric)
 
 	-- A suspended ceiling at 12 studs with a T-bar grid.
 	local ceiling = Instance.new("Folder")
@@ -170,10 +211,18 @@ local function finishShell(office: Instance, folder: Instance)
 	-- Close the authored gap between the entrance frame (11) and lintel.
 	slab(folder, "EntranceTransom", 14, 22, 23.7, 24.3, 11.5, 1, P.Charcoal, M.Metal)
 
-	-- The shell's high fixtures sit above the new ceiling: retire them.
+	-- The shell's high fixtures and its 16-stud warehouse ceiling both sit
+	-- above the new suspended ceiling at 12: retire them. The ceiling has no
+	-- collision or query dependency (nothing raycasts against it), and it is
+	-- fully occluded from below by the new one, so removing it is safe and
+	-- keeps the runtime shell consistent with what the room actually is.
 	local lighting = office:FindFirstChild("Lighting")
 	if lighting then
 		lighting:Destroy()
+	end
+	local shellCeiling = shell and shell:FindFirstChild("Ceiling")
+	if shellCeiling then
+		shellCeiling:Destroy()
 	end
 
 	-- Blinds, and the city's glow coming in through the glass.
@@ -321,7 +370,9 @@ local function danielsOffice(office: Instance, folder: Instance)
 	PropKit.sideChair(room, at(-25.8, -12.0, SOUTH), { upholstery = P.FabricWarm, yaw = -14 })
 
 	PropKit.shelving(room, at(-27.2, -13.4, SOUTH), 4.6, 7.4, 4, 31, { frame = P.WalnutDark, material = M.Wood, depth = 1.1 })
-	PropKit.rug(room, at(-24, -7, NORTH), 10, 7.5, Color3.fromRGB(70, 58, 52), Color3.fromRGB(46, 38, 34))
+	-- The rug rests on the room finish (top at FLOOR_LIFT + 0.08), not the
+	-- base carpet, so it is not buried by the thin floor slab.
+	PropKit.rug(room, at(-24, -7, NORTH, FLOOR_LIFT + 0.08), 10, 7.5, Color3.fromRGB(70, 58, 52), Color3.fromRGB(46, 38, 34))
 	PropKit.framedArt(room, at(-25.4, -2.52, NORTH, 6.3), 3.2, 2.3, 11)
 	PropKit.framedArt(room, at(-28.7, -2.52, NORTH, 6.6), 1.2, 1.5, 12)
 	-- His jacket is still on the rack.
@@ -568,7 +619,7 @@ local function openPlan(folder: Instance)
 	pod(25, 0.3, 4.2, 11, { [1] = { screen = "on" } })
 
 	-- Lounge along the south wall.
-	PropKit.rug(room, at(-22.5, 20.4, NORTH), 11, 5.6, Color3.fromRGB(96, 88, 80), Color3.fromRGB(70, 64, 58))
+	PropKit.rug(room, at(-22.5, 20.4, NORTH, FLOOR_LIFT + 0.08), 11, 5.6, Color3.fromRGB(96, 88, 80), Color3.fromRGB(70, 64, 58))
 	PropKit.sofa(room, at(-22.5, 22.0, NORTH), 7, P.Fabric, M.Fabric)
 	PropKit.coffeeTable(room, at(-22.5, 18.9, NORTH), 4, 2.2)
 	PropKit.mug(room, at(-21.6, 18.7, NORTH, 1.26), Color3.fromRGB(60, 80, 110))
