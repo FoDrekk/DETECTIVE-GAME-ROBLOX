@@ -208,11 +208,13 @@ local function spawnEvidenceProps()
 	local parent = office or workspace
 
 	local folder = parent:FindFirstChild(EVIDENCE_PROPS_FOLDER_NAME)
-	if not folder then
-		folder = Instance.new("Folder")
-		folder.Name = EVIDENCE_PROPS_FOLDER_NAME
-		folder.Parent = parent
+	if folder then
+		-- Baked already: adopted as-is so author repositioning survives.
+		return
 	end
+	folder = Instance.new("Folder")
+	folder.Name = EVIDENCE_PROPS_FOLDER_NAME
+	folder.Parent = parent
 
 	local caseDef = CaseRegistry.get(Config.Game.AutoStartCase)
 	if not caseDef then
@@ -285,11 +287,13 @@ local function buildLocationSigns()
 	local parent = office or workspace
 
 	local folder = parent:FindFirstChild(LOCATION_SIGNS_FOLDER_NAME)
-	if not folder then
-		folder = Instance.new("Folder")
-		folder.Name = LOCATION_SIGNS_FOLDER_NAME
-		folder.Parent = parent
+	if folder then
+		-- Baked already: adopted as-is so author repositioning survives.
+		return
 	end
+	folder = Instance.new("Folder")
+	folder.Name = LOCATION_SIGNS_FOLDER_NAME
+	folder.Parent = parent
 
 	local caseDef = CaseRegistry.get(Config.Game.AutoStartCase)
 	if not caseDef then

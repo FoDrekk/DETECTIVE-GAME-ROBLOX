@@ -22,6 +22,7 @@
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local Logger = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Logger"))
@@ -415,6 +416,18 @@ local function faceSpeaker(player: Player, suspectId: string)
 	):Play()
 end
 
+-- A baked NPC persists in the place (Edit-mode bake). Adopt it by the hitbox
+-- part named after the suspect id instead of rebuilding the avatar, so any
+-- author repositioning of the model survives.
+local function findBakedNpc(folder: Instance, suspect: Types.SuspectDefinition): Model?
+	for _, child in ipairs(folder:GetChildren()) do
+		if child:IsA("Model") and child:FindFirstChild(suspect.id, true) then
+			return child
+		end
+	end
+	return nil
+end
+
 function SuspectSpawner.start()
 	local office = workspace:FindFirstChild(Config.Environment.OfficeModelName)
 	local parent = office or workspace
@@ -426,25 +439,38 @@ function SuspectSpawner.start()
 		folder.Parent = parent
 	end
 
-	local spawned = 0
+	local spawned, adopted = 0, 0
 	for _, suspect in ipairs(CaseService.getSuspects(Config.Game.AutoStartCase)) do
-		local model = buildNpc(suspect)
+		local model = findBakedNpc(folder, suspect)
 		if model then
-			model.Parent = folder
+			adopted += 1
+		else
+			model = buildNpc(suspect)
+		end
+		if model then
+			if not model.Parent then
+				model.Parent = folder
+			end
 			spawnedModels[suspect.id] = model
-			local humanoid = model:FindFirstChildOfClass("Humanoid")
-			if humanoid then
-				playIdle(humanoid)
+			-- The idle loop and the conversation listener are runtime state:
+			-- an Edit-mode bake only stages the models.
+			if RunService:IsRunning() then
+				local humanoid = model:FindFirstChildOfClass("Humanoid")
+				if humanoid then
+					playIdle(humanoid)
+				end
 			end
 			spawned += 1
 		end
 	end
 
-	StoryEvents.on("ConversationStarted", function(player: Player, data: { [string]: any })
-		faceSpeaker(player, data.suspectId)
-	end)
+	if RunService:IsRunning() then
+		StoryEvents.on("ConversationStarted", function(player: Player, data: { [string]: any })
+			faceSpeaker(player, data.suspectId)
+		end)
+	end
 
-	log:info("suspects spawned", { count = spawned })
+	log:info("suspects staged", { count = spawned, adopted = adopted })
 end
 
 return SuspectSpawner

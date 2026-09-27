@@ -52,6 +52,37 @@ rokit install
 
 > The base `MysteryCaseRoblox.rbxl` is never used as a Rojo build target.
 
+### Baking the environment (Edit mode)
+
+The world builders (`OfficeRoom`, `OfficeDetailing`, `OfficeInterior`,
+`CitySkyline`, `SuspectSpawner`) normally run when the server bootstraps, so
+`Workspace.Office` looks like an empty authored shell while designing in Edit
+mode. To make Edit show the same map as Play, run the builders once in Edit
+mode and save the place:
+
+```lua
+-- Edit mode, command bar (or MCP):
+require(game.ServerScriptService.Server.EnvironmentBake).bake()      -- incremental fill
+require(game.ServerScriptService.Server.EnvironmentBake).bake(true)   -- force: destroy + rebuild
+```
+
+Then press **Ctrl+S** to persist. Baked content is *adopted*, not rebuilt:
+every builder skips geometry whose generated folder already exists, so
+re-running the bake never duplicates anything and author edits to baked props
+survive. Runtime-only wiring (records-room flicker, aviation-light blink,
+suspect idle animations, the conversation listener) is gated on
+`RunService:IsRunning()`, so a bake never leaves loops or tweens running in
+Edit mode.
+
+Notes:
+
+- The bake is Edit-mode only; it refuses to run while a game is running.
+- Re-running `rojo serve` and syncing replaces `Workspace.Office` from
+  `assets/Office.rbxm`, which strips the baked folders — re-bake afterwards.
+- `bake(true)` also clears the one-shot markers (the `FloorSunk` attribute on
+  `Shell.Floor`, the `Baked` attribute on `Workspace.Office`) so a forced
+  rebuild starts from the authored state.
+
 ## Project structure
 
 ```

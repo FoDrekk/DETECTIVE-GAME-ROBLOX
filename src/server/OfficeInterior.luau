@@ -36,6 +36,7 @@
 
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Logger = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Logger"))
@@ -162,14 +163,17 @@ local function finishShell(office: Instance, folder: Instance)
 	-- room slabs span 0.08..0.13. Every pair is separated by >= 0.03 and the
 	-- large flat surfaces (carpet vs shell) by 0.09, so nothing fights.
 
+	-- Guarded by an attribute: an Edit-mode bake sinks it once and persists
+	-- that; a later re-run (partial rebuild) must not sink it again.
 	local shellFloor = find(office, { "Shell", "Floor" })
-	if shellFloor and shellFloor:IsA("BasePart") then
+	if shellFloor and shellFloor:IsA("BasePart") and not shellFloor:GetAttribute("FloorSunk") then
 		-- Sink the authored floor so its top is ~0.10 below the new surface.
 		shellFloor.Position = Vector3.new(
 			shellFloor.Position.X,
 			shellFloor.Position.Y - 0.6,
 			shellFloor.Position.Z
 		)
+		shellFloor:SetAttribute("FloorSunk", true)
 	end
 
 	local floors = Instance.new("Folder")
@@ -232,8 +236,10 @@ local function finishShell(office: Instance, folder: Instance)
 	local blinds = { [-22] = 0.8, [-4] = 0.22, [14] = 0.5 }
 	for x, lowered in pairs(blinds) do
 		PropKit.blinds(windows, at(x, -23.55, SOUTH, 7), 11.4, 7.4, lowered)
+		-- The light lives on the authored glass; skip if a bake already
+		-- attached one (force re-bake leaves it behind with the shell).
 		local glass = shell and shell:FindFirstChild(`WinGlass_{x}`)
-		if glass and glass:IsA("BasePart") then
+		if glass and glass:IsA("BasePart") and not glass:FindFirstChildWhichIsA("SurfaceLight") then
 			PropKit.light(glass, "SurfaceLight", Style.CityGlow.Brightness, Style.CityGlow.Range, Style.CityGlow.Color, {
 				face = Enum.NormalId.Back,
 				angle = 75,
@@ -285,6 +291,19 @@ local function buildLights(folder: Instance): { BasePart }
 		table.insert(flicker, diffuser)
 	end
 	return flicker
+end
+
+-- Locate the flicker target inside an already-built (or baked) interior, so
+-- the runtime loop can be armed whether the geometry was just built or
+-- adopted from an Edit-mode bake.
+local function findFlickerParts(interior: Instance): { BasePart }
+	local lights = interior:FindFirstChild("Lights")
+	local records = lights and lights:FindFirstChild("Records")
+	local diffuser = records and records:FindFirstChild("Diffuser")
+	if diffuser and diffuser:IsA("BasePart") then
+		return { diffuser }
+	end
+	return {}
 end
 
 -- The records-room tube: mostly steady, now and then a stutter. One light,
@@ -459,18 +478,21 @@ local function meetingRoom(office: Instance, folder: Instance)
 	if panelOn and panelOn:IsA("BasePart") then
 		panelOn.Color = Color3.fromRGB(14, 20, 30)
 		panelOn.Material = M.Neon
-		PropKit.label(panelOn, Enum.NormalId.Left, "HDMI 1\nNo signal", {
-			color = Color3.fromRGB(110, 130, 160),
-			font = Enum.Font.GothamMedium,
-			size = 22,
-			lightInfluence = 0,
-		})
+		-- The label lives on the authored part; one bake already attached it.
+		if not panelOn:FindFirstChildOfClass("SurfaceGui") then
+			PropKit.label(panelOn, Enum.NormalId.Left, "HDMI 1\nNo signal", {
+				color = Color3.fromRGB(110, 130, 160),
+				font = Enum.Font.GothamMedium,
+				size = 22,
+				lightInfluence = 0,
+			})
+		end
 	end
 
 	-- The whiteboard: last quarter, and a partnership struck out.
 	local board = find(office, { "Furniture", "Whiteboard" })
 	if board and board:IsA("BasePart") then
-		local gui = PropKit.label(board, Enum.NormalId.Back, "", { pixelsPerStud = 60 })
+		local gui = board:FindFirstChildOfClass("SurfaceGui") or PropKit.label(board, Enum.NormalId.Back, "", { pixelsPerStud = 60 })
 		local text = gui:FindFirstChildOfClass("TextLabel")
 		if text then
 			text.RichText = true
@@ -481,7 +503,7 @@ local function meetingRoom(office: Instance, folder: Instance)
 			text.TextXAlignment = Enum.TextXAlignment.Left
 			text.TextYAlignment = Enum.TextYAlignment.Top
 			text.Text = "Q3 TARGETS\n\n<s>R&amp;L</s>   <font color=\"#9a2a2a\">R</font>\n\nretainers +12%\nnew clients: 4\n\n<font color=\"#9a2a2a\">sign by FRI</font>"
-			local pad = Instance.new("UIPadding")
+			local pad = text:FindFirstChildOfClass("UIPadding") or Instance.new("UIPadding")
 			pad.PaddingLeft = UDim.new(0, 40)
 			pad.PaddingTop = UDim.new(0, 26)
 			pad.Parent = text
@@ -518,12 +540,14 @@ local function reception(office: Instance, folder: Instance): BasePart?
 		fascia.Size = Vector3.new(6.2, 3.0, 0.14)
 		fascia.Color = P.Walnut
 		fascia.Material = M.WoodPlanks
-		PropKit.label(fascia, Enum.NormalId.Back, "REYES & LANE", {
-			color = Color3.fromRGB(206, 176, 112),
-			font = Enum.Font.GothamBold,
-			pixelsPerStud = 50,
-			size = 30,
-		})
+		if not fascia:FindFirstChildOfClass("SurfaceGui") then
+			PropKit.label(fascia, Enum.NormalId.Back, "REYES & LANE", {
+				color = Color3.fromRGB(206, 176, 112),
+				font = Enum.Font.GothamBold,
+				pixelsPerStud = 50,
+				size = 30,
+			})
+		end
 	end
 	destroy(office, { "Furniture", "ReceptionChair" })
 	destroy(office, { "Furniture", "LobbyBench" })
@@ -702,30 +726,40 @@ function OfficeInterior.start()
 		log:warn(`Workspace.{Config.Environment.OfficeModelName} not found; skipping interior`)
 		return
 	end
-	local folder = office:FindFirstChild(FOLDER_NAME)
-	if folder then
-		folder:Destroy()
-	end
-	local interior = Instance.new("Folder")
-	interior.Name = FOLDER_NAME
-	interior.Parent = office
+	local interior = office:FindFirstChild(FOLDER_NAME)
+	local wasBaked = interior ~= nil
+	if interior then
+		-- Baked already (Edit-mode bake or a previous run): adopt the
+		-- geometry as-is so author edits to props and lights survive. Only
+		-- the runtime wiring below runs.
+		log:info("interior already present; adopting baked geometry")
+	else
+		interior = Instance.new("Folder")
+		interior.Name = FOLDER_NAME
+		interior.Parent = office
 
-	finishShell(office, interior)
-	local flicker = buildLights(interior)
-	danielsOffice(office, interior)
-	recordsRoom(office, interior)
-	meetingRoom(office, interior)
-	reception(office, interior)
-	openPlan(interior)
-	centre(interior)
-	-- The shell's authored block desks, chairs and monitors are replaced.
-	for i = 1, 3 do
-		destroy(office, { "Furniture", `MainDesk_{i}` })
-		destroy(office, { "Furniture", `MainChair_{i}` })
-		destroy(office, { "Furniture", `MainMon_{i}` })
+		finishShell(office, interior)
+		buildLights(interior)
+		danielsOffice(office, interior)
+		recordsRoom(office, interior)
+		meetingRoom(office, interior)
+		reception(office, interior)
+		openPlan(interior)
+		centre(interior)
+		-- The shell's authored block desks, chairs and monitors are replaced.
+		for i = 1, 3 do
+			destroy(office, { "Furniture", `MainDesk_{i}` })
+			destroy(office, { "Furniture", `MainChair_{i}` })
+			destroy(office, { "Furniture", `MainMon_{i}` })
+		end
+		destroy(office, { "Furniture", "StorageCredenza" })
 	end
-	destroy(office, { "Furniture", "StorageCredenza" })
-	startFlicker(flicker)
+
+	-- The flicker loop is runtime state: an Edit-mode bake only positions
+	-- the parts; a running game arms the loop.
+	if RunService:IsRunning() then
+		startFlicker(findFlickerParts(interior))
+	end
 
 	local parts, lights = 0, 0
 	for _, d in ipairs(interior:GetDescendants()) do
@@ -735,7 +769,7 @@ function OfficeInterior.start()
 			lights += 1
 		end
 	end
-	log:info("interior built", { parts = parts, lights = lights })
+	log:info("interior ready", { parts = parts, lights = lights, baked = wasBaked })
 end
 
 return OfficeInterior

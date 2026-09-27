@@ -503,6 +503,13 @@ function OfficeDetailing.start()
 		log:warn(`Workspace.{Config.Environment.OfficeModelName} not found; skipping environment detailing`)
 		return
 	end
+	if office:FindFirstChild(DETAIL_FOLDER_NAME) then
+		-- Baked already: adopt as-is, including any author adjustments. The
+		-- spawn pad move and desk settle are one-shot edits the bake already
+		-- made; re-running them would snap the author's placement back.
+		log:info("detailing already present; adopting baked geometry")
+		return
+	end
 
 	placeInvestigatorSpawn(office)
 	settleDanielsDesk(office)
