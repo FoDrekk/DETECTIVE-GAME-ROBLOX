@@ -216,6 +216,16 @@ function TimelineService.getDiscovered(player: Player): { Types.TimelineEventPro
 	return challengeOrder(player)
 end
 
+-- The discovered events in canonical chronological order, regardless of
+-- whether the player has reconstructed the puzzle yet (Phase 2P). For the
+-- in-progress timeline view, use `getDiscovered` -- the puzzle order is the
+-- point while it's unsolved. This is for the case's own closing record (the
+-- accusation may open, M9, well before OBJ-006), which restates what
+-- actually happened, in the order it happened, never the shuffled one.
+function TimelineService.getChronological(player: Player): { Types.TimelineEventProgress }
+	return chronological(player)
+end
+
 --[[
 	Validate and record the player's reconstruction of the timeline (M5).
 

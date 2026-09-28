@@ -19,6 +19,7 @@ return function(t)
 	local ReasoningService = require(Server:WaitForChild("ReasoningService"))
 	local TimelineService = require(Server:WaitForChild("TimelineService"))
 	local AccusationService = require(Server:WaitForChild("AccusationService"))
+	local GameStateService = require(Server:WaitForChild("GameStateService"))
 	local CaseRegistry = require(game:GetService("ServerStorage"):WaitForChild("Config"):WaitForChild("CaseRegistry"))
 	local expect = t.expect
 
@@ -247,6 +248,9 @@ return function(t)
 		talk(player, "SUS-003", { "found", "anyone", "badges", "cameras" }, "bye")
 		expect.equal(active(player), "OBJ-001")
 		expect.truthy(knowsStatement(player, "STMT-SUS-003-CAMERAS"))
+		-- Phase 2P: the badge log's pointer is a lead the case file can be
+		-- revisited for, not just a line said once and never recorded.
+		expect.truthy(knowsStatement(player, "STMT-SUS-003-BADGE"))
 
 		searchOffice(player)
 		expect.equal(active(player), "OBJ-002")
@@ -474,6 +478,24 @@ return function(t)
 		expect.truthy(choiceIds(player).coffee)
 	end)
 
+	t.test("Sam's badge-log question is hidden once its statement is recorded, not merely used once", function()
+		local player = makePlayer()
+		ConversationService.begin(player, "SUS-003")
+		untilChoice(player)
+		expect.truthy(choiceIds(player).badges)
+		expect.truthy(ConversationService.choose(player, "badges"))
+		untilChoice(player) -- SAM-BADGE-1 -> SAM-BADGE-2 (statementId here) -> SAM-BADGE-3 -> hub
+		expect.truthy(knowsStatement(player, "STMT-SUS-003-BADGE"))
+		expect.falsy(choiceIds(player).badges)
+		ConversationService.leave(player)
+		ConversationService.begin(player, "SUS-003")
+		untilChoice(player)
+		-- Hidden because the statement is known, exactly like every other
+		-- fact-yielding question in this file -- not a one-shot `once` flag,
+		-- which would hide it here even for a player who never asked.
+		expect.falsy(choiceIds(player).badges)
+	end)
+
 	t.test("Sam greets you differently the second time", function()
 		local player = makePlayer()
 		ConversationService.begin(player, "SUS-003")
@@ -588,7 +610,10 @@ return function(t)
 		expect.falsy(AccusationService.accuse(player, "ACC-001", "DEDUCT-001", "CONTRA-001")) -- not established
 		expect.falsy(AccusationService.accuse(player, "ACC-001", "DEDUCT-002", "CONTRA-002")) -- not established
 		expect.truthy(AccusationService.accuse(player, "ACC-001", "DEDUCT-002", "CONTRA-001"))
-		expect.equal((AccusationService.getVerdict(player) :: any).grade, "Solved")
+		local verdict = AccusationService.getVerdict(player) :: any
+		expect.equal(verdict.grade, "Solved")
+		-- Phase 2P: a case that holds has nothing left to account for.
+		expect.equal(verdict.shortfall, nil)
 	end)
 
 	t.test("the right man with a case that doesn't hold walks", function()
@@ -600,6 +625,11 @@ return function(t)
 		expect.equal(verdict.grade, "Unproven")
 		expect.truthy(string.find(verdict.epilogue, "walks", 1, true))
 		expect.falsy((AccusationService.getResolution(player) :: any).supported)
+		-- Phase 2P: the named motive/proof aren't authorized for this
+		-- accusation, so the shortfall says so -- never the true pairing.
+		expect.truthy(verdict.shortfall)
+		expect.truthy(string.find(verdict.shortfall, "Victor Lane", 1, true))
+		expect.falsy(string.find(verdict.shortfall, "Ending the Partnership", 1, true))
 	end)
 
 	t.test("accusing Mara is a wrong verdict that still tells the truth", function()
@@ -611,5 +641,35 @@ return function(t)
 		expect.equal(verdict.grade, "Wrong")
 		expect.equal(verdict.culpritName, "Victor Lane")
 		expect.truthy(string.find(verdict.epilogue, "Mara", 1, true))
+		-- Phase 2P: ACC-002 authors no motives/proofs at all, so neither
+		-- holds up against the person actually accused.
+		expect.truthy(verdict.shortfall)
+		expect.truthy(string.find(verdict.shortfall, "Mara Reyes", 1, true))
+	end)
+
+	------------------------------------------------------------------
+	-- The closing summary (Phase 2P)
+	------------------------------------------------------------------
+
+	t.test("the closing summary's timeline is chronological even accused before it's reconstructed", function()
+		local player = makePlayer()
+		establish(player, { "DEDUCT-002" }, { "CONTRA-001" })
+		-- Discovered out of chronological order (11:52, then 11:42, then
+		-- 11:47), so a sort that never ran couldn't be mistaken for one that
+		-- did.
+		EvidenceService.discover(player, "EV-004") -- TIMELINE-004, 11:52 PM
+		EvidenceService.discover(player, "EV-002") -- TIMELINE-001, 11:42 PM
+		EvidenceService.discover(player, "EV-001") -- TIMELINE-002, 11:47 PM
+		expect.truthy(AccusationService.accuse(player, "ACC-001", "DEDUCT-002", "CONTRA-001"))
+		-- The point of this test: genuinely the early-accusation case, with
+		-- OBJ-006 (reconstruct the night) nowhere near done.
+		expect.falsy(TimelineService.isEstablished(player))
+
+		local summary = GameStateService.getClosingSummary(player)
+		expect.truthy(summary)
+		expect.equal(#summary.timeline, 3)
+		expect.equal(summary.timeline[1].timestamp, "11:42 PM")
+		expect.equal(summary.timeline[2].timestamp, "11:47 PM")
+		expect.equal(summary.timeline[3].timestamp, "11:52 PM")
 	end)
 end

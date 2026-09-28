@@ -642,9 +642,11 @@ M5 makes establishing the sequence a real, server-validated investigation step.
 - **Requirement gate.** `ObjectiveRequirement.timelineEstablished` is a new
   optional gate alongside `evidence`/`interaction`/`target`/`contradiction`/
   `deduction`; `requirementSatisfied` checks the player's own live state.
-  CASE-001's `OBJ-005` ("Reconstruct the Timeline") uses it and is the final
-  objective, so the accusation picker is only offered once the player has both
-  reasoned about the case and ordered its events.
+  CASE-001's `OBJ-006` ("Reconstruct the Night") uses it and is the final
+  objective. It no longer gates the accusation picker on its own: M9's
+  `accusationRules.opensAfter` (see below) lets `[Q]` open as soon as
+  `OBJ-002` completes, well before the timeline (or the rest of the case)
+  is reconstructed -- accusing early is possible, and costs what it should.
 - **Spoiler safety.** Until established, the client receives the events with
   their clock times hidden (it renders `?`); the canonical order and the true
   timestamps are only sent once the player has earned them. The payload

@@ -108,9 +108,13 @@ recommended default; the product owner can redirect.)
   the canonical chronological order it computes; a wrong, incomplete,
   duplicated or invented order is rejected. Establishing is permanent and
   per-player.
-- A new final objective (`OBJ-005`) gates on the established sequence, so the
-  case cannot be closed by collecting objects alone — the player must both
-  reason about the evidence and reconstruct the night.
+- A new final objective gates on the established sequence, so the case
+  cannot be closed by collecting objects alone — the player must both reason
+  about the evidence and reconstruct the night. (Since renumbered to
+  `OBJ-006` as M7-M9 inserted objectives ahead of it, and M9's
+  `accusationRules.opensAfter` below now lets the accusation open well
+  before this objective, or the case, is done — that is the point: accusing
+  early is possible, and costs what it should.)
 
 ### M6 — Production presentation (looks and sounds like a game) — done
 

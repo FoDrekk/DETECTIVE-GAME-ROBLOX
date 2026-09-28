@@ -73,8 +73,11 @@ local function setVisible(visible: boolean)
 	end
 end
 
--- The sequence of events the player actually revealed, already sorted by the
--- server. Never includes an undiscovered event.
+-- The sequence of events the player actually revealed, always in canonical
+-- chronological order (Phase 2P: `GameStateService.getClosingSummary` uses
+-- `TimelineService.getChronological`, not the puzzle order, even when the
+-- accusation opened before the timeline was reconstructed). Never includes
+-- an undiscovered event.
 local function buildTimelineText(summary: Types.CaseClosedSummary): string
 	if #summary.timeline == 0 then
 		return "No timeline events were recorded."
@@ -116,8 +119,18 @@ local function applyHeadline(summary: Types.CaseClosedSummary)
 			titleLabel.TextColor3 = Theme.TextPrimary
 			verdictLabel.Text = `You accused {accusedName}. The killer was {verdict.culpritName}.`
 		end
-		epilogueLabel.Text = verdict.epilogue or ""
-		epilogueLabel.Visible = verdict.epilogue ~= nil
+		-- Phase 2P: for Unproven/Wrong, lead with why the case named didn't
+		-- hold (derived only from what was already established -- never the
+		-- true motive/proof), then whatever the case authors for after.
+		local epilogueParts = {}
+		if verdict.shortfall then
+			table.insert(epilogueParts, verdict.shortfall)
+		end
+		if verdict.epilogue then
+			table.insert(epilogueParts, verdict.epilogue)
+		end
+		epilogueLabel.Text = table.concat(epilogueParts, "  ")
+		epilogueLabel.Visible = #epilogueParts > 0
 		revealHeader.Visible = true
 		revealLabel.Visible = true
 		revealLabel.Text = verdict.reveal
@@ -219,11 +232,12 @@ function CaseClosedView.start()
 	verdict.TextYAlignment = Enum.TextYAlignment.Top
 	verdictLabel = verdict
 
-	-- M9: what happened next, for this ending.
+	-- M9: what happened next, for this ending. Phase 2P: taller, since
+	-- Unproven/Wrong now leads with a shortfall sentence before it.
 	epilogueLabel = Components.text({
 		name = "Epilogue",
 		text = "",
-		size = UDim2.new(1, 0, 0, 40),
+		size = UDim2.new(1, 0, 0, 64),
 		position = UDim2.fromOffset(0, 126),
 		textSize = 14,
 		color = Theme.TextPrimary,
@@ -235,11 +249,12 @@ function CaseClosedView.start()
 	epilogue.TextYAlignment = Enum.TextYAlignment.Top
 	epilogue.TextTransparency = 0.1
 
+	-- Phase 2P: shifted down 24px from the taller epilogue block above.
 	revealHeader = Components.text({
 		name = "RevealHeader",
 		text = "WHAT HAPPENED",
 		size = UDim2.new(1, 0, 0, 14),
-		position = UDim2.fromOffset(0, 178),
+		position = UDim2.fromOffset(0, 202),
 		font = Theme.FontBold,
 		textSize = 11,
 		color = Theme.Accent,
@@ -250,7 +265,7 @@ function CaseClosedView.start()
 		name = "Reveal",
 		text = "",
 		size = UDim2.new(1, 0, 0, 120),
-		position = UDim2.fromOffset(0, 198),
+		position = UDim2.fromOffset(0, 222),
 		textSize = 14,
 		color = Theme.TextSecondary,
 		parent = root,
@@ -263,7 +278,7 @@ function CaseClosedView.start()
 		name = "TimelineHeader",
 		text = "THE SEQUENCE OF EVENTS",
 		size = UDim2.new(1, 0, 0, 14),
-		position = UDim2.fromOffset(0, 330),
+		position = UDim2.fromOffset(0, 354),
 		font = Theme.FontBold,
 		textSize = 11,
 		color = Theme.Accent,
@@ -274,7 +289,7 @@ function CaseClosedView.start()
 		name = "Timeline",
 		text = "",
 		size = UDim2.new(1, 0, 0, 96),
-		position = UDim2.fromOffset(0, 350),
+		position = UDim2.fromOffset(0, 374),
 		textSize = 13,
 		color = Theme.TextPrimary,
 		parent = root,

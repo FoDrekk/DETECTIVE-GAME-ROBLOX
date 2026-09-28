@@ -17,6 +17,18 @@ Config.Environment = {
 	-- Root objects removed at runtime so the authored environment is the only
 	-- ground. Names, not references, so this stays data-driven.
 	DefaultGroundNames = { "Baseplate", "SpawnLocation" },
+	-- Phase 2P: stale-bake detection. EnvironmentBake.bake() stamps this onto
+	-- Workspace.Office once it finishes (Edit mode only); OfficeRoom.start()
+	-- compares it against a baked place's own stamp on every boot, live or
+	-- Edit. Bump this by hand whenever a change to OfficeRoom/OfficeDetailing/
+	-- OfficeInterior/CitySkyline/SuspectSpawner would change what they
+	-- generate -- the builders themselves still adopt existing generated
+	-- folders unchanged (Baked content is adopted, not rebuilt); this only
+	-- warns when that adoption is silently keeping geometry a later bump
+	-- never reached. See `815064d` for the incident this exists to catch:
+	-- a floor/grounding fix landed in the builders, but the already-baked
+	-- `.rbxl` was never re-baked, so the fix never reached the saved place.
+	BuilderVersion = 2,
 	-- 12:40 AM, after hours (OfficeRoom). Readability first: the local lights
 	-- carry the mood, ambient and exposure keep every room playable.
 	Night = {

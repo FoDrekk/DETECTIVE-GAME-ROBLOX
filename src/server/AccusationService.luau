@@ -153,6 +153,45 @@ local function caseHolds(data: Types.PlayerData, accusation: Types.AccusationDef
 	return table.find(accusation.motives or {}, motive) ~= nil and table.find(accusation.proofs or {}, proof) ~= nil
 end
 
+--[[
+	Phase 2P: why an Unproven or Wrong verdict didn't hold, in one sentence,
+	derived only from data already authored on the accusation (its `motives`/
+	`proofs`) and the labels of what the player actually named. Never states
+	the true motive/proof for this suspect (that would be the solution,
+	handed out before or instead of finding it) -- only whether the pairing
+	the player committed to is one this accusation recognises. Nil once the
+	case holds (Solved) or if the case doesn't use motive/proof grading.
+]]
+local function explainShortfall(
+	data: Types.PlayerData,
+	accusation: Types.AccusationDefinition,
+	caseDef: Types.CaseDefinition
+): string?
+	local motiveId = data.caseState.accusationMotive
+	local proofId = data.caseState.accusationProof
+	if not motiveId or not proofId then
+		return nil
+	end
+	local motiveOk = table.find(accusation.motives or {}, motiveId) ~= nil
+	local proofOk = table.find(accusation.proofs or {}, proofId) ~= nil
+	if motiveOk and proofOk then
+		return nil
+	end
+
+	local suspect = CaseService.getSuspect(data.caseState.caseId, accusation.suspectId)
+	local suspectName = suspect and suspect.name or accusation.suspectId
+	local motiveLabel = labelFor(caseDef.deductions, motiveId) or "the motive you named"
+	local proofLabel = labelFor(caseDef.contradictions, proofId) or "the proof you named"
+
+	if not motiveOk and not proofOk then
+		return `Neither holds up against {suspectName}: "{motiveLabel}" isn't why, `
+			.. `and "{proofLabel}" doesn't place them there.`
+	elseif not motiveOk then
+		return `"{motiveLabel}" isn't why {suspectName} would have done it.`
+	end
+	return `"{proofLabel}" doesn't put {suspectName} there.`
+end
+
 local function buildOption(caseId: string, accusation: Types.AccusationDefinition): Types.AccusationOption
 	local suspect = CaseService.getSuspect(caseId, accusation.suspectId)
 	return {
@@ -316,12 +355,19 @@ function AccusationService.getVerdict(player: Player): Types.CaseVerdict?
 			epilogue = solution.solvedEpilogue
 		end
 	end
+	-- Phase 2P: only Unproven/Wrong ever need explaining; a Solved case has
+	-- nothing left to account for.
+	local shortfall: string? = nil
+	if grade ~= "Solved" and caseRules(data.caseState.caseId).requiresCase then
+		shortfall = explainShortfall(data, accusation, caseDef :: Types.CaseDefinition)
+	end
 	return {
 		correct = correct,
 		culpritName = if culprit then culprit.name else solution.culpritSuspectId,
 		reveal = solution.reveal,
 		grade = grade,
 		epilogue = epilogue,
+		shortfall = shortfall,
 	}
 end
 

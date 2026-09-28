@@ -93,7 +93,11 @@ function EnvironmentBake.bake(force: boolean?): boolean
 	SuspectSpawner.start()
 
 	office:SetAttribute("Baked", true)
-	log:info("environment baked", { office = office.Name, force = force == true })
+	-- Phase 2P: stamp the builder version this bake was produced by, so a
+	-- later boot (this bake's `.rbxl`, opened fresh) can tell whether the
+	-- generated folders it's adopting still match the current builder code.
+	office:SetAttribute("BuilderVersion", Config.Environment.BuilderVersion)
+	log:info("environment baked", { office = office.Name, force = force == true, builderVersion = Config.Environment.BuilderVersion })
 	return true
 end
 
