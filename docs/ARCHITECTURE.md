@@ -1123,7 +1123,9 @@ player, without changing who owns what.
     enabled only when complete.
   - CaseClosedView shows the grade, the epilogue and the missteps. (Phase 3:
     the objective count reads "Leads followed", since accusing opens partway
-    through the objective chain.)
+    through the objective chain; R7 adds "Timeline reconstructed" when
+    `CaseClosedSummary.timelineReconstructed`, which GameStateService fills
+    from `TimelineService.isEstablished` -- display only, never graded.)
 - **Phase 3 (release readiness)**: `Components.fitToViewport(panel,
   designSize, margin?, minScale?)` adds a `UIScale` that shrinks a
   fixed-size panel to the viewport (never above 1, floor 0.5); CaseClosedView,
