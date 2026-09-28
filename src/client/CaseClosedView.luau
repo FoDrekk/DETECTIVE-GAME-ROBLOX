@@ -159,8 +159,10 @@ function CaseClosedView.show(summary: Types.CaseClosedSummary)
 	end
 	applyHeadline(summary)
 	timelineLabel.Text = buildTimelineText(summary)
+	-- Phase 3 (R6): objectives are leads, not a score. Accusing opens halfway
+	-- through the chain, so a solved case often ends with some unfollowed.
 	statsLabel.Text = `Evidence {summary.evidenceExamined}/{summary.evidenceTotal}`
-		.. `   ·   Objectives {summary.objectivesCompleted}/{summary.objectivesTotal}`
+		.. `   ·   Leads followed {summary.objectivesCompleted}/{summary.objectivesTotal}`
 		.. `   ·   Contradictions {summary.contradictionsIdentified}`
 		.. `   ·   Missteps {summary.mistakes}`
 	setVisible(true)
@@ -187,6 +189,7 @@ function CaseClosedView.start()
 	})
 	root.Visible = false
 	Components.padding(root, 28)
+	Components.fitToViewport(root, Vector2.new(620, 580))
 
 	local accent = Components.frame({
 		name = "Accent",

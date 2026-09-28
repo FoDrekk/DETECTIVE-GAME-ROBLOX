@@ -9,6 +9,11 @@ local Config = {}
 
 Config.Game = {
 	AutoStartCase = "CASE-001",
+	-- Phase 3 (R2): the session is server-wide, so only one investigator per
+	-- server. Also set Max Players to 1 in Game Settings when publishing.
+	MaxInvestigators = 1,
+	FullServerMessage = "This case is a solo investigation, and someone is already on it. "
+		.. "Please join again to start your own.",
 }
 
 Config.Environment = {

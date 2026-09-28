@@ -249,6 +249,27 @@ recommended default; the product owner can redirect.)
   both green. **Awaiting a Roblox Studio playtest** for rendering, camera
   feel, collision, UI layout, NPC animation, and audio.
 
+### Phase 3 — Release readiness — in progress
+
+- **R1, panels fit small screens.** Case Closed (620×580), Timeline
+  (520×500) and the Evidence panel (470×310) were fixed-size and would clip
+  on a phone held sideways. They now shrink to the viewport through a shared
+  `Components.fitToViewport`, as the Accusation and Case File panels already
+  did. Verified in Studio: at a 1530×576 viewport the Case Closed panel,
+  previously cut off at the top, now fits at 0.92.
+- **R2, one investigator per server.** `SessionGuard` turns a second player
+  away with a message. A safety net only: set **Max Players = 1** in Game
+  Settings when publishing (Game Settings needs the place published first).
+- **R6, "Leads followed".** The closing stats count objectives as leads
+  followed rather than "Objectives n/7", which read as a failure on a solved
+  case.
+- **R3, replay verified in Studio** after a Solved ending with the P7
+  epilogue: empty case file and timeline, first objective, accusing closed,
+  Victor meets the detective fresh.
+- **Still to do:** R4 (full touch pass in the phone emulator) and R5
+  (performance baseline). On a phone in landscape the Case Closed panel
+  scales to about 0.6, so its smallest text is small; R4 should judge it.
+
 ## Known follow-ups (not blocking)
 
 - **Creator Store assets.** The office furniture is code-built (PropKit)
@@ -275,6 +296,7 @@ recommended default; the product owner can redirect.)
 - **Single-player scope.** The phase machine is server-wide, so a second
   player in the same server shares one briefing/investigation/closing phase.
   Fine for a 1-player server; per-player phases are needed for more.
+  (Phase 3: `SessionGuard` now turns a second player away.)
 - **Running the unit suite inside a live play session** drives that shared
   phase and broadcasts it to the real client; restart Play afterwards.
 

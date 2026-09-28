@@ -32,6 +32,7 @@ local OfficeDetailing = require(Services:WaitForChild("OfficeDetailing"))
 local OfficeInterior = require(Services:WaitForChild("OfficeInterior"))
 local CitySkyline = require(Services:WaitForChild("CitySkyline"))
 local SuspectSpawner = require(Services:WaitForChild("SuspectSpawner"))
+local SessionGuard = require(Services:WaitForChild("SessionGuard"))
 
 --[[
 	Fail loudly on unrecoverable configuration errors. A missing active case is
@@ -146,12 +147,18 @@ local function bootstrap()
 
 	-- 5. Player lifecycle. Initialise data, then let the phase machine
 	--    grant the case and broadcast the phase.
-	local handled: { [number]: boolean } = {}
+	--    Phase 3 (R2): one investigator per server (see SessionGuard); the
+	--    guard also absorbs the PlayerAdded/startup-sweep double report.
+	local guard = SessionGuard.new(Config.Game.MaxInvestigators)
 	local function onPlayerAdded(player: Player)
-		if handled[player.UserId] then
+		local result = guard:admit(player.UserId)
+		if result == "Duplicate" then
+			return
+		elseif result == "Full" then
+			log:warn("server full; turning a second investigator away", { player = player.Name })
+			player:Kick(Config.Game.FullServerMessage)
 			return
 		end
-		handled[player.UserId] = true
 		PlayerDataService.initialize(player, Config.Game.AutoStartCase)
 		GameStateService.enterBriefingFor(player)
 		ObjectiveService.sendCurrent(player)
@@ -165,7 +172,7 @@ local function bootstrap()
 		onPlayerAdded(player)
 	end
 	Players.PlayerRemoving:Connect(function(player)
-		handled[player.UserId] = nil
+		guard:release(player.UserId)
 	end)
 
 	-- 6. Interaction requests.

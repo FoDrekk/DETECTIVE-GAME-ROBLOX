@@ -1121,7 +1121,18 @@ player, without changing who owns what.
     established facts, with a stamp on success.
   - AccusationView has three sections (who, why, what proves it) and ACCUSE
     enabled only when complete.
-  - CaseClosedView shows the grade, the epilogue and the missteps.
+  - CaseClosedView shows the grade, the epilogue and the missteps. (Phase 3:
+    the objective count reads "Leads followed", since accusing opens partway
+    through the objective chain.)
+- **Phase 3 (release readiness)**: `Components.fitToViewport(panel,
+  designSize, margin?, minScale?)` adds a `UIScale` that shrinks a
+  fixed-size panel to the viewport (never above 1, floor 0.5); CaseClosedView,
+  TimelineView and EvidencePanel use it, matching what AccusationView and
+  CaseFileView already did inline. `SessionGuard` (server) admits one
+  investigator per server (`Config.Game.MaxInvestigators`); the bootstrap
+  kicks any further player with `Config.Game.FullServerMessage`. It is a
+  safety net for the server-wide phase machine -- Max Players should still
+  be 1 in the published place.
   - The Q/touch accusation gate follows the payload's `open`, announced
     once per case.
 
