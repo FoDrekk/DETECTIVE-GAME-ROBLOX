@@ -1135,6 +1135,17 @@ player, without changing who owns what.
   be 1 in the published place.
   - The Q/touch accusation gate follows the payload's `open`, announced
     once per case.
+  - **DialogueView (R4)**: the panel and the choice list each carry their
+    own `UIScale` (kept in sync by `rescale`), sized against the real
+    choice count rather than a fixed 9-slot allocation, so a short
+    landscape phone can fit the choices under the letterbox bars instead
+    of running them off the top of the screen. `panelY(extra)` computes
+    the panel's Position (scaled, and compensated for a real Roblox
+    behaviour: once anything in an `IgnoreGuiInset` screen carries a
+    `UIScale`, it renders `GetGuiInset().Y` pixels higher than its
+    declared offset); both `rescale` and the open/close tween in
+    `setOpen` go through it, so they never compute two different
+    answers for where the panel sits.
 
 ## Headless verification
 

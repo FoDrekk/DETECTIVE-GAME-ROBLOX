@@ -266,9 +266,30 @@ recommended default; the product owner can redirect.)
 - **R3, replay verified in Studio** after a Solved ending with the P7
   epilogue: empty case file and timeline, first objective, accusing closed,
   Victor meets the detective fresh.
-- **Still to do:** R4 (full touch pass in the phone emulator) and R5
-  (performance baseline). On a phone in landscape the Case Closed panel
-  scales to about 0.6, so its smallest text is small; R4 should judge it.
+- **R4, full touch pass in the phone emulator.** Found and fixed a severe
+  bug: with 5-6 dialogue choices open, the choice list's fixed 9-slot
+  height needed far more room than a landscape phone has below the
+  letterbox bars. On an iPhone 17 Pro / Samsung Galaxy A06 (Studio's
+  device simulator), most choices rendered above the top of the screen --
+  reachable by neither touch nor mouse. The panel and the choice list now
+  each carry their own `UIScale` (kept in sync), sized against the real
+  content height, and shrink together to fit under the letterbox; a
+  separate, real bug was found and worked around along the way -- once
+  anything in an `IgnoreGuiInset` screen carries a `UIScale`, it renders
+  `GetGuiInset().Y` pixels higher than its declared offset. Verified on
+  both devices (all 6 choices land on-screen and are tappable) and at a
+  normal desktop viewport (no regression: scale clamps to 1, panel renders
+  at the exact position it always did). The rest of the touch pass (title,
+  briefing, talking, showing evidence, ending) held up on both devices.
+- **R5, performance baseline.** Measured with LibMP in the Samsung Galaxy
+  A06 device simulator (a low-end phone profile), standing in the open
+  office with the skyline and most interior lights in view: ~17ms CPU /
+  ~24-25ms GPU per frame (2,811 parts, 22 lights) -- GPU-bound, not CPU-
+  bound. Toggling all 7 shadow-casting lights off changed nothing outside
+  noise (24.45ms / 25.58ms / 25.30ms across on-off-on): shadows are not
+  the cost here, so per the proposal's own scope, no shadow change was
+  made. Studio's Play-mode numbers aren't a real phone's, but they're a
+  fair baseline for comparing future changes against.
 
 ## Known follow-ups (not blocking)
 
