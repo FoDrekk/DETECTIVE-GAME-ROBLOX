@@ -192,6 +192,28 @@ local function explainShortfall(
 	return `"{proofLabel}" doesn't put {suspectName} there.`
 end
 
+-- P7: the Solved epilogue for how far this player actually pushed -- the
+-- first authored variant whose facts they have all established, else the
+-- plain `solvedEpilogue`. Reads only this player's own evidence/statements.
+local function solvedEpilogueFor(data: Types.PlayerData, solution: Types.CaseSolution): string?
+	for _, variant in ipairs(solution.solvedVariants or {}) do
+		local allKnown = #variant.requiredFacts > 0
+		for _, fact in ipairs(variant.requiredFacts) do
+			local known = if fact.kind == "Evidence"
+				then data.caseState.discovered[fact.id] ~= nil
+				else data.caseState.unlockedStatements[fact.id] == true
+			if not known then
+				allKnown = false
+				break
+			end
+		end
+		if allKnown then
+			return variant.epilogue
+		end
+	end
+	return solution.solvedEpilogue
+end
+
 local function buildOption(caseId: string, accusation: Types.AccusationDefinition): Types.AccusationOption
 	local suspect = CaseService.getSuspect(caseId, accusation.suspectId)
 	return {
@@ -352,7 +374,7 @@ function AccusationService.getVerdict(player: Player): Types.CaseVerdict?
 			epilogue = solution.unprovenEpilogue
 		else
 			grade = "Solved"
-			epilogue = solution.solvedEpilogue
+			epilogue = solvedEpilogueFor(data, solution)
 		end
 	end
 	-- Phase 2P: only Unproven/Wrong ever need explaining; a Solved case has

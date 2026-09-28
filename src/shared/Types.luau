@@ -462,6 +462,16 @@ export type CaseSolution = {
 	-- holds (solvedEpilogue) or one that doesn't (unprovenEpilogue).
 	solvedEpilogue: string?,
 	unprovenEpilogue: string?,
+	-- P7: a Solved ending that reflects how far the investigation went. The
+	-- first variant whose facts this player has all established replaces
+	-- `solvedEpilogue`. Never changes the grade -- only what a case that
+	-- already held says happened next.
+	solvedVariants: { SolvedEpilogueVariant }?,
+}
+
+export type SolvedEpilogueVariant = {
+	requiredFacts: { FactReference },
+	epilogue: string,
 }
 
 export type DiscoveredEvidence = EvidenceDefinition & {

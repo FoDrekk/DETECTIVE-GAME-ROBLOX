@@ -1101,7 +1101,12 @@ player, without changing who owns what.
   `getVerdict` grades them: Solved when both are in the accusation's
   `motives`/`proofs`, Unproven when the suspect is right but the case isn't,
   Wrong otherwise, with `solution.solvedEpilogue`/`unprovenEpilogue` or the
-  accusation's `wrongEpilogue`. The payload gains `open`, `requiresCase`, and
+  accusation's `wrongEpilogue`. (P7: `solution.solvedVariants` can replace
+  the Solved epilogue with one reflecting how far the investigation went --
+  the first variant whose `requiredFacts` the player has all established.
+  CASE-001 uses it for an investigator who broke Victor. Grades never
+  change.) Unproven/Wrong also carry a one-line `shortfall` (Phase 2P). The
+  payload gains `open`, `requiresCase`, and
   the established `motives`/`proofs` (labels only). It is re-sent when
   objectives complete or reasoning changes.
 - **Remotes**: `DialoguePresent`, `ClaimContradiction`, `AnswerDeduction`

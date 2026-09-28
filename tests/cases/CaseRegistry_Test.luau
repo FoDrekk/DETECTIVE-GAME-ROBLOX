@@ -188,6 +188,28 @@ return function(t)
 		expect.truthy(accusable)
 	end)
 
+	-- P7: every Solved variant is reachable -- it names only facts the case
+	-- actually authors.
+	t.test("every solved-epilogue variant names authored facts", function()
+		local caseDef = CaseRegistry.get("CASE-001")
+		local known = {}
+		for _, ev in ipairs(caseDef.evidence) do
+			known["Evidence:" .. ev.id] = true
+		end
+		for _, st in ipairs(caseDef.statements) do
+			known["Statement:" .. st.id] = true
+		end
+		local variants = caseDef.solution.solvedVariants or {}
+		expect.truthy(#variants > 0)
+		for _, variant in ipairs(variants) do
+			expect.truthy(#variant.epilogue > 0)
+			expect.truthy(#variant.requiredFacts > 0)
+			for _, fact in ipairs(variant.requiredFacts) do
+				expect.truthy(known[fact.kind .. ":" .. fact.id])
+			end
+		end
+	end)
+
 	-- Case definitions contain the solution, so they must never replicate.
 	t.test("case data lives in ServerStorage, not ReplicatedStorage", function()
 		expect.falsy(ReplicatedStorage:FindFirstChild("Config"))

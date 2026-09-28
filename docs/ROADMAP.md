@@ -213,6 +213,8 @@ recommended default; the product owner can redirect.)
   to, and needs a motive (an established deduction) and a proof (an
   established contradiction). The verdict is graded Solved, Unproven or
   Wrong, each with its own epilogue, and the close reports the missteps.
+  (Later, P7: a Solved case where Victor was pushed until he broke gets its
+  own epilogue; accusing early with a case that holds is still Solved.)
 - **Objective text gives leads, not answers** (OBJ-003..OBJ-005 reworded).
 - **Old behaviour is kept** for anything without `claim`, `question` or
   `accusationRules`: the frozen legacy case and its mechanism tests are

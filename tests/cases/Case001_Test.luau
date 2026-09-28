@@ -320,6 +320,8 @@ return function(t)
 		expect.equal(verdict.grade, "Solved")
 		expect.equal(verdict.culpritName, "Victor Lane")
 		expect.truthy(verdict.epilogue)
+		-- P7: Victor was pushed until he broke, so the ending says so.
+		expect.truthy(string.find(verdict.epilogue, "word for word", 1, true))
 		expect.equal(mistakes(player), 0)
 	end)
 
@@ -614,6 +616,20 @@ return function(t)
 		expect.equal(verdict.grade, "Solved")
 		-- Phase 2P: a case that holds has nothing left to account for.
 		expect.equal(verdict.shortfall, nil)
+		-- P7: solved early, Victor never broke -- the plain ending.
+		expect.equal(verdict.epilogue, caseDef.solution.solvedEpilogue)
+	end)
+
+	t.test("P7: breaking Victor changes the ending, never the grade", function()
+		local player = makePlayer()
+		establish(player, { "DEDUCT-003" }, { "CONTRA-004" })
+		local data = PlayerDataService.get(player) :: any
+		data.caseState.unlockedStatements["STMT-SUS-002-BREAK"] = true
+		expect.truthy(AccusationService.accuse(player, "ACC-001", "DEDUCT-003", "CONTRA-004"))
+		local verdict = AccusationService.getVerdict(player) :: any
+		-- The case named still doesn't hold: Unproven, with its own ending.
+		expect.equal(verdict.grade, "Unproven")
+		expect.equal(verdict.epilogue, caseDef.solution.unprovenEpilogue)
 	end)
 
 	t.test("the right man with a case that doesn't hold walks", function()

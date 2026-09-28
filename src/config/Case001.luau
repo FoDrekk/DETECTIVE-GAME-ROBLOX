@@ -1543,6 +1543,16 @@ local Case001: Types.CaseDefinition = {
 			.. "Tuesday that no camera would see him go.",
 		solvedEpilogue = "Victor Lane is charged before sunrise. The dissolution papers are still on "
 			.. "Daniel's desk, unsigned, where he left them.",
+		-- P7: the case holds either way; an investigator who pushed Victor
+		-- until he broke gets an ending that says so.
+		solvedVariants = {
+			{
+				requiredFacts = { { kind = "Statement", id = "STMT-SUS-002-BREAK" } },
+				epilogue = "Victor Lane is charged before sunrise. What he said in that meeting room goes "
+					.. "into the file word for word, and his lawyer can't take it back. The dissolution "
+					.. "papers are still on Daniel's desk, unsigned, where he left them.",
+			},
+		},
 		unprovenEpilogue = "Victor Lane walks out at three in the morning with his lawyer. You know what "
 			.. "happened in that office. You couldn't make it hold.",
 	},
