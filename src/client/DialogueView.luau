@@ -76,6 +76,9 @@ local bodyLabel: TextLabel? = nil
 local hintLabel: TextLabel? = nil
 local toast: TextLabel? = nil
 local choiceList: Frame? = nil
+local choicesFrame: Frame? = nil
+local panelScale: UIScale? = nil
+local choicesScale: UIScale? = nil
 
 local isOpen = false
 local typing = false
@@ -266,6 +269,66 @@ local function unbindChoiceKeys()
 	ContextActionService:UnbindAction(CHOICE_ACTION)
 end
 
+local function choicesHeight(): number
+	local n = #choiceButtons
+	if n == 0 then
+		return 0
+	end
+	return n * Style.ChoiceHeight + (n - 1) * 6
+end
+
+-- The panel's resting Position, `extra` pixels lower (used for the open
+-- animation's starting point). Shared by `rescale` and `setOpen` so they
+-- never compute two different answers for where the panel's bottom sits.
+local function panelY(extra: number): UDim2
+	local scale = if panelScale then panelScale.Scale else 1
+	local inset = GuiService:GetGuiInset().Y
+	return UDim2.new(0.5, 0, 1, -Style.PanelBottomOffset * scale + extra * scale + inset)
+end
+
+-- Phase 3 (R4): on a short landscape phone there isn't room for the panel
+-- plus a full page of choices below the letterbox bars -- the choices were
+-- found to run off the top of the screen, unreachable by touch. Shrink the
+-- panel and the choices as a unit (each keeps its own UIScale, since a
+-- shared scale-everything wrapper would claim 100% of the screen as its own
+-- nominal size and shrink at the exact same rate as its content, never
+-- gaining any relative room) so every choice stays visible and tappable,
+-- rather than clipping the top rows.
+local function rescale()
+	if not panelScale or not choicesScale then
+		return
+	end
+	local camera = workspace.CurrentCamera
+	if not camera then
+		return
+	end
+	-- The choices frame was sized for a full page (9 slots) regardless of how
+	-- many choices are actually showing; shrink it to the real content so the
+	-- scale math below isn't budgeting for empty space that was never drawn.
+	local height = choicesHeight()
+	if choicesFrame then
+		choicesFrame.Size = UDim2.new(1, -32, 0, height)
+	end
+	local viewport = camera.ViewportSize
+	local topMargin = viewport.Y * Style.LetterboxHeight + 16
+	local needed = Style.PanelBottomOffset + Style.PanelHeight + 12 + height
+	local available = math.max(viewport.Y - topMargin, 1)
+	local scale = math.clamp(available / needed, 0.4, 1)
+	panelScale.Scale = scale
+	choicesScale.Scale = scale
+	-- Once anything in an IgnoreGuiInset screen carries a UIScale, it renders
+	-- GetGuiInset().Y pixels higher than its declared offset -- add that back
+	-- so the panel and choices land where the rest of the touch HUD does.
+	if panel and panel.Visible then
+		panel.Position = panelY(0)
+	end
+	if choicesFrame then
+		local inset = GuiService:GetGuiInset().Y
+		choicesFrame.Position =
+			UDim2.new(0.5, 0, 1, -(Style.PanelBottomOffset + Style.PanelHeight + 12) * scale + inset)
+	end
+end
+
 local function clearChoices()
 	unbindChoiceKeys()
 	for _, button in ipairs(choiceButtons) do
@@ -278,6 +341,7 @@ local function clearChoices()
 	if GuiService.SelectedObject and GuiService.SelectedObject:IsDescendantOf(gui :: ScreenGui) then
 		GuiService.SelectedObject = nil
 	end
+	rescale()
 end
 
 local function pick(index: number)
@@ -416,6 +480,7 @@ local function showChoices(payload: Types.DialoguePayload)
 		table.insert(choiceButtons, button)
 	end
 	list.Visible = true
+	rescale()
 
 	ContextActionService:BindAction(CHOICE_ACTION, function(_, state, input)
 		if state ~= Enum.UserInputState.Begin then
@@ -535,12 +600,12 @@ local function setOpen(open: boolean)
 	if open then
 		gui.Enabled = true
 		panel.Visible = true
-		panel.Position = UDim2.new(0.5, 0, 1, -Style.PanelBottomOffset + 24)
+		panel.Position = panelY(24)
 		panel.BackgroundTransparency = 1
 		TweenService:Create(letterTop, TweenInfo.new(0.35, Enum.EasingStyle.Quad), { Size = bar }):Play()
 		TweenService:Create(letterBottom, TweenInfo.new(0.35, Enum.EasingStyle.Quad), { Size = bar }):Play()
 		TweenService:Create(panel, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
-			Position = UDim2.new(0.5, 0, 1, -Style.PanelBottomOffset),
+			Position = panelY(0),
 			BackgroundTransparency = Style.PanelTransparency,
 		}):Play()
 	else
@@ -720,6 +785,12 @@ function DialogueView.start()
 	})
 	root.Visible = false
 	panel = root
+	-- Phase 3 (R4): shrinks the panel to fit a short viewport; see `rescale`.
+	-- Kept off `root`'s own Position -- `rescale` sets that explicitly each
+	-- time, scaled and inset-compensated, rather than relying on how a self-
+	-- scaled object's own offset happens to resolve.
+	panelScale = Instance.new("UIScale")
+	panelScale.Parent = root
 	local sizeLimit = Instance.new("UISizeConstraint")
 	sizeLimit.MaxSize = Vector2.new(Style.PanelMaxWidth, Style.PanelHeight)
 	sizeLimit.Parent = root
@@ -831,6 +902,11 @@ function DialogueView.start()
 	list.Size = UDim2.new(1, -32, 0, 9 * (Style.ChoiceHeight + 6))
 	list.Visible = false
 	list.Parent = screen
+	choicesFrame = list
+	-- Phase 3 (R4): its own UIScale, kept in sync with the panel's by
+	-- `rescale`, rather than one shared wrapper (see the comment on `rescale`).
+	choicesScale = Instance.new("UIScale")
+	choicesScale.Parent = list
 	local listLimit = Instance.new("UISizeConstraint")
 	listLimit.MaxSize = Vector2.new(Style.PanelMaxWidth, 9 * (Style.ChoiceHeight + 6))
 	listLimit.Parent = list
@@ -869,6 +945,10 @@ function DialogueView.start()
 	toast = toastLabel
 
 	InputHints.changed().Event:Connect(setHint)
+	if workspace.CurrentCamera then
+		workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(rescale)
+	end
+	rescale()
 end
 
 return DialogueView
