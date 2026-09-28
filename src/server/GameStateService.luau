@@ -131,6 +131,7 @@ function GameStateService.getClosingSummary(player: Player): Types.CaseClosedSum
 		contradiction = if #reasoning.contradictions > 0 then reasoning.contradictions[1] else nil,
 		verdict = AccusationService.getVerdict(player),
 		mistakes = data.caseState.reasoningMistakes or 0,
+		timelineReconstructed = TimelineService.isEstablished(player),
 	}
 end
 

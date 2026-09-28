@@ -290,6 +290,19 @@ recommended default; the product owner can redirect.)
   the cost here, so per the proposal's own scope, no shadow change was
   made. Studio's Play-mode numbers aren't a real phone's, but they're a
   fair baseline for comparing future changes against.
+- **R7, the timeline puzzle is rewarded.** The closing stats end with
+  "Timeline reconstructed" when the player put the night in order
+  (`CaseClosedSummary.timelineReconstructed`). Shown only when earned,
+  never as a missed-it callout, and it never changes the grade. The
+  stats separators went from three spaces a side to two so the credit
+  clears the "Investigate again" hint on the same row. Verified in Studio.
+- **R8, not done: the desk is still corrected at runtime.** Rewriting
+  `assets/Office.rbxm` with `rbxm-parser` (the only tool available that
+  writes the binary format) was tried against a scratch copy: the output
+  grew from 13 KB to 46 KB and then hung when read back, so it was not
+  trusted with the real asset. The asset is untouched and
+  `OfficeDetailing.settleDanielsDesk` stays. The safe way to do this is in
+  Studio by hand (see "Known follow-ups").
 
 ## Known follow-ups (not blocking)
 
@@ -305,7 +318,16 @@ recommended default; the product owner can redirect.)
   M10: examine now frames from the player's side; evidence panel offset left.
 - **The office asset itself still has Daniel's desk 4 studs up**; M6 corrects
   it at runtime. Fixing `assets/Office.rbxm` directly would let that
-  correction be removed.
+  correction be removed. (Phase 3 R8 tried a scripted rewrite and backed
+  out; see above.) The runtime fix only runs on a fresh bake, so it costs
+  nothing in the shipped place. To fix the source by hand: import
+  `assets/Office.rbxm` into an empty place, move `Furniture.DanielDesk`,
+  `DanielChair`, `DanielMonitor`, `DanielLamp` and `DanielGlow` exactly as
+  `settleDanielsDesk` does (desk and chair down 4.00 studs, chair also 3
+  studs south; monitor and lamp onto the desk top at y = 2.62), save it
+  back with Studio's own "Save to File", then delete the desk, chair,
+  monitor, lamp and glow moves from `settleDanielsDesk` (keep the coffee
+  cup placement, which is a gameplay choice, not the height fix).
 - **Suspect faces are Roblox's default dynamic head.** Classic face decals map
   poorly onto it, so none is applied; distinct faces need dynamic-head assets.
 - ~~Keyboard only.~~ Resolved: touch buttons and gamepad bindings, with

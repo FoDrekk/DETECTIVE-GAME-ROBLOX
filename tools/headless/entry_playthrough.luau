@@ -634,6 +634,12 @@ check(
 		and string.find(closingText("Stats"), "Objectives", 1, true) == nil,
 	"the closing stats count leads followed, not objectives"
 )
+-- Phase 3 (R7): this run reconstructed the timeline, so the closing stats
+-- reward it.
+check(
+	string.find(closingText("Stats"), "Timeline reconstructed", 1, true) ~= nil,
+	"the closing stats credit reconstructing the timeline"
+)
 -- Phase 3 (R1): the fixed-size panels shrink to fit a phone held sideways.
 do
 	local function fitScale(guiName: string, panelName: string): number?
@@ -755,12 +761,18 @@ verdict = summary and summary[1].verdict
 check(verdict and verdict.grade == "Wrong", "accusing Mara: the wrong person")
 check(summary and summary[1].mistakes == 2, "two missteps on the record")
 check(summary and summary[1].objectivesCompleted < summary[1].objectivesTotal, "accused with the case still open")
+-- Phase 3 (R7): this rushed run never opened the timeline, so nothing to reward.
+check(summary and summary[1].timelineReconstructed == false, "no timeline credit without reconstructing it")
 if verdict then
 	say(`  [VERDICT] {verdict.grade}: {verdict.epilogue or ""}`)
 end
 Shim.advance(3)
 check(closingText("Title") == "The wrong person was charged.", "the closing screen: 'The wrong person was charged.'")
 check(string.find(closingText("Stats"), "Missteps 2", 1, true) ~= nil, "the closing screen counts the missteps")
+check(
+	string.find(closingText("Stats"), "Timeline reconstructed", 1, true) == nil,
+	"the closing screen never claims a timeline credit that wasn't earned"
+)
 
 print("\n---- TRANSCRIPT ----")
 print(table.concat(transcript, "\n"))

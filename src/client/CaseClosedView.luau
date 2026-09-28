@@ -161,10 +161,17 @@ function CaseClosedView.show(summary: Types.CaseClosedSummary)
 	timelineLabel.Text = buildTimelineText(summary)
 	-- Phase 3 (R6): objectives are leads, not a score. Accusing opens halfway
 	-- through the chain, so a solved case often ends with some unfollowed.
+	-- Phase 3 (R7): separators are two spaces a side, not three, so the
+	-- timeline credit still clears the "Investigate again" hint sharing
+	-- this row.
 	statsLabel.Text = `Evidence {summary.evidenceExamined}/{summary.evidenceTotal}`
-		.. `   ·   Leads followed {summary.objectivesCompleted}/{summary.objectivesTotal}`
-		.. `   ·   Contradictions {summary.contradictionsIdentified}`
-		.. `   ·   Missteps {summary.mistakes}`
+		.. `  ·  Leads followed {summary.objectivesCompleted}/{summary.objectivesTotal}`
+		.. `  ·  Contradictions {summary.contradictionsIdentified}`
+		.. `  ·  Missteps {summary.mistakes}`
+		-- Phase 3 (R7): a small reward for reconstructing the timeline, which
+		-- never affects the verdict and is easy to skip -- shown only when
+		-- earned, never as a missed-it callout.
+		.. if summary.timelineReconstructed then `  ·  Timeline reconstructed` else ``
 	setVisible(true)
 end
 

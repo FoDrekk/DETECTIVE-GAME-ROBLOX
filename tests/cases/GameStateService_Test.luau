@@ -305,5 +305,26 @@ return function(t)
 		local summary = GameStateService.getClosingSummary(player)
 		expect.truthy(summary)
 		expect.falsy(summary.verdict)
+		-- Phase 3 (R7): completeEverything reconstructs the timeline.
+		expect.truthy(summary.timelineReconstructed)
+	end)
+
+	-- Phase 3 (R7): the closing summary rewards reconstructing the timeline,
+	-- but only once the player has actually done it -- accusing early (the
+	-- timeline puzzle is optional; nothing gates it) must not claim otherwise.
+	t.test("closing summary reports the timeline as reconstructed only once submitted", function()
+		resetToInvestigation()
+		local player = makePlayer()
+		completeThroughObj003(player) -- discovers only EV-004, never submits an order
+		local before = GameStateService.getClosingSummary(player)
+		expect.truthy(before)
+		expect.falsy(before.timelineReconstructed)
+
+		-- Only EV-004 (-> TIMELINE-004) is discovered at this point; a
+		-- single-event order is trivially correct and still establishes it.
+		expect.truthy(TimelineService.submitSequence(player, { "TIMELINE-004" }))
+		local after = GameStateService.getClosingSummary(player)
+		expect.truthy(after)
+		expect.truthy(after.timelineReconstructed)
 	end)
 end

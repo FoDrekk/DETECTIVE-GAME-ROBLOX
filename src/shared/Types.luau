@@ -796,6 +796,10 @@ export type CaseClosedSummary = {
 	verdict: CaseVerdict?,
 	-- M9: connections that didn't hold along the way.
 	mistakes: number,
+	-- Phase 3 (R7): whether this player put the night in its real order
+	-- (TimelineService.isEstablished), which never changes the grade but
+	-- is worth showing since it's easy to skip.
+	timelineReconstructed: boolean,
 }
 
 -- Whether the player's accusation named the culprit, and what happened.
