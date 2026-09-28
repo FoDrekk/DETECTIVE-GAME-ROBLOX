@@ -108,9 +108,13 @@ recommended default; the product owner can redirect.)
   the canonical chronological order it computes; a wrong, incomplete,
   duplicated or invented order is rejected. Establishing is permanent and
   per-player.
-- A new final objective (`OBJ-005`) gates on the established sequence, so the
-  case cannot be closed by collecting objects alone — the player must both
-  reason about the evidence and reconstruct the night.
+- A new final objective gates on the established sequence, so the case
+  cannot be closed by collecting objects alone — the player must both reason
+  about the evidence and reconstruct the night. (Since renumbered to
+  `OBJ-006` as M7-M9 inserted objectives ahead of it, and M9's
+  `accusationRules.opensAfter` below now lets the accusation open well
+  before this objective, or the case, is done — that is the point: accusing
+  early is possible, and costs what it should.)
 
 ### M6 — Production presentation (looks and sounds like a game) — done
 
@@ -209,6 +213,8 @@ recommended default; the product owner can redirect.)
   to, and needs a motive (an established deduction) and a proof (an
   established contradiction). The verdict is graded Solved, Unproven or
   Wrong, each with its own epilogue, and the close reports the missteps.
+  (Later, P7: a Solved case where Victor was pushed until he broke gets its
+  own epilogue; accusing early with a case that holds is still Solved.)
 - **Objective text gives leads, not answers** (OBJ-003..OBJ-005 reworded).
 - **Old behaviour is kept** for anything without `claim`, `question` or
   `accusationRules`: the frozen legacy case and its mechanism tests are
@@ -243,6 +249,48 @@ recommended default; the product owner can redirect.)
   both green. **Awaiting a Roblox Studio playtest** for rendering, camera
   feel, collision, UI layout, NPC animation, and audio.
 
+### Phase 3 — Release readiness — in progress
+
+- **R1, panels fit small screens.** Case Closed (620×580), Timeline
+  (520×500) and the Evidence panel (470×310) were fixed-size and would clip
+  on a phone held sideways. They now shrink to the viewport through a shared
+  `Components.fitToViewport`, as the Accusation and Case File panels already
+  did. Verified in Studio: at a 1530×576 viewport the Case Closed panel,
+  previously cut off at the top, now fits at 0.92.
+- **R2, one investigator per server.** `SessionGuard` turns a second player
+  away with a message. A safety net only: set **Max Players = 1** in Game
+  Settings when publishing (Game Settings needs the place published first).
+- **R6, "Leads followed".** The closing stats count objectives as leads
+  followed rather than "Objectives n/7", which read as a failure on a solved
+  case.
+- **R3, replay verified in Studio** after a Solved ending with the P7
+  epilogue: empty case file and timeline, first objective, accusing closed,
+  Victor meets the detective fresh.
+- **R4, full touch pass in the phone emulator.** Found and fixed a severe
+  bug: with 5-6 dialogue choices open, the choice list's fixed 9-slot
+  height needed far more room than a landscape phone has below the
+  letterbox bars. On an iPhone 17 Pro / Samsung Galaxy A06 (Studio's
+  device simulator), most choices rendered above the top of the screen --
+  reachable by neither touch nor mouse. The panel and the choice list now
+  each carry their own `UIScale` (kept in sync), sized against the real
+  content height, and shrink together to fit under the letterbox; a
+  separate, real bug was found and worked around along the way -- once
+  anything in an `IgnoreGuiInset` screen carries a `UIScale`, it renders
+  `GetGuiInset().Y` pixels higher than its declared offset. Verified on
+  both devices (all 6 choices land on-screen and are tappable) and at a
+  normal desktop viewport (no regression: scale clamps to 1, panel renders
+  at the exact position it always did). The rest of the touch pass (title,
+  briefing, talking, showing evidence, ending) held up on both devices.
+- **R5, performance baseline.** Measured with LibMP in the Samsung Galaxy
+  A06 device simulator (a low-end phone profile), standing in the open
+  office with the skyline and most interior lights in view: ~17ms CPU /
+  ~24-25ms GPU per frame (2,811 parts, 22 lights) -- GPU-bound, not CPU-
+  bound. Toggling all 7 shadow-casting lights off changed nothing outside
+  noise (24.45ms / 25.58ms / 25.30ms across on-off-on): shadows are not
+  the cost here, so per the proposal's own scope, no shadow change was
+  made. Studio's Play-mode numbers aren't a real phone's, but they're a
+  fair baseline for comparing future changes against.
+
 ## Known follow-ups (not blocking)
 
 - **Creator Store assets.** The office furniture is code-built (PropKit)
@@ -269,6 +317,7 @@ recommended default; the product owner can redirect.)
 - **Single-player scope.** The phase machine is server-wide, so a second
   player in the same server shares one briefing/investigation/closing phase.
   Fine for a 1-player server; per-player phases are needed for more.
+  (Phase 3: `SessionGuard` now turns a second player away.)
 - **Running the unit suite inside a live play session** drives that shared
   phase and broadcasts it to the real client; restart Play afterwards.
 

@@ -36,6 +36,7 @@
 
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Logger = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Logger"))
@@ -54,10 +55,13 @@ local CEILING_Y = 12
 -- Underside of the dropped ceilings over Daniel's office and the meeting
 -- room (OfficeDetailing builds them at y = 11, 0.3 thick).
 local DROPPED_Y = 10.85
--- Top of the walkable floor surface, set just above the old Y=0 so every
--- floor-standing prop (placed at Y=0) still reads as resting on it. See
--- finishShell for the full floor layering.
-local FLOOR_LIFT = 0.05
+-- Floors are laid out so the base carpet's top sits exactly at the old Y=0
+-- the authored shell and all floor-standing props use, so nothing sinks into
+-- it. Room finishes are a thin decorative layer 0.03 above the carpet (the
+-- smallest gap that reliably avoids z-fighting); both are walkable. See
+-- finishShell for the full layering.
+local FLOOR_TOP = 0.00
+local ROOM_TOP = 0.03
 
 local Style = Config.Environment.Interior
 
@@ -151,33 +155,41 @@ local function finishShell(office: Instance, folder: Instance)
 	--
 	--   * `Shell.Floor` is sunk well below the room and left only as a
 	--     backstop (it stays collidable/queryable, but nothing rests on it).
-	--   * The base `Carpet` becomes the real floor: built like every other
-	--     finish, then made CanCollide/CanQuery. Player collision and
-	--     SuspectSpawner.floorBelow's downward raycast both land on it.
-	--   * Room slabs are thin and sit a clear gap above the base carpet;
-	--     every decorative prop (placed at Y=0) rests on the carpet with a
-	--     negligible sink, exactly as it did on the shell floor before.
+	--   * The base `Carpet` is the real floor, with its top at the authored
+	--     Y=0.00 so every floor-standing prop (authored or placed at Y=0)
+	--     rests on it exactly rather than sinking. It is CanCollide/CanQuery,
+	--     so player collision and SuspectSpawner.floorBelow's downward
+	--     raycast both land on it.
+	--   * Room slabs are a thin decorative layer 0.03 above the carpet (the
+	--     smallest gap that reliably avoids z-fighting) and are also
+	--     CanCollide/CanQuery, so inside a room the player and NPCs stand on
+	--     the surface actually being drawn (0.03) instead of sinking to the
+	--     carpet 0.03 below it.
 	--
-	-- Clearances: shell-floor top is sunk to -0.10; carpet spans -0.01..0.05;
-	-- room slabs span 0.08..0.13. Every pair is separated by >= 0.03 and the
-	-- large flat surfaces (carpet vs shell) by 0.09, so nothing fights.
+	-- Clearances: shell-floor top is sunk to -0.60; carpet spans -0.06..0.00;
+	-- room slabs span -0.02..0.03. Every visible pair is separated by >= 0.03
+	-- and the large flat surfaces (carpet vs shell) by 0.54, so nothing
+	-- fights.
 
+	-- Guarded by an attribute: an Edit-mode bake sinks it once and persists
+	-- that; a later re-run (partial rebuild) must not sink it again.
 	local shellFloor = find(office, { "Shell", "Floor" })
-	if shellFloor and shellFloor:IsA("BasePart") then
-		-- Sink the authored floor so its top is ~0.10 below the new surface.
+	if shellFloor and shellFloor:IsA("BasePart") and not shellFloor:GetAttribute("FloorSunk") then
+		-- Sink the authored floor so its top is well below the new surface.
 		shellFloor.Position = Vector3.new(
 			shellFloor.Position.X,
 			shellFloor.Position.Y - 0.6,
 			shellFloor.Position.Z
 		)
+		shellFloor:SetAttribute("FloorSunk", true)
 	end
 
 	local floors = Instance.new("Folder")
 	floors.Name = "Floors"
 	floors.Parent = folder
 
-	-- The base carpet: the physical, walkable floor.
-	local carpet = slab(floors, "Carpet", -29.5, 29.5, -23.5, 23.5, FLOOR_LIFT - 0.03, 0.06, Color3.fromRGB(58, 62, 70), M.Carpet)
+	-- The base carpet: the physical, walkable floor everywhere.
+	local carpet = slab(floors, "Carpet", -29.5, 29.5, -23.5, 23.5, FLOOR_TOP - 0.03, 0.06, Color3.fromRGB(58, 62, 70), M.Carpet)
 	carpet.CanCollide = true
 	carpet.CanQuery = true
 
@@ -190,12 +202,15 @@ local function finishShell(office: Instance, folder: Instance)
 		{ name = "Kitchenette", x0 = -13.5, x1 = -9.5, z0 = -23.5, z1 = -13.2, color = Color3.fromRGB(196, 194, 188), material = M.CeramicTiles },
 		{ name = "Runner", x0 = -7, x1 = 3, z0 = -23.5, z1 = 6, color = Color3.fromRGB(82, 84, 90), material = M.Carpet },
 	}
-	-- Room finishes: thin, disjoint, a clear gap above the base carpet.
+	-- Room finishes: thin, disjoint, a clear gap above the base carpet. They
+	-- are the visible floor in their rooms, so they are walkable too.
 	for _, zone in ipairs(zones) do
-		slab(floors, zone.name, zone.x0, zone.x1, zone.z0, zone.z1, FLOOR_LIFT + 0.055, 0.05, zone.color, zone.material)
+		local finish = slab(floors, zone.name, zone.x0, zone.x1, zone.z0, zone.z1, ROOM_TOP - 0.025, 0.05, zone.color, zone.material)
+		finish.CanCollide = true
+		finish.CanQuery = true
 	end
 	-- The doormat sits on the lobby finish, not on the base carpet.
-	slab(floors, "Doormat", 14.8, 21.2, 21.4, 23.4, FLOOR_LIFT + 0.115, 0.03, Color3.fromRGB(36, 36, 38), M.Fabric)
+	slab(floors, "Doormat", 14.8, 21.2, 21.4, 23.4, ROOM_TOP + 0.01, 0.02, Color3.fromRGB(36, 36, 38), M.Fabric)
 
 	-- A suspended ceiling at 12 studs with a T-bar grid.
 	local ceiling = Instance.new("Folder")
@@ -232,8 +247,10 @@ local function finishShell(office: Instance, folder: Instance)
 	local blinds = { [-22] = 0.8, [-4] = 0.22, [14] = 0.5 }
 	for x, lowered in pairs(blinds) do
 		PropKit.blinds(windows, at(x, -23.55, SOUTH, 7), 11.4, 7.4, lowered)
+		-- The light lives on the authored glass; skip if a bake already
+		-- attached one (force re-bake leaves it behind with the shell).
 		local glass = shell and shell:FindFirstChild(`WinGlass_{x}`)
-		if glass and glass:IsA("BasePart") then
+		if glass and glass:IsA("BasePart") and not glass:FindFirstChildWhichIsA("SurfaceLight") then
 			PropKit.light(glass, "SurfaceLight", Style.CityGlow.Brightness, Style.CityGlow.Range, Style.CityGlow.Color, {
 				face = Enum.NormalId.Back,
 				angle = 75,
@@ -285,6 +302,19 @@ local function buildLights(folder: Instance): { BasePart }
 		table.insert(flicker, diffuser)
 	end
 	return flicker
+end
+
+-- Locate the flicker target inside an already-built (or baked) interior, so
+-- the runtime loop can be armed whether the geometry was just built or
+-- adopted from an Edit-mode bake.
+local function findFlickerParts(interior: Instance): { BasePart }
+	local lights = interior:FindFirstChild("Lights")
+	local records = lights and lights:FindFirstChild("Records")
+	local diffuser = records and records:FindFirstChild("Diffuser")
+	if diffuser and diffuser:IsA("BasePart") then
+		return { diffuser }
+	end
+	return {}
 end
 
 -- The records-room tube: mostly steady, now and then a stutter. One light,
@@ -370,9 +400,9 @@ local function danielsOffice(office: Instance, folder: Instance)
 	PropKit.sideChair(room, at(-25.8, -12.0, SOUTH), { upholstery = P.FabricWarm, yaw = -14 })
 
 	PropKit.shelving(room, at(-27.2, -13.4, SOUTH), 4.6, 7.4, 4, 31, { frame = P.WalnutDark, material = M.Wood, depth = 1.1 })
-	-- The rug rests on the room finish (top at FLOOR_LIFT + 0.08), not the
-	-- base carpet, so it is not buried by the thin floor slab.
-	PropKit.rug(room, at(-24, -7, NORTH, FLOOR_LIFT + 0.08), 10, 7.5, Color3.fromRGB(70, 58, 52), Color3.fromRGB(46, 38, 34))
+	-- The rug rests on the room finish (top at ROOM_TOP), not the base
+	-- carpet, so it is not buried by the thin floor slab.
+	PropKit.rug(room, at(-24, -7, NORTH, ROOM_TOP), 10, 7.5, Color3.fromRGB(70, 58, 52), Color3.fromRGB(46, 38, 34))
 	PropKit.framedArt(room, at(-25.4, -2.52, NORTH, 6.3), 3.2, 2.3, 11)
 	PropKit.framedArt(room, at(-28.7, -2.52, NORTH, 6.6), 1.2, 1.5, 12)
 	-- His jacket is still on the rack.
@@ -459,18 +489,21 @@ local function meetingRoom(office: Instance, folder: Instance)
 	if panelOn and panelOn:IsA("BasePart") then
 		panelOn.Color = Color3.fromRGB(14, 20, 30)
 		panelOn.Material = M.Neon
-		PropKit.label(panelOn, Enum.NormalId.Left, "HDMI 1\nNo signal", {
-			color = Color3.fromRGB(110, 130, 160),
-			font = Enum.Font.GothamMedium,
-			size = 22,
-			lightInfluence = 0,
-		})
+		-- The label lives on the authored part; one bake already attached it.
+		if not panelOn:FindFirstChildOfClass("SurfaceGui") then
+			PropKit.label(panelOn, Enum.NormalId.Left, "HDMI 1\nNo signal", {
+				color = Color3.fromRGB(110, 130, 160),
+				font = Enum.Font.GothamMedium,
+				size = 22,
+				lightInfluence = 0,
+			})
+		end
 	end
 
 	-- The whiteboard: last quarter, and a partnership struck out.
 	local board = find(office, { "Furniture", "Whiteboard" })
 	if board and board:IsA("BasePart") then
-		local gui = PropKit.label(board, Enum.NormalId.Back, "", { pixelsPerStud = 60 })
+		local gui = board:FindFirstChildOfClass("SurfaceGui") or PropKit.label(board, Enum.NormalId.Back, "", { pixelsPerStud = 60 })
 		local text = gui:FindFirstChildOfClass("TextLabel")
 		if text then
 			text.RichText = true
@@ -481,7 +514,7 @@ local function meetingRoom(office: Instance, folder: Instance)
 			text.TextXAlignment = Enum.TextXAlignment.Left
 			text.TextYAlignment = Enum.TextYAlignment.Top
 			text.Text = "Q3 TARGETS\n\n<s>R&amp;L</s>   <font color=\"#9a2a2a\">R</font>\n\nretainers +12%\nnew clients: 4\n\n<font color=\"#9a2a2a\">sign by FRI</font>"
-			local pad = Instance.new("UIPadding")
+			local pad = text:FindFirstChildOfClass("UIPadding") or Instance.new("UIPadding")
 			pad.PaddingLeft = UDim.new(0, 40)
 			pad.PaddingTop = UDim.new(0, 26)
 			pad.Parent = text
@@ -518,12 +551,14 @@ local function reception(office: Instance, folder: Instance): BasePart?
 		fascia.Size = Vector3.new(6.2, 3.0, 0.14)
 		fascia.Color = P.Walnut
 		fascia.Material = M.WoodPlanks
-		PropKit.label(fascia, Enum.NormalId.Back, "REYES & LANE", {
-			color = Color3.fromRGB(206, 176, 112),
-			font = Enum.Font.GothamBold,
-			pixelsPerStud = 50,
-			size = 30,
-		})
+		if not fascia:FindFirstChildOfClass("SurfaceGui") then
+			PropKit.label(fascia, Enum.NormalId.Back, "REYES & LANE", {
+				color = Color3.fromRGB(206, 176, 112),
+				font = Enum.Font.GothamBold,
+				pixelsPerStud = 50,
+				size = 30,
+			})
+		end
 	end
 	destroy(office, { "Furniture", "ReceptionChair" })
 	destroy(office, { "Furniture", "LobbyBench" })
@@ -619,7 +654,7 @@ local function openPlan(folder: Instance)
 	pod(25, 0.3, 4.2, 11, { [1] = { screen = "on" } })
 
 	-- Lounge along the south wall.
-	PropKit.rug(room, at(-22.5, 20.4, NORTH, FLOOR_LIFT + 0.08), 11, 5.6, Color3.fromRGB(96, 88, 80), Color3.fromRGB(70, 64, 58))
+	PropKit.rug(room, at(-22.5, 20.4, NORTH, FLOOR_TOP), 11, 5.6, Color3.fromRGB(96, 88, 80), Color3.fromRGB(70, 64, 58))
 	PropKit.sofa(room, at(-22.5, 22.0, NORTH), 7, P.Fabric, M.Fabric)
 	PropKit.coffeeTable(room, at(-22.5, 18.9, NORTH), 4, 2.2)
 	PropKit.mug(room, at(-21.6, 18.7, NORTH, 1.26), Color3.fromRGB(60, 80, 110))
@@ -702,30 +737,40 @@ function OfficeInterior.start()
 		log:warn(`Workspace.{Config.Environment.OfficeModelName} not found; skipping interior`)
 		return
 	end
-	local folder = office:FindFirstChild(FOLDER_NAME)
-	if folder then
-		folder:Destroy()
-	end
-	local interior = Instance.new("Folder")
-	interior.Name = FOLDER_NAME
-	interior.Parent = office
+	local interior = office:FindFirstChild(FOLDER_NAME)
+	local wasBaked = interior ~= nil
+	if interior then
+		-- Baked already (Edit-mode bake or a previous run): adopt the
+		-- geometry as-is so author edits to props and lights survive. Only
+		-- the runtime wiring below runs.
+		log:info("interior already present; adopting baked geometry")
+	else
+		interior = Instance.new("Folder")
+		interior.Name = FOLDER_NAME
+		interior.Parent = office
 
-	finishShell(office, interior)
-	local flicker = buildLights(interior)
-	danielsOffice(office, interior)
-	recordsRoom(office, interior)
-	meetingRoom(office, interior)
-	reception(office, interior)
-	openPlan(interior)
-	centre(interior)
-	-- The shell's authored block desks, chairs and monitors are replaced.
-	for i = 1, 3 do
-		destroy(office, { "Furniture", `MainDesk_{i}` })
-		destroy(office, { "Furniture", `MainChair_{i}` })
-		destroy(office, { "Furniture", `MainMon_{i}` })
+		finishShell(office, interior)
+		buildLights(interior)
+		danielsOffice(office, interior)
+		recordsRoom(office, interior)
+		meetingRoom(office, interior)
+		reception(office, interior)
+		openPlan(interior)
+		centre(interior)
+		-- The shell's authored block desks, chairs and monitors are replaced.
+		for i = 1, 3 do
+			destroy(office, { "Furniture", `MainDesk_{i}` })
+			destroy(office, { "Furniture", `MainChair_{i}` })
+			destroy(office, { "Furniture", `MainMon_{i}` })
+		end
+		destroy(office, { "Furniture", "StorageCredenza" })
 	end
-	destroy(office, { "Furniture", "StorageCredenza" })
-	startFlicker(flicker)
+
+	-- The flicker loop is runtime state: an Edit-mode bake only positions
+	-- the parts; a running game arms the loop.
+	if RunService:IsRunning() then
+		startFlicker(findFlickerParts(interior))
+	end
 
 	local parts, lights = 0, 0
 	for _, d in ipairs(interior:GetDescendants()) do
@@ -735,7 +780,7 @@ function OfficeInterior.start()
 			lights += 1
 		end
 	end
-	log:info("interior built", { parts = parts, lights = lights })
+	log:info("interior ready", { parts = parts, lights = lights, baked = wasBaked })
 end
 
 return OfficeInterior

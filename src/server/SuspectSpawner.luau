@@ -22,6 +22,7 @@
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local Logger = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Logger"))
@@ -249,6 +250,31 @@ local function floorBelow(position: Vector3, ignore: Instance): number
 	return if hit then hit.Position.Y else position.Y - PLACEMENT_HEIGHT
 end
 
+-- World-space lowest point of any part in the model: the soles of its feet.
+-- Uses each part's own CFrame so a rotated/mesh foot is measured where it is.
+local function lowestPoint(model: Model): number
+	local lowest = math.huge
+	for _, descendant in ipairs(model:GetDescendants()) do
+		if descendant:IsA("BasePart") then
+			local bottom = (descendant.CFrame * CFrame.new(0, -descendant.Size.Y / 2, 0)).Position.Y
+			if bottom < lowest then
+				lowest = bottom
+			end
+		end
+	end
+	return if lowest == math.huge then 0 else lowest
+end
+
+-- Drop the model along Y so the soles of its feet rest on the floor under
+-- the authored position (XZ/yaw untouched). Idempotent: re-running after the
+-- rig has settled corrects any residual sink.
+local function groundModel(model: Model, placement: Types.NpcPlacement)
+	local delta = floorBelow(placement.position, model) - lowestPoint(model)
+	if math.abs(delta) > 1e-4 then
+		model:PivotTo(model:GetPivot() + Vector3.new(0, delta, 0))
+	end
+end
+
 local function addNameTag(head: BasePart, name: string, role: string)
 	local Theme = Config.UI.Theme
 
@@ -339,6 +365,11 @@ local function buildNpc(suspect: Types.SuspectDefinition): Model?
 	humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
 	humanoid.BreakJointsOnDeath = false
 	humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
+	-- Fix the rig's proportions now: automatic avatar scaling resizes the
+	-- limbs a step after creation (a part's OriginalSize != Size), which
+	-- lowers the feet after they have already been grounded below and leaves
+	-- the avatar sunk into the floor.
+	humanoid.AutomaticScalingEnabled = false
 
 	local root = model:FindFirstChild("HumanoidRootPart") :: BasePart
 	root.Anchored = true
@@ -350,15 +381,14 @@ local function buildNpc(suspect: Types.SuspectDefinition): Model?
 	end
 
 	-- Stand the avatar on the floor under its authored position, facing
-	-- its authored lookAt.
+	-- its authored lookAt. Ground by the lowest posed part (the feet) rather
+	-- than GetBoundingBox, which can report a box above the actual limbs.
 	local position = placement.position
 	local facing = if placement.lookAt
 		then CFrame.lookAt(position, Vector3.new(placement.lookAt.X, position.Y, placement.lookAt.Z))
 		else CFrame.new(position)
 	model:PivotTo(facing)
-	local boxCFrame, boxSize = model:GetBoundingBox()
-	local feetY = boxCFrame.Position.Y - boxSize.Y / 2
-	model:PivotTo(facing + Vector3.new(0, floorBelow(position, model) - feetY, 0))
+	groundModel(model, placement)
 
 	-- The interaction contract lives on its own part, welded to the root
 	-- so it follows the avatar when it turns.
@@ -415,6 +445,18 @@ local function faceSpeaker(player: Player, suspectId: string)
 	):Play()
 end
 
+-- A baked NPC persists in the place (Edit-mode bake). Adopt it by the hitbox
+-- part named after the suspect id instead of rebuilding the avatar, so any
+-- author repositioning of the model survives.
+local function findBakedNpc(folder: Instance, suspect: Types.SuspectDefinition): Model?
+	for _, child in ipairs(folder:GetChildren()) do
+		if child:IsA("Model") and child:FindFirstChild(suspect.id, true) then
+			return child
+		end
+	end
+	return nil
+end
+
 function SuspectSpawner.start()
 	local office = workspace:FindFirstChild(Config.Environment.OfficeModelName)
 	local parent = office or workspace
@@ -426,25 +468,52 @@ function SuspectSpawner.start()
 		folder.Parent = parent
 	end
 
-	local spawned = 0
+	local spawned, adopted = 0, 0
+	local staged: { { model: Model, placement: Types.NpcPlacement } } = {}
 	for _, suspect in ipairs(CaseService.getSuspects(Config.Game.AutoStartCase)) do
-		local model = buildNpc(suspect)
+		local model = findBakedNpc(folder, suspect)
 		if model then
-			model.Parent = folder
+			adopted += 1
+		else
+			model = buildNpc(suspect)
+		end
+		if model then
+			if not model.Parent then
+				model.Parent = folder
+			end
 			spawnedModels[suspect.id] = model
-			local humanoid = model:FindFirstChildOfClass("Humanoid")
-			if humanoid then
-				playIdle(humanoid)
+			local placement = suspect.npcPlacement
+			if placement then
+				table.insert(staged, { model = model, placement = placement })
+			end
+			-- The idle loop and the conversation listener are runtime state:
+			-- an Edit-mode bake only stages the models.
+			if RunService:IsRunning() then
+				local humanoid = model:FindFirstChildOfClass("Humanoid")
+				if humanoid then
+					playIdle(humanoid)
+				end
 			end
 			spawned += 1
 		end
 	end
 
-	StoryEvents.on("ConversationStarted", function(player: Player, data: { [string]: any })
-		faceSpeaker(player, data.suspectId)
-	end)
+	-- The rig's proportional scaling settles a step after creation and can
+	-- lower the feet, so re-ground every staged avatar once it has.
+	task.wait()
+	for _, entry in ipairs(staged) do
+		if entry.model.Parent then
+			groundModel(entry.model, entry.placement)
+		end
+	end
 
-	log:info("suspects spawned", { count = spawned })
+	if RunService:IsRunning() then
+		StoryEvents.on("ConversationStarted", function(player: Player, data: { [string]: any })
+			faceSpeaker(player, data.suspectId)
+		end)
+	end
+
+	log:info("suspects staged", { count = spawned, adopted = adopted })
 end
 
 return SuspectSpawner

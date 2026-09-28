@@ -628,6 +628,34 @@ check(closedPhase and closedPhase[1] == "CaseClosed", "phase CaseClosed")
 Shim.advance(3)
 check(closingText("Title") == "Case solved.", "the closing screen: 'Case solved.'")
 check(string.find(closingText("Epilogue"), "unsigned", 1, true) ~= nil, "the closing screen tells what happened next")
+-- Phase 3 (R6): objectives read as leads, not a score.
+check(
+	string.find(closingText("Stats"), "Leads followed", 1, true) ~= nil
+		and string.find(closingText("Stats"), "Objectives", 1, true) == nil,
+	"the closing stats count leads followed, not objectives"
+)
+-- Phase 3 (R1): the fixed-size panels shrink to fit a phone held sideways.
+do
+	local function fitScale(guiName: string, panelName: string): number?
+		local panel = find(gui(guiName), panelName)
+		local scale = panel and panel:FindFirstChildOfClass("UIScale")
+		return scale and (scale :: UIScale).Scale
+	end
+	check(fitScale("MysteryCase_CaseClosed", "CaseClosed") == 1, "on a desktop screen the closing panel is full size")
+	camera.ViewportSize = Vector2.new(844, 390)
+	Shim.advance(0.1)
+	local closed = fitScale("MysteryCase_CaseClosed", "CaseClosed")
+	local timeline = fitScale("MysteryCase_Timeline", "Timeline")
+	local evidence = fitScale("MysteryCase_Evidence", "EvidencePanel")
+	say(`  [FIT 844x390] closing {closed} / timeline {timeline} / evidence {evidence}`)
+	check(
+		closed and closed * 580 <= 390 - 40 and timeline and timeline * 500 <= 390 - 40 and evidence and evidence * 310 <= 390 - 40,
+		"on a phone in landscape the closing, timeline and evidence panels fit the screen"
+	)
+	camera.ViewportSize = Vector2.new(1280, 720)
+	Shim.advance(0.1)
+	check(fitScale("MysteryCase_CaseClosed", "CaseClosed") == 1, "back on a desktop screen, full size again")
+end
 
 -- Investigate again: a clean second run.
 pressInteract()
@@ -645,6 +673,22 @@ check(
 	secondRun and secondRun[1] == "Investigation" and camera.CameraType == Enum.CameraType.Custom,
 	"E begins the second run, camera back with the player"
 )
+-- Phase 3 (R3): nothing from the solved run carries into the second.
+do
+	local fresh = reasoning()
+	check(
+		fresh and #fresh.statements == 0 and #fresh.contradictions == 0 and #fresh.deductions == 0 and #fresh.evidence == 0,
+		"the replay starts with an empty case file"
+	)
+	check(objective() == "OBJ-000", "the replay starts at the first objective")
+	local accusationFresh = lastSent("AccusationUpdated")
+	check(accusationFresh and not accusationFresh[1].open, "the replay starts with accusing closed")
+	local timelineFresh = lastSent("TimelineUpdated")
+	check(
+		timelineFresh and #timelineFresh[1].events == 0 and not timelineFresh[1].established,
+		"the replay starts with an empty timeline"
+	)
+end
 
 --------------------------------------------------------------------------
 -- Second run: sloppy, and an early accusation of the wrong person

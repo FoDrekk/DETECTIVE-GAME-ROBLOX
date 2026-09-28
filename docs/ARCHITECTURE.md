@@ -642,9 +642,11 @@ M5 makes establishing the sequence a real, server-validated investigation step.
 - **Requirement gate.** `ObjectiveRequirement.timelineEstablished` is a new
   optional gate alongside `evidence`/`interaction`/`target`/`contradiction`/
   `deduction`; `requirementSatisfied` checks the player's own live state.
-  CASE-001's `OBJ-005` ("Reconstruct the Timeline") uses it and is the final
-  objective, so the accusation picker is only offered once the player has both
-  reasoned about the case and ordered its events.
+  CASE-001's `OBJ-006` ("Reconstruct the Night") uses it and is the final
+  objective. It no longer gates the accusation picker on its own: M9's
+  `accusationRules.opensAfter` (see below) lets `[Q]` open as soon as
+  `OBJ-002` completes, well before the timeline (or the rest of the case)
+  is reconstructed -- accusing early is possible, and costs what it should.
 - **Spoiler safety.** Until established, the client receives the events with
   their clock times hidden (it renders `?`); the canonical order and the true
   timestamps are only sent once the player has earned them. The payload
@@ -1099,7 +1101,12 @@ player, without changing who owns what.
   `getVerdict` grades them: Solved when both are in the accusation's
   `motives`/`proofs`, Unproven when the suspect is right but the case isn't,
   Wrong otherwise, with `solution.solvedEpilogue`/`unprovenEpilogue` or the
-  accusation's `wrongEpilogue`. The payload gains `open`, `requiresCase`, and
+  accusation's `wrongEpilogue`. (P7: `solution.solvedVariants` can replace
+  the Solved epilogue with one reflecting how far the investigation went --
+  the first variant whose `requiredFacts` the player has all established.
+  CASE-001 uses it for an investigator who broke Victor. Grades never
+  change.) Unproven/Wrong also carry a one-line `shortfall` (Phase 2P). The
+  payload gains `open`, `requiresCase`, and
   the established `motives`/`proofs` (labels only). It is re-sent when
   objectives complete or reasoning changes.
 - **Remotes**: `DialoguePresent`, `ClaimContradiction`, `AnswerDeduction`
@@ -1114,9 +1121,31 @@ player, without changing who owns what.
     established facts, with a stamp on success.
   - AccusationView has three sections (who, why, what proves it) and ACCUSE
     enabled only when complete.
-  - CaseClosedView shows the grade, the epilogue and the missteps.
+  - CaseClosedView shows the grade, the epilogue and the missteps. (Phase 3:
+    the objective count reads "Leads followed", since accusing opens partway
+    through the objective chain.)
+- **Phase 3 (release readiness)**: `Components.fitToViewport(panel,
+  designSize, margin?, minScale?)` adds a `UIScale` that shrinks a
+  fixed-size panel to the viewport (never above 1, floor 0.5); CaseClosedView,
+  TimelineView and EvidencePanel use it, matching what AccusationView and
+  CaseFileView already did inline. `SessionGuard` (server) admits one
+  investigator per server (`Config.Game.MaxInvestigators`); the bootstrap
+  kicks any further player with `Config.Game.FullServerMessage`. It is a
+  safety net for the server-wide phase machine -- Max Players should still
+  be 1 in the published place.
   - The Q/touch accusation gate follows the payload's `open`, announced
     once per case.
+  - **DialogueView (R4)**: the panel and the choice list each carry their
+    own `UIScale` (kept in sync by `rescale`), sized against the real
+    choice count rather than a fixed 9-slot allocation, so a short
+    landscape phone can fit the choices under the letterbox bars instead
+    of running them off the top of the screen. `panelY(extra)` computes
+    the panel's Position (scaled, and compensated for a real Roblox
+    behaviour: once anything in an `IgnoreGuiInset` screen carries a
+    `UIScale`, it renders `GetGuiInset().Y` pixels higher than its
+    declared offset); both `rescale` and the open/close tween in
+    `setOpen` go through it, so they never compute two different
+    answers for where the panel sits.
 
 ## Headless verification
 

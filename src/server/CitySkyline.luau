@@ -19,6 +19,7 @@
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
@@ -99,9 +100,14 @@ local function lightWindows(tower: BasePart, scale: number, facade: boolean, rng
 	return lit
 end
 
-local function aviationLight(tower: BasePart, parent: Instance)
+-- The lamp itself (steady, bright): built by the bake or by a fresh run.
+-- The blink is runtime state, armed separately below.
+local function aviationLight(tower: BasePart, parent: Instance): BasePart
 	local top = tower.Position + Vector3.new(0, tower.Size.Y / 2 + 0.4, 0)
-	local lamp = block("AviationLight", Vector3.new(0.6, 0.6, 0.6), top, AVIATION_RED, Enum.Material.Neon, parent)
+	return block("AviationLight", Vector3.new(0.6, 0.6, 0.6), top, AVIATION_RED, Enum.Material.Neon, parent)
+end
+
+local function armAviationBlink(lamp: BasePart)
 	TweenService:Create(
 		lamp,
 		TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
@@ -114,6 +120,23 @@ function CitySkyline.start()
 	local backdrop = office and office:FindFirstChild("Backdrop")
 	if not office or not backdrop then
 		log:warn("no authored backdrop; skipping skyline")
+		return
+	end
+
+	local existing = office:FindFirstChild(FOLDER_NAME)
+	if existing then
+		-- Baked already: adopt the geometry as-is (it is deterministic, and
+		-- author edits to it survive). The aviation blink is runtime state:
+		-- re-arm it only when a game is running.
+		if RunService:IsRunning() then
+			for _, child in ipairs(existing:GetDescendants()) do
+				if child.Name == "AviationLight" and child:IsA("BasePart") then
+					child.Transparency = 0
+					armAviationBlink(child)
+				end
+			end
+		end
+		log:info("skyline already present; adopting baked geometry", { parts = #existing:GetChildren() })
 		return
 	end
 
@@ -192,7 +215,12 @@ function CitySkyline.start()
 		return a.Position.Y + a.Size.Y / 2 > b.Position.Y + b.Size.Y / 2
 	end)
 	for i = 1, math.min(3, #towers) do
-		aviationLight(towers[i], folder)
+		local lamp = aviationLight(towers[i], folder)
+		-- The blink only runs in a live game; an Edit-mode bake leaves the
+		-- lamps steady and bright.
+		if RunService:IsRunning() then
+			armAviationBlink(lamp)
+		end
 	end
 
 	log:info("skyline built", { towers = #towers, litWindows = windows, parts = #folder:GetChildren() })

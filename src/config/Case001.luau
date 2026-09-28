@@ -199,6 +199,10 @@ local Case001: Types.CaseDefinition = {
 		{
 			instanceName = "CoffeeCup",
 			text = "Daniel's mug. Chamomile -- the tag still hangs over the rim. Stone cold.",
+			-- Phase 2P: the authored asset's own prompt read as "Examine
+			-- Coffee Cup", indistinguishable from EV-006 (the visitor's
+			-- espresso cup) a few studs away. Named for what it actually is.
+			label = "Examine Daniel's Mug",
 		},
 		{
 			instanceName = "Pen",
@@ -443,7 +447,14 @@ local Case001: Types.CaseDefinition = {
 		{
 			id = "OBJ-005",
 			title = "The Last Ten Minutes",
-			description = "Victor has a new story for the last ten minutes. Everything in it can be checked.",
+			-- Reworded (Phase 2P): the previous text asserted Victor had
+			-- already revised his story, but this objective becomes active
+			-- as soon as his "half ten" alibi is contradicted (OBJ-003/004)
+			-- -- before he has said anything about the badge log directly.
+			-- This must read true whether he is confronted with it in
+			-- conversation or via the case file first.
+			description = "His badge places him in the building until 11:52. Take that to him, "
+				.. "and find out what he says happened in the ten minutes he hasn't explained.",
 			requiredEvidence = {},
 			requiredInteractions = {},
 			requirements = {
@@ -517,7 +528,12 @@ local Case001: Types.CaseDefinition = {
 							"SAM-ANYONE-1",
 							{ lacks("Statement", "STMT-SUS-003-VICTOR") }
 						),
-						ask("badges", "How does anyone get in after hours?", "SAM-BADGE-1", nil, true),
+						ask(
+							"badges",
+							"How does anyone get in after hours?",
+							"SAM-BADGE-1",
+							{ lacks("Statement", "STMT-SUS-003-BADGE") }
+						),
 						ask(
 							"cameras",
 							"Does the building have cameras?",
@@ -604,6 +620,11 @@ local Case001: Types.CaseDefinition = {
 					id = "SAM-BADGE-2",
 					speaker = "Sam Okafor",
 					text = "The system keeps a log. I printed tonight's for you. It's on the reception counter.",
+					-- Phase 2P: the case's most load-bearing lead had no
+					-- statement recorded, so it was easy to walk past and
+					-- never revisit. Recorded, not answered -- it still says
+					-- only where the log is, not what it proves.
+					statementId = "STMT-SUS-003-BADGE",
 					next = "SAM-BADGE-3",
 				},
 				["SAM-BADGE-3"] = {
@@ -1341,6 +1362,13 @@ local Case001: Types.CaseDefinition = {
 			text = "Victor said goodnight around ten. Sam never saw him actually leave.",
 		},
 		{
+			-- Phase 2P: a lead, not an answer -- only where the log is.
+			id = "STMT-SUS-003-BADGE",
+			suspectId = "SUS-003",
+			label = "The Badge Log",
+			text = "Every door locks at nine. Sam printed tonight's badge log; it's on the reception counter.",
+		},
+		{
 			id = "STMT-SUS-003-CAMERAS",
 			suspectId = "SUS-003",
 			label = "The Cameras",
@@ -1515,6 +1543,16 @@ local Case001: Types.CaseDefinition = {
 			.. "Tuesday that no camera would see him go.",
 		solvedEpilogue = "Victor Lane is charged before sunrise. The dissolution papers are still on "
 			.. "Daniel's desk, unsigned, where he left them.",
+		-- P7: the case holds either way; an investigator who pushed Victor
+		-- until he broke gets an ending that says so.
+		solvedVariants = {
+			{
+				requiredFacts = { { kind = "Statement", id = "STMT-SUS-002-BREAK" } },
+				epilogue = "Victor Lane is charged before sunrise. What he said in that meeting room goes "
+					.. "into the file word for word, and his lawyer can't take it back. The dissolution "
+					.. "papers are still on Daniel's desk, unsigned, where he left them.",
+			},
+		},
 		unprovenEpilogue = "Victor Lane walks out at three in the morning with his lawyer. You know what "
 			.. "happened in that office. You couldn't make it hold.",
 	},

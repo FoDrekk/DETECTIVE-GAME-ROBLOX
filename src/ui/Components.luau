@@ -110,4 +110,29 @@ function Components.padding(parent: Instance, px: number): UIPadding
 	return padding(parent, px)
 end
 
+-- Phase 3 (R1): shrink a fixed-size panel to fit short or narrow screens
+-- (a phone in landscape), never growing it past its authored size. `margin`
+-- is the room left around the panel on each axis, in screen pixels.
+function Components.fitToViewport(panel: GuiObject, designSize: Vector2, margin: Vector2?, minScale: number?): UIScale
+	local room = margin or Vector2.new(40, 40)
+	local scale = Instance.new("UIScale")
+	scale.Parent = panel
+	local function rescale()
+		local camera = workspace.CurrentCamera
+		if camera then
+			local viewport = camera.ViewportSize
+			scale.Scale = math.clamp(
+				math.min((viewport.X - room.X) / designSize.X, (viewport.Y - room.Y) / designSize.Y),
+				minScale or 0.5,
+				1
+			)
+		end
+	end
+	rescale()
+	if workspace.CurrentCamera then
+		workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(rescale)
+	end
+	return scale
+end
+
 return Components

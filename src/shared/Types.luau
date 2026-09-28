@@ -112,9 +112,14 @@ export type LocationDefinition = {
 -- sets the object's `ObservationText` attribute at runtime; it creates no
 -- evidence, timeline, objective or reasoning state. An entry whose instance
 -- is not present is simply skipped -- purely additive.
+-- `label` (Phase 2P) optionally overrides the interaction prompt itself
+-- (e.g. an authored "Examine Coffee Cup" that reads as real evidence next to
+-- the actual clue): applying one sets `PromptLabel` alongside `ObservationText`.
+-- Absent leaves the authored asset's own prompt label untouched.
 export type ObservationDefinition = {
 	instanceName: string,
 	text: string,
+	label: string?,
 }
 
 -- A single fact on the case timeline. Events are authored in case data and
@@ -457,6 +462,16 @@ export type CaseSolution = {
 	-- holds (solvedEpilogue) or one that doesn't (unprovenEpilogue).
 	solvedEpilogue: string?,
 	unprovenEpilogue: string?,
+	-- P7: a Solved ending that reflects how far the investigation went. The
+	-- first variant whose facts this player has all established replaces
+	-- `solvedEpilogue`. Never changes the grade -- only what a case that
+	-- already held says happened next.
+	solvedVariants: { SolvedEpilogueVariant }?,
+}
+
+export type SolvedEpilogueVariant = {
+	requiredFacts: { FactReference },
+	epilogue: string,
 }
 
 export type DiscoveredEvidence = EvidenceDefinition & {
@@ -796,6 +811,11 @@ export type CaseVerdict = {
 	grade: "Solved" | "Unproven" | "Wrong",
 	-- What happened next, for this grade (authored; may be absent).
 	epilogue: string?,
+	-- Phase 2P: for Unproven/Wrong only -- one sentence on which of the named
+	-- motive/proof didn't hold, computed only from data already authored on
+	-- the accusation. Never the true motive/proof; nil for Solved, and nil
+	-- for a case that doesn't grade on motive/proof at all.
+	shortfall: string?,
 }
 
 return {}

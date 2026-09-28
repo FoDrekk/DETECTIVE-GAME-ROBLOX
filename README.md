@@ -8,9 +8,12 @@ lives on disk and is synchronised into Studio with **Rojo**.
 
 ## Base place
 
-`MysteryCaseRoblox.rbxl` is the **original base place** and must be treated as
-read-only. It is committed to the repository intentionally. Do not overwrite,
-rebuild over, or delete it. Generated places go to `/build/` (git-ignored).
+`MysteryCaseRoblox.rbxl` is the **original base place**. It is committed to
+the repository intentionally, and is never a Rojo build target -- Rojo only
+syncs `src/`/`assets/` *into* it. Since M10 it also carries the Edit-mode
+environment bake (below): the generated office decoration, saved with
+**Ctrl+S** from Studio, so Edit and Play show the same map. Generated places
+from `rojo build` go to `/build/` (git-ignored) instead.
 
 The place still holds early copies of the scripts. Rojo replaces the ones the
 project maps. It also removes the stale `ReplicatedStorage.Config` and
@@ -52,11 +55,60 @@ rokit install
 
 > The base `MysteryCaseRoblox.rbxl` is never used as a Rojo build target.
 
+### Baking the environment (Edit mode)
+
+The world builders (`OfficeRoom`, `OfficeDetailing`, `OfficeInterior`,
+`CitySkyline`, `SuspectSpawner`) normally run when the server bootstraps, so
+`Workspace.Office` looks like an empty authored shell while designing in Edit
+mode. To make Edit show the same map as Play, run the builders once in Edit
+mode and save the place:
+
+```lua
+-- Edit mode, command bar (or MCP):
+require(game.ServerScriptService.Server.EnvironmentBake).bake()      -- incremental fill
+require(game.ServerScriptService.Server.EnvironmentBake).bake(true)   -- force: destroy + rebuild
+```
+
+Then press **Ctrl+S** to persist. Baked content is *adopted*, not rebuilt:
+every builder skips geometry whose generated folder already exists, so
+re-running the bake never duplicates anything and author edits to baked props
+survive. Runtime-only wiring (records-room flicker, aviation-light blink,
+suspect idle animations, the conversation listener) is gated on
+`RunService:IsRunning()`, so a bake never leaves loops or tweens running in
+Edit mode.
+
+Notes:
+
+- The bake is Edit-mode only; it refuses to run while a game is running.
+- Re-running `rojo serve` and syncing replaces `Workspace.Office` from
+  `assets/Office.rbxm`, which strips the baked folders — re-bake afterwards.
+- `bake(true)` also clears the one-shot markers (the `FloorSunk` attribute on
+  `Shell.Floor`, the `Baked` attribute on `Workspace.Office`) so a forced
+  rebuild starts from the authored state.
+- `Workspace.Office` also carries a `BuilderVersion` attribute, stamped by
+  every bake against `Config.Environment.BuilderVersion`. If a change to any
+  of the five builder modules would change what they generate, bump that
+  constant — otherwise the next boot's stale-bake warning (`OfficeRoom.start`)
+  won't fire, and an already-baked place can silently keep old geometry
+  after the code that produces it has moved on. This is exactly what
+  happened before Phase 2P: a floor/grounding fix landed in the builders,
+  but the already-baked `.rbxl` was never re-baked, so the fix never reached
+  the saved place.
+- **Which checkout is open matters.** If you work from a git worktree (e.g.
+  a branch checked out under `.claude/worktrees/<name>/`), make sure the
+  Studio session baking and saving has *that* worktree's
+  `MysteryCaseRoblox.rbxl` open, not the main checkout's. Studio has no way
+  to know which one you meant; saving into the wrong checkout leaves the
+  intended one untouched (its stale bake un-fixed) while quietly editing a
+  file outside your working tree. Check the file Studio actually has open
+  before baking, and copy the saved file into the intended checkout if it
+  saved to the wrong one.
+
 ## Project structure
 
 ```
 MysteryCaseRoblox/
-├─ MysteryCaseRoblox.rbxl   # original base place (do not overwrite)
+├─ MysteryCaseRoblox.rbxl   # base place; carries the Edit-mode bake (never a rojo build target)
 ├─ default.project.json     # Rojo project mapping
 ├─ rokit.toml               # pinned toolchain
 ├─ .gitignore
@@ -196,11 +248,15 @@ M5: the timeline is a mechanic, not decoration.
   order only if it is exactly the discovered set, each once, in canonical
   chronological order — the server computes and compares it, and never trusts
   a client claim. Establishing is permanent, per-player, and idempotent.
-- **A new final objective, `OBJ-005` ("Reconstruct the Timeline")**, gates on
+- **A new final objective ("Reconstruct the Timeline")**, gates on
   the established sequence. Because it is the last objective, the accusation
   picker (`[Q]`) is now only offered once the player has both reasoned about
   the case *and* put its events in order — the case can no longer be closed by
   simply collecting objects.
+  (Superseded by M9's `accusationRules.opensAfter`, below: CASE-001 now opens
+  accusing once both suspects have been spoken to, with reasoning and the
+  timeline still open. This objective is `OBJ-006` today; two objectives
+  were inserted after it was written.)
 
 M4: a complete session.
 
@@ -503,10 +559,14 @@ OBJECTIVE PROGRESS → NEXT CLUE
    chronological order. **T** closes it.
 5. Each required action ticks its checklist row (`□` → `✓`).
 6. When all requirements are met the server completes the objective and the
-   client shows **OBJECTIVE COMPLETE**, then the next objective in the chain:
-   `OBJ-001` → `OBJ-002` (question Victor Lane) → `OBJ-003` (review the
-   contradiction) → `OBJ-004` (close the investigation) → `OBJ-005`
-   (reconstruct the timeline).
+   client shows **OBJECTIVE COMPLETE**, then the next objective in the chain.
+   CASE-001's chain today: `OBJ-000` (the night guard) → `OBJ-001` (Daniel's
+   office) → `OBJ-002` (both suspects) → `OBJ-003` (test Victor's alibi) →
+   `OBJ-004` (the call nobody answered) → `OBJ-005` (the last ten minutes) →
+   `OBJ-006` (reconstruct the night). M9's `accusationRules.opensAfter`
+   (below) lets the accusation picker (`[Q]`) open as soon as `OBJ-002`
+   completes -- well before this chain ends -- so it is possible, and
+   costly, to accuse with the rest of the case still open.
 7. Press **T** to open the **CASE TIMELINE**. Until step 6's final objective
    is done, the events appear in a deliberately jumbled order with their times
    hidden; the player moves them into the order they happened and confirms.

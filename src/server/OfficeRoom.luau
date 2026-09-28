@@ -208,11 +208,13 @@ local function spawnEvidenceProps()
 	local parent = office or workspace
 
 	local folder = parent:FindFirstChild(EVIDENCE_PROPS_FOLDER_NAME)
-	if not folder then
-		folder = Instance.new("Folder")
-		folder.Name = EVIDENCE_PROPS_FOLDER_NAME
-		folder.Parent = parent
+	if folder then
+		-- Baked already: adopted as-is so author repositioning survives.
+		return
 	end
+	folder = Instance.new("Folder")
+	folder.Name = EVIDENCE_PROPS_FOLDER_NAME
+	folder.Parent = parent
 
 	local caseDef = CaseRegistry.get(Config.Game.AutoStartCase)
 	if not caseDef then
@@ -285,11 +287,13 @@ local function buildLocationSigns()
 	local parent = office or workspace
 
 	local folder = parent:FindFirstChild(LOCATION_SIGNS_FOLDER_NAME)
-	if not folder then
-		folder = Instance.new("Folder")
-		folder.Name = LOCATION_SIGNS_FOLDER_NAME
-		folder.Parent = parent
+	if folder then
+		-- Baked already: adopted as-is so author repositioning survives.
+		return
 	end
+	folder = Instance.new("Folder")
+	folder.Name = LOCATION_SIGNS_FOLDER_NAME
+	folder.Parent = parent
 
 	local caseDef = CaseRegistry.get(Config.Game.AutoStartCase)
 	if not caseDef then
@@ -330,6 +334,13 @@ local function applyObservations()
 				local descriptor = Interactable.describe(instance)
 				if descriptor and not descriptor.evidenceId then
 					instance:SetAttribute(Interactable.AttributeName.ObservationText, observation.text)
+					if observation.label then
+						-- Phase 2P: an authored asset's own prompt label can
+						-- read as real evidence next to the actual clue (e.g.
+						-- "Examine Coffee Cup" beside the visitor's cup); let
+						-- the case override it without touching the asset.
+						instance:SetAttribute(Interactable.AttributeName.PromptLabel, observation.label)
+					end
 					applied += 1
 				end
 			end
@@ -341,6 +352,31 @@ local function applyObservations()
 	end
 end
 
+--[[
+	Phase 2P: stale-bake detection. `office` here is whatever the currently
+	open/loaded `.rbxl` already carries (before this boot's builders run),
+	so this reads the stamp left by the *last* `EnvironmentBake.bake()`, not
+	anything this session has touched yet. A place that was never baked
+	(fresh from `assets/Office.rbxm` via Rojo, no generated folders yet)
+	carries no `Baked` attribute at all -- nothing to warn about, since this
+	boot's builders will generate current-version geometry from scratch.
+	Only warns; never rebuilds or blocks boot, and never touches the
+	builders' own reuse-existing-folders adoption.
+]]
+local function warnIfBakeStale(office: Instance?)
+	if not office or not office:GetAttribute("Baked") then
+		return
+	end
+	local stamped = office:GetAttribute("BuilderVersion")
+	local current = Config.Environment.BuilderVersion
+	if stamped ~= current then
+		log:warn("baked office geometry predates the current builder code; re-bake and save in Edit mode", {
+			stampedVersion = stamped,
+			currentVersion = current,
+		})
+	end
+end
+
 function OfficeRoom.start()
 	clearDefaultGround()
 
@@ -348,6 +384,7 @@ function OfficeRoom.start()
 	if not office then
 		log:warn(`Workspace.{Config.Environment.OfficeModelName} not found; run Rojo sync to load the authored environment`)
 	end
+	warnIfBakeStale(office)
 
 	applyNightLighting()
 	spawnEvidenceProps()

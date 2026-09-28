@@ -193,8 +193,9 @@ end
 -- of the desk -- clear of the desk, of the walkway between the office and
 -- records-room doors (x -22..-18), and in view from the doorway. Thin chalk
 -- strokes tracing a silhouette (one arm flung up, one down, as found), not
--- filled shapes.
-local CHALK_ORIGIN = Vector3.new(-17.0, 0.085, -8.6)
+-- filled shapes. The origin's Y is the stroke centre: it clears the room
+-- finish (top at 0.03; see OfficeInterior's floor layering) by ~0.001.
+local CHALK_ORIGIN = Vector3.new(-17.0, 0.037, -8.6)
 local CHALK_SCALE = 0.9
 -- Outline points (x, z) around the torso centre, head toward -z.
 local CHALK_BODY = {
@@ -501,6 +502,13 @@ function OfficeDetailing.start()
 	local office = workspace:FindFirstChild(Config.Environment.OfficeModelName)
 	if not office then
 		log:warn(`Workspace.{Config.Environment.OfficeModelName} not found; skipping environment detailing`)
+		return
+	end
+	if office:FindFirstChild(DETAIL_FOLDER_NAME) then
+		-- Baked already: adopt as-is, including any author adjustments. The
+		-- spawn pad move and desk settle are one-shot edits the bake already
+		-- made; re-running them would snap the author's placement back.
+		log:info("detailing already present; adopting baked geometry")
 		return
 	end
 

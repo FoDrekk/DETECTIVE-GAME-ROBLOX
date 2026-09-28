@@ -149,6 +149,8 @@ function EvidencePanel.start()
 	})
 	root.Visible = false
 	Components.padding(root, 22)
+	-- Horizontal margin covers the 40px left offset on both sides.
+	Components.fitToViewport(root, Vector2.new(470, 310), Vector2.new(80, 40))
 
 	local accent = Components.frame({
 		name = "Accent",

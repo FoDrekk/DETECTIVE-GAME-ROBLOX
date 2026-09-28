@@ -124,7 +124,10 @@ function GameStateService.getClosingSummary(player: Player): Types.CaseClosedSum
 		-- Phase 2N: the player's own accusation and whether the evidence they
 		-- actually unlocked is consistent with it.
 		accusation = AccusationService.getResolution(player),
-		timeline = TimelineService.getDiscovered(player),
+		-- Phase 2P: always chronological here, even if the accusation opened
+		-- (M9) before OBJ-006 reconstructed the puzzle order -- the closing
+		-- record restates what happened, not the shuffled presentation.
+		timeline = TimelineService.getChronological(player),
 		contradiction = if #reasoning.contradictions > 0 then reasoning.contradictions[1] else nil,
 		verdict = AccusationService.getVerdict(player),
 		mistakes = data.caseState.reasoningMistakes or 0,

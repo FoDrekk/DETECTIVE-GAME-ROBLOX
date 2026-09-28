@@ -338,6 +338,7 @@ function TimelineView.start()
 	})
 	root.Visible = false
 	Components.padding(root, 26)
+	Components.fitToViewport(root, Vector2.new(520, 500))
 
 	local accent = Components.frame({
 		name = "Accent",
