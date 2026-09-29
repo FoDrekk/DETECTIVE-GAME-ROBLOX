@@ -210,7 +210,7 @@ local function buildEvidenceProp(evidence: Types.EvidenceDefinition, folder: Ins
 	CollectionService:AddTag(part, Interactable.TAG)
 	part:SetAttribute(Interactable.AttributeName.Kind, "Read")
 	local verb = if placement.style == "Printout" then "Read" else "Examine"
-	part:SetAttribute(Interactable.AttributeName.PromptLabel, `{verb} {evidence.name}`)
+	part:SetAttribute(Interactable.AttributeName.PromptLabel, placement.label or `{verb} {evidence.name}`)
 	part:SetAttribute(Interactable.AttributeName.EvidenceId, evidence.id)
 
 	return part

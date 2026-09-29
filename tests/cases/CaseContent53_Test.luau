@@ -5,8 +5,8 @@
 	EV-008 to EV-010, three new statements, CONTRA-005, DEDUCT-005/006, the
 	badge log printed on request, and the accusation's new motive and proof --
 	each proved through the real services, not by reading data alone. The
-	phone's evidence (EV-011/012, CONTRA-006, STMT-SUS-001-HOME) is 5.4 and is
-	deliberately absent; the last test pins that.
+	phone's evidence (EV-011/012, CONTRA-006, STMT-SUS-001-HOME) is 5.4 and
+	lives in CaseContent54_Test.
 
 	The world checks read whatever is in Workspace.Office, so they run against
 	the freshly built world headless and against the patched baked place in
@@ -128,10 +128,12 @@ return function(t)
 	-- The evidence
 	------------------------------------------------------------------
 
-	t.test("the case now has ten pieces of evidence, three of them optional new finds", function()
+	t.test("5.3's ten pieces of evidence are all still there, three of them optional new finds", function()
 		local ids = {}
-		for _, evidence in ipairs(caseDef.evidence) do
-			table.insert(ids, evidence.id)
+		for index, evidence in ipairs(caseDef.evidence) do
+			if index <= 10 then
+				table.insert(ids, evidence.id)
+			end
 		end
 		expect.deepEqual(ids, { "EV-001", "EV-002", "EV-003", "EV-004", "EV-005", "EV-006", "EV-007", "EV-008", "EV-009", "EV-010" })
 	end)
@@ -427,7 +429,8 @@ return function(t)
 			end
 		end
 		expect.deepEqual(accusation.motives, { "DEDUCT-002", "DEDUCT-001", "DEDUCT-006" })
-		expect.deepEqual(accusation.proofs, { "CONTRA-001", "CONTRA-002", "CONTRA-005" })
+		-- Phase 5.4 adds CONTRA-006 after these (CaseContent54_Test).
+		expect.deepEqual({ table.unpack(accusation.proofs, 1, 3) }, { "CONTRA-001", "CONTRA-002", "CONTRA-005" })
 		-- supportedBy is exactly v1's, so "supported" means what it did.
 		expect.deepEqual(accusation.supportedBy.contradictions, { "CONTRA-001", "CONTRA-002" })
 		expect.deepEqual(accusation.supportedBy.deductions, { "DEDUCT-001", "DEDUCT-002", "DEDUCT-004" })
@@ -543,20 +546,4 @@ return function(t)
 		expect.truthy(string.find(text.Text, "Tiket #4471", 1, true))
 	end)
 
-	------------------------------------------------------------------
-	-- What waits for 5.4
-	------------------------------------------------------------------
-
-	t.test("the phone's evidence and its consequences are not in yet", function()
-		for _, evidence in ipairs(caseDef.evidence) do
-			expect.falsy(evidence.id == "EV-011" or evidence.id == "EV-012")
-		end
-		for _, contradiction in ipairs(caseDef.contradictions) do
-			expect.falsy(contradiction.id == "CONTRA-006")
-		end
-		for _, statement in ipairs(caseDef.statements) do
-			expect.falsy(statement.id == "STMT-SUS-001-HOME")
-		end
-		expect.equal(#caseDef.timeline, 5)
-	end)
 end

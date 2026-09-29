@@ -107,13 +107,32 @@ local function discoverEvidence(player: Player, evidenceId: string, granted: boo
 		end
 	end
 
+	-- Phase 5.4: the clues this one hands over with it. Named on the readout
+	-- (only the ones newly added), then granted once the readout is sent.
+	local handedOver: { string } = {}
+	local alsoAdded: { string } = {}
+	for _, otherId in ipairs(definition.grantsEvidence or {}) do
+		if otherId ~= evidenceId and not data.caseState.discovered[otherId] then
+			for _, other in ipairs(caseDef.evidence) do
+				if other.id == otherId then
+					table.insert(handedOver, otherId)
+					table.insert(alsoAdded, other.name)
+					break
+				end
+			end
+		end
+	end
+
 	local payload: Types.EvidencePayload = {
 		evidence = discovered,
-		totalDiscovered = Util.count(data.caseState.discovered),
+		-- Counts the ones about to be handed over with it, so the readout's
+		-- "x / y" is what the Case File will say a moment later.
+		totalDiscovered = Util.count(data.caseState.discovered) + #handedOver,
 		totalEvidence = #caseDef.evidence,
 		revealedEvent = revealedEvent,
 		related = if #related > 0 then related else nil,
 		granted = if granted then true else nil,
+		alsoAdded = if #alsoAdded > 0 then alsoAdded else nil,
 	}
 
 	evidenceDiscoveredEvent:Fire(player, payload)
@@ -124,6 +143,12 @@ local function discoverEvidence(player: Player, evidenceId: string, granted: boo
 		granted = if granted then true else nil,
 	})
 	StoryEvents.publish("EvidenceDiscovered", player, { evidenceId = evidenceId })
+
+	-- The primary is recorded and announced first, so a chain can never loop
+	-- back to it (it is already discovered by the time the others are asked).
+	for _, otherId in ipairs(handedOver) do
+		EvidenceService.grant(player, otherId)
+	end
 	return true, nil
 end
 

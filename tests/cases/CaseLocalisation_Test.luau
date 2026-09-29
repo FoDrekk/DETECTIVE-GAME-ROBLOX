@@ -171,14 +171,18 @@ return function(t)
 		expect.truthy(string.find(nodeText("SUS-003", "SAM-MARA-2"), "Kesian.", 1, true))
 		expect.equal(nodeText("SUS-003", "SAM-BYE"), "Okay, okay. I'll be... here. Obviously.")
 		expect.equal(nodeText("SUS-002", "VIC-BADGE-1"), "Aiya. Then the system's wrong, lah.")
+		-- Phase 5.4: rattled by the watch data, he slips once more.
+		expect.truthy(string.find(nodeText("SUS-002", "VIC-WATCH-1"), "Aiya,", 1, true))
 		expect.truthy(string.find(nodeText("SUS-001", "MARA-LAST-1"), "Sayang", 1, true))
 		-- Victor is polished until he cracks, and Meera rarely switches: no
 		-- other line of theirs carries a Malay or Manglish particle.
 		for _, conversation in ipairs(caseDef.conversations) do
 			if conversation.suspectId ~= "SUS-003" then
-				local allowed = if conversation.suspectId == "SUS-002" then "VIC-BADGE-1" else "MARA-LAST-1"
+				local allowed: { [string]: boolean } = if conversation.suspectId == "SUS-002"
+					then { ["VIC-BADGE-1"] = true, ["VIC-WATCH-1"] = true }
+					else { ["MARA-LAST-1"] = true }
 				for id, node in pairs(conversation.nodes) do
-					if id ~= allowed then
+					if not allowed[id] then
 						for _, particle in ipairs({ " lah", "Aiya", "Sayang", " kan", "Kesian", " ah." }) do
 							if string.find(node.text, particle, 1, true) then
 								error(`{id} carries '{particle}': not in the approved sheet`)

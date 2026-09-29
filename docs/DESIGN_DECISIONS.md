@@ -262,7 +262,7 @@ Format: **Decision**, **Why**, **Alternatives**, **Why not**, **Impact**.
     dialogue, the difficulty);
   - never a simple "be kind, get the evidence; be harsh, lose it for good".
 - **Approved implementation (owner, 2026-09-29): "two ways into the phone"**
-  (built in step 5.4; nothing built yet):
+  (built in step 5.4; see `CASE_001_V2_CONTENT_SHEET_5_4.md`):
   - **Route A, trust** (the gentle path, or thawed by apologising). As written
     in story bible §11:
     - Meera types the date and reads the message aloud.
