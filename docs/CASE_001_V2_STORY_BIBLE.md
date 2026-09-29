@@ -267,13 +267,13 @@ Legend:
 | **EV-008** | **Marked Floor** | Beside the credenza | Patrol tape where he lay; ambulance tag: "Pronounced 12:26 AM. Head injury. Fall against furniture." The credenza corner is chipped. | Whether he fell or was pushed | **New, O** |
 | **EV-009** | **Face-Down Photo** | Shelf | Daniel and Victor at a ribbon-cutting, fifteen years younger. The glass is cracked and the photo turned face down. | Who turned it | **New, O** (promoted from flavour) |
 | **EV-010** | **Partnership Drawer** | File cabinet | "R&L — PARTNERSHIP", opened tonight; folders out of order; the divider "VENDOR INVOICES — KEMAS" with nothing behind it | What was in it | **New, O** (promoted from flavour) |
-| **EV-011** | **Unsent Message** | Phone (G: Meera unlocks it) | 11:48 PM, draft to Meera: "I'm sorry about tonight. I'm finishing it with V. He's taking it badly. Then I'm coming home." | Exactly what happened next | **New, O+G** |
-| **EV-012** | **Watch Data** | Phone (G: same unlock) | Daniel's watch, synced: heart rate recorded until 11:49 PM, nothing after | Who was with him | **New, O+G** |
+| **EV-011** | **Unsent Message** | Desk phone (G: Meera opens it, or its code is worked out and the screen lights) | 11:48 PM, draft to Meera: "I'm sorry about tonight. I'm finishing it with V. He's taking it badly. Then I'm coming home." | Exactly what happened next | **New, O+G** |
+| **EV-012** | **Watch Data** | Desk phone (G: handed over with EV-011, by either route) | Daniel's watch, synced: heart rate recorded until 11:49 PM, nothing after | Who was with him | **New, O+G** |
+| **EV-013** | **Photo of Meera** | Desk drawer | Meera in a songket, holding flowers, laughing at whoever held the camera. On the back, in Daniel's hand: "For M. — 07.12.09." | Why the date matters | **New, O** (promoted from flavour; the clue to the phone's code) |
 
 Flavour observations that stay flavour (updated for v2):
 - **Pen:** uncapped across a blank signature line.
 - **Whiteboard:** "R&L" struck through to "R".
-- **Desk drawer:** the photo of Meera.
 - **Daniel's mug:** chamomile.
 - **Guard's flask**, **meeting-room water**.
 - **Lift panel:** now a trip log. "10:29 PM ↓ · 11:03 PM ↑ · 11:53 PM ↓ ·
@@ -305,7 +305,7 @@ Existing statements stay, with names localised. New ones:
 | CONTRA-003 | Meera's Missed Call | Meera's alibi | EV-001 Phone | unchanged (the innocent contradiction) | No |
 | CONTRA-004 | The Footage | Victor: "pull the footage" | EV-007 Monitor | unchanged | No (shows planning to be unseen, not presence) |
 | **CONTRA-005** | **Nobody Told Him** | STMT-SUS-002-MEERA | STMT-SUS-003-TAPE | "Victor knows Daniel's call went unanswered. The phone has been behind the tape since before he arrived, and all he was told was that Daniel had passed. He knew because he was in the room." | **Yes (new)** |
-| **CONTRA-006** | **Still in the Building** | Victor's revised story | EV-012 Watch Data | "Daniel's heart stopped at 11:49. Victor's badge didn't leave until 11:52. He wasn't laughing on the phone when Victor left." | **Yes (new)** |
+| **CONTRA-006** | **Still in the Building** | Victor's revised story | EV-012 Watch Data | "Victor says Daniel was alive when he left. Daniel's watch records his last heartbeat at 11:49. Victor's badge didn't leave until 11:52." | **Yes (new)** |
 
 Both new contradictions can be **claimed in the Case File**. CONTRA-006 can also
 be **presented**: show Victor the watch data, which is an alternative route to
@@ -326,6 +326,11 @@ options. New ones:
 |---|---|---|---|---|---|
 | **DEDUCT-005** | **By the Credenza** | EV-008 Marked Floor + EV-009 Face-Down Photo | "Tape by the credenza, a head injury, a cracked photo turned face down. What happened here?" | He collapsed alone at his desk / **He fell during a struggle, and someone turned the photo over afterwards** / He was hit with the frame / He slipped reaching for a file | struggle |
 | **DEDUCT-006** | **Why It Couldn't Wait** | EV-010 Partnership Drawer + EV-002 Laptop | "A buy-out that Victor would 'fight', and a folder of vendor invoices gone from tonight's drawer. Why midnight?" | Daniel wanted to leave before year-end tax / **Daniel had found something in those invoices, and it was his leverage** / Meera wanted the money / The client deadline moved | leverage |
+
+| **DEDUCT-007** | **Daniel's Code** | EV-001 Phone + EV-013 Photo of Meera | "Daniel's phone is locked. What would he choose as the code?" | Meera's birthday / **Their wedding date** / The day the firm opened / The day Daniel was born | wedding |
+
+DEDUCT-007 is the second way into the phone (Route B). Answering it lights
+the desk phone's screen. It is neither a motive nor a proof.
 
 - **Motives for ACC-001 (v2):** DEDUCT-002, DEDUCT-001, **DEDUCT-006**.
 - **Proofs for ACC-001 (v2):** CONTRA-001, CONTRA-002, **CONTRA-005**,
@@ -349,44 +354,55 @@ Seven events once everything is found:
 
 - `timelineChallengeOrder` must stay non-chronological at every index; the
   registry test enforces this.
-- Proposed order: 11:52, 12:00, 11:48, 11:31, 11:49, 11:47, 11:42.
+- Order as built: 11:52, 12:00, 11:49, 11:31, 11:48, 11:47, 11:42
+  (TIMELINE-004, 003, 007, 005, 006, 002, 001). It differs from the canonical
+  position at every index, which the registry test requires.
 - The timeline shows 11:48 and 11:49 only to players who opened the phone. They
   make ordering easier and more meaningful: the night visibly *stops* between
   the call and the badge.
 
-## 11. The payoff: the phone unlock scene
+## 11. The payoff: two ways into the phone
 
-This is the heart of v2.
+This is the heart of v2. The title's question, "what was the last call for?",
+is answered by an unsent message. Whatever the player's approach to Meera, the
+evidence stays reachable by investigation: the approach changes only how it is
+reached. Both routes hand over the same two items (EV-011 and EV-012), reach
+the same timeline events and CONTRA-006, and the phone ending keys on
+STMT-SUS-001-HOME, not on who opened the phone.
 
-> **Owner revision (2026-09-29).** The harsh-path outcome below ("that player
-> misses the payoff") is superseded. The phone's evidence must stay reachable
-> by investigation whatever the approach, and the approach changes only how
-> it's reached. The two-route design ("two ways into the phone") is approved
-> in `DESIGN_DECISIONS.md` D-10. This section will be
-> rewritten to match in step 5.4. The trust route below stands as Route A.
-
-- **When it's available:** after Meera's admission
-  (STMT-SUS-001-ADMISSION), and only while she isn't upset (the gentle path, or
-  thawed by apologising).
+**Route A: trust.** The gentle path, or thawed by apologising.
+- **When it's available:** after Meera's admission (STMT-SUS-001-ADMISSION),
+  until the message is in hand.
 - **The choice:** "Would you open his phone for me?"
 
-> **MEERA:** ...Zero-seven, one-two, zero-nine. Our wedding.
-> *(She types it and doesn't hand it back straight away.)*
+> **MEERA:** ...Give it here. He used the same code for everything.
+> **MEERA:** Zero-seven, one-two, zero-nine. Our wedding.
 > **MEERA:** There's a message. He never sent it.
-> **MEERA:** *(reading)* "I'm sorry about tonight. I'm finishing it with V. He's taking it badly. Then I'm coming home."
+> **MEERA:** "I'm sorry about tonight. I'm finishing it with V. He's taking it badly. Then I'm coming home."
 > **MEERA:** He was coming home.
 
-- **What it grants:** EV-011 and EV-012 are discovered, and
-  STMT-SUS-001-HOME is recorded.
-- **On the harsh path, if never thawed:**
-  - she won't unlock it ("Get your forensics people to do it.");
-  - the case is still fully solvable through CONTRA-001, 002 and 005;
-  - that player misses the payoff and the 11:48 and 11:49 events.
-- **Why this works.**
-  - The title's question is answered: he called to say he was coming home.
-  - The answer comes from the person who didn't pick up.
-  - The player unlocks it by being decent to her.
-  - It is emotion delivered through agency, not a cutscene.
+The last line grants EV-011 and EV-012 and records STMT-SUS-001-HOME.
+
+**Route B: investigation.** Any approach, including harsh and never thawed.
+- The photo in Daniel's desk drawer (EV-013) shows Meera in a songket, and the
+  back carries "07.12.09".
+- With the locked phone (EV-001), it opens the Case File question DEDUCT-007,
+  "Daniel's phone is locked. What would he choose as the code?". The wedding
+  date is the answer.
+- A right answer lights the desk phone's screen. Reading it hands over the
+  message (EV-011), and the watch data (EV-012) with it, and the investigator
+  reads it alone.
+- Meera's moment comes later, when she is shown the message. She reads it
+  twice, then: "...He was coming home." That records STMT-SUS-001-HOME.
+- A player who upset Meera and never thawed her has a third choice on her cold
+  line once they hold the message: "He left a message for you. I found it." It
+  reaches the same beats and clears her upset.
+
+**Why this works.**
+- The title's question is answered: he called to say he was coming home.
+- The answer reaches the player either through kindness (Route A) or through
+  attention (Route B), and neither loses the evidence.
+- It is emotion delivered through agency, not a cutscene.
 
 ## 12. Structure and pacing
 

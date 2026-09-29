@@ -1208,6 +1208,23 @@ local EVIDENCE_BUILDERS: { [string]: (b: Builder) -> BasePart } = {
 		return tag
 	end,
 
+	-- Phase 5.4: the desk phone's screen, woken. It lies over the phone's own
+	-- face (placed at its top), so the same phone lights up once it is open.
+	PhoneScreen = function(b)
+		local screen = box(b, "Screen", Vector3.new(0.58, 0.02, 1.16), 0, 0.01, 0, Color3.fromRGB(150, 188, 226), M.Neon)
+		screen.CastShadow = false
+		label(screen, Enum.NormalId.Top, "Draft\nto Meera", {
+			color = Color3.fromRGB(24, 44, 78),
+			font = Enum.Font.GothamBold,
+			pixelsPerStud = 140,
+			size = 9,
+			lightInfluence = 0,
+			padding = 6,
+		})
+		light(screen, "PointLight", 0.35, 3.5, Color3.fromRGB(170, 205, 245))
+		return screen
+	end,
+
 	-- The pantry espresso machine, its display still showing the last brew.
 	EspressoMachine = function(b)
 		local body = box(b, "Body", Vector3.new(1.3, 1.5, 1.2), 0, 0.75, 0.05, P.Steel, M.Metal)

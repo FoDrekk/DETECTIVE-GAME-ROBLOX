@@ -15,6 +15,8 @@ local CaseService = require(script.Parent:WaitForChild("CaseService"))
 local AccusationService = require(script.Parent:WaitForChild("AccusationService"))
 local TimelineService = require(script.Parent:WaitForChild("TimelineService"))
 local ReasoningService = require(script.Parent:WaitForChild("ReasoningService"))
+local CutsceneService = require(script.Parent:WaitForChild("CutsceneService"))
+local StoryEvents = require(script.Parent:WaitForChild("StoryEvents"))
 
 local GameStateService = {}
 
@@ -43,6 +45,26 @@ local caseClosedEvent: BindableEvent = Instance.new("BindableEvent")
 
 function GameStateService.onCaseClosed(): BindableEvent
 	return caseClosedEvent
+end
+
+-- Phase 5.4: a Solved close that plays a scene first (an outro) holds the
+-- summary back until that scene is over -- finished, skipped or timed out --
+-- and only then announces the close. Keyed by UserId, not by the player
+-- table: a BindableEvent hands its listeners a copy of a table, so a mock
+-- player (the unit tests') would never match itself; a UserId always does.
+local pendingClose: { [number]: { cutsceneId: string, summary: Types.CaseClosedSummary } } = {}
+
+StoryEvents.on("CutsceneFinished", function(player: Player, data: { [string]: any })
+	local pending = pendingClose[player.UserId]
+	if pending and pending.cutsceneId == data.cutsceneId then
+		pendingClose[player.UserId] = nil
+		caseClosedEvent:Fire(player, pending.summary)
+	end
+end)
+
+-- True while this player's close is waiting on its outro.
+function GameStateService.isClosingScenePlaying(player: Player): boolean
+	return pendingClose[player.UserId] ~= nil
 end
 
 -- Fired with (player) once a replay is accepted (M4). The bootstrap bridge
@@ -145,6 +167,26 @@ function GameStateService.setPhase(phase: Types.GamePhase): boolean
 end
 
 --[[
+	Phase 5.4: announce a close that has been accepted. A Solved case may play a
+	scene first (its outro); the closing summary then follows when that scene
+	is over. If no scene is authored, or it can't play (another is on), the
+	summary comes at once, as it always did. Public so the hand-off can be
+	tested without walking the whole phase machine (requestConclude calls it).
+]]
+function GameStateService.announceClose(player: Player)
+	local summary = GameStateService.getClosingSummary(player)
+	if not summary then
+		return
+	end
+	local outroId = AccusationService.getOutroCutsceneId(player)
+	if outroId and CutsceneService.play(player, outroId) then
+		pendingClose[player.UserId] = { cutsceneId = outroId, summary = summary }
+	else
+		caseClosedEvent:Fire(player, summary)
+	end
+end
+
+--[[
 	Phase 2L: attempt to conclude this player's investigation
 	(Investigation -> CaseClosed). Public and directly callable/testable,
 	matching this codebase's established pattern (e.g. ObjectiveService.
@@ -166,10 +208,7 @@ function GameStateService.requestConclude(player: Player): boolean
 		PlayerDataService.setPhase(p, "CaseClosed")
 	end
 	broadcast("CaseClosed")
-	local summary = GameStateService.getClosingSummary(player)
-	if summary then
-		caseClosedEvent:Fire(player, summary)
-	end
+	GameStateService.announceClose(player)
 	return true
 end
 
@@ -192,6 +231,7 @@ function GameStateService.requestReplay(player: Player): boolean
 		return false
 	end
 
+	pendingClose[player.UserId] = nil
 	PlayerDataService.clear(player)
 	PlayerDataService.initialize(player, ACTIVE_CASE)
 	PlayerDataService.setPhase(player, "CaseBriefing")
@@ -224,6 +264,9 @@ function GameStateService.enterBriefingFor(player: Player)
 end
 
 function GameStateService.start()
+	game:GetService("Players").PlayerRemoving:Connect(function(player: Player)
+		pendingClose[player.UserId] = nil
+	end)
 	machine:onEnter("CaseBriefing", function()
 		for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
 			grantCase(player)

@@ -214,6 +214,28 @@ local function solvedEpilogueFor(data: Types.PlayerData, solution: Types.CaseSol
 	return solution.solvedEpilogue
 end
 
+-- Phase 5.4: the scene to play at a Solved close, chosen the same way as the
+-- epilogue: the first authored entry whose facts this player has all
+-- established (one with none always matches), else no scene.
+local function outroCutsceneFor(data: Types.PlayerData, solution: Types.CaseSolution): string?
+	for _, entry in ipairs(solution.solvedCutscenes or {}) do
+		local allKnown = true
+		for _, fact in ipairs(entry.requiredFacts or {}) do
+			local known = if fact.kind == "Evidence"
+				then data.caseState.discovered[fact.id] ~= nil
+				else data.caseState.unlockedStatements[fact.id] == true
+			if not known then
+				allKnown = false
+				break
+			end
+		end
+		if allKnown then
+			return entry.cutsceneId
+		end
+	end
+	return nil
+end
+
 local function buildOption(caseId: string, accusation: Types.AccusationDefinition): Types.AccusationOption
 	local suspect = CaseService.getSuspect(caseId, accusation.suspectId)
 	return {
@@ -344,6 +366,23 @@ function AccusationService.getResolution(player: Player): Types.AccusationResolu
 		supported = supported,
 		basedOn = basedOn,
 	}
+end
+
+-- Phase 5.4: the scene (a cutscene id) to play at this player's close, or nil.
+-- Only a Solved verdict ever has one: a case that didn't hold, or one that
+-- authors no `solvedCutscenes`, closes straight onto the summary.
+function AccusationService.getOutroCutsceneId(player: Player): string?
+	local verdict = AccusationService.getVerdict(player)
+	if not verdict or verdict.grade ~= "Solved" then
+		return nil
+	end
+	local data = PlayerDataService.get(player)
+	local caseDef = data and CaseService.getCase(data.caseState.caseId)
+	local solution = caseDef and caseDef.solution
+	if not data or not solution then
+		return nil
+	end
+	return outroCutsceneFor(data, solution)
 end
 
 -- The case's true answer measured against this player's committed

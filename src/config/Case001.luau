@@ -185,10 +185,6 @@ local Case001: Types.CaseDefinition = {
 				.. "The badge readers do the remembering.",
 		},
 		{
-			instanceName = "DeskDrawer",
-			text = "Pens. A phone charger. A photo of Meera he never put on the desk. Nothing anyone would come back for.",
-		},
-		{
 			instanceName = "Whiteboard",
 			text = 'Last quarter\'s targets, in Daniel\'s handwriting. Someone has struck through "R&L" and written a single "R" beside it.',
 		},
@@ -224,7 +220,10 @@ local Case001: Types.CaseDefinition = {
 			id = "EV-001",
 			name = "Phone",
 			description = "Daniel's phone, face up beside the keyboard.",
-			details = "Last call: 11:47 PM, to MARA. Rang for 31 seconds. Declined.",
+			-- Phase 5.4: the contact name is fixed (v1's "MARA"), and the screen is
+			-- locked beyond the call log, which is what makes the code a question.
+			details = "Last call: 11:47 PM, to MEERA ♥. Rang for 31 seconds. Declined. "
+				.. "The screen is locked beyond the call log.",
 			location = "Daniel's Office",
 			importance = "Critical",
 			category = "Communication",
@@ -364,6 +363,52 @@ local Case001: Types.CaseDefinition = {
 			category = "Document",
 			bindTo = { instanceName = "FileCabinet_1" },
 		},
+		{
+			-- Phase 5.4: the phone, open. Reached two ways (Meera opens it, or the
+			-- code is worked out from the photo); both give this and EV-012.
+			id = "EV-011",
+			name = "Unsent Message",
+			description = "A message on Daniel's phone that was never sent.",
+			details = [[Draft to MEERA ♥, 11:48 PM: "I'm sorry about tonight. I'm finishing it with V. He's taking it badly. Then I'm coming home."]],
+			location = "Daniel's Office",
+			importance = "High",
+			category = "Communication",
+			timestamp = "11:48 PM",
+			timelineEventId = "TIMELINE-006",
+			-- Examining it also hands over the watch data.
+			grantsEvidence = { "EV-012" },
+			-- The desk phone's own screen, woken once the code is worked out.
+			propPlacement = {
+				position = Vector3.new(-20.5, 2.84, -9.2),
+				style = "PhoneScreen",
+				label = "Read Unlocked Phone",
+				revealWhen = { knows("Deduction", "DEDUCT-007") },
+			},
+		},
+		{
+			id = "EV-012",
+			name = "Watch Data",
+			description = "Daniel's watch data, synced to his phone.",
+			details = "Heart rate recorded until 11:49 PM. Nothing after.",
+			location = "Daniel's Office",
+			importance = "Medium",
+			category = "Digital Activity",
+			timestamp = "11:49 PM",
+			timelineEventId = "TIMELINE-007",
+		},
+		{
+			-- The photo in the desk drawer (a flavour object until now). The wedding
+			-- outfit on the front and the date on the back are the whole clue to the
+			-- phone's code.
+			id = "EV-013",
+			name = "Photo of Meera",
+			description = "A photo in Daniel's desk drawer, one he never put on the desk.",
+			details = [[Meera in a songket, holding flowers. She's laughing at whoever held the camera. On the back, in Daniel's hand: "For M. — 07.12.09."]],
+			location = "Daniel's Office",
+			importance = "Medium",
+			category = "Personal",
+			bindTo = { instanceName = "DeskDrawer" },
+		},
 	},
 
 	timeline = {
@@ -392,6 +437,22 @@ local Case001: Types.CaseDefinition = {
 			sourceEvidenceIds = { "EV-001" },
 		},
 		{
+			id = "TIMELINE-006",
+			timestamp = "11:48 PM",
+			timeMinutes = 1428,
+			title = "A message never sent",
+			description = "Daniel starts a message to Meera. He never sends it.",
+			sourceEvidenceIds = { "EV-011" },
+		},
+		{
+			id = "TIMELINE-007",
+			timestamp = "11:49 PM",
+			timeMinutes = 1429,
+			title = "The last heartbeat",
+			description = "Daniel's watch records its last heart rate. Nothing after.",
+			sourceEvidenceIds = { "EV-012" },
+		},
+		{
 			id = "TIMELINE-004",
 			timestamp = "11:52 PM",
 			timeMinutes = 1432,
@@ -411,8 +472,17 @@ local Case001: Types.CaseDefinition = {
 
 	-- The order a not-yet-reconstructed timeline presents its events in.
 	-- Deliberately NOT chronological (canonical: 11:31 -> 11:42 -> 11:47 ->
-	-- 11:52 -> 12:00), so putting the night in order is a real step.
-	timelineChallengeOrder = { "TIMELINE-004", "TIMELINE-003", "TIMELINE-005", "TIMELINE-002", "TIMELINE-001" },
+	-- 11:48 -> 11:49 -> 11:52 -> 12:00), and different from the canonical
+	-- position at every index, so putting the night in order is a real step.
+	timelineChallengeOrder = {
+		"TIMELINE-004",
+		"TIMELINE-003",
+		"TIMELINE-007",
+		"TIMELINE-005",
+		"TIMELINE-006",
+		"TIMELINE-002",
+		"TIMELINE-001",
+	},
 
 	-- The pacing spine. Each description points at a question, never at
 	-- its answer. Requirements met before an objective becomes active still
@@ -835,6 +905,11 @@ local Case001: Types.CaseDefinition = {
 							"MARA-DISSOLVE-1",
 							{ knows("Evidence", "EV-002"), lacks("Statement", "STMT-SUS-001-MOTIVE") }
 						),
+						ask("phone", "Would you open his phone for me?", "MARA-OPENPHONE-1", {
+							knows("Statement", "STMT-SUS-001-ADMISSION"),
+							lacks("Statement", "STMT-SUS-001-HOME"),
+							lacks("Evidence", "EV-011"),
+						}),
 						show("show", "Can you look at something for me?", "Show Meera…", "MARA-SHOW-NOTHING", {
 							{
 								-- Her alibi against the phone: the call was
@@ -851,6 +926,18 @@ local Case001: Types.CaseDefinition = {
 								evidence = "EV-001",
 								next = "MARA-PHONE-KNOWN",
 								requires = { knows("Statement", "STMT-SUS-001-VICTOR") },
+							},
+							{
+								-- Phase 5.4: his unsent message, read to her (the other way
+								-- into it: the phone was opened by working out its code).
+								evidence = "EV-011",
+								next = "MARA-MSG-0",
+								requires = { lacks("Statement", "STMT-SUS-001-HOME") },
+							},
+							{
+								evidence = "EV-011",
+								next = "MARA-MSG-KNOWN",
+								requires = { knows("Statement", "STMT-SUS-001-HOME") },
 							},
 							{ evidence = "EV-001", next = "MARA-PHONE-EARLY" },
 						}),
@@ -1060,7 +1147,100 @@ local Case001: Types.CaseDefinition = {
 					choices = {
 						ask("apologise", "I'm sorry. I need to understand that call.", "MARA-COLD-THAW"),
 						ask("insist", "I need the truth, Puan Meera.", "MARA-COLD-NO"),
+						-- Phase 5.4: the other way back to her, for whoever worked out the
+						-- phone's code without ever thawing her.
+						ask("message", "He left a message for you. I found it.", "MARA-MSG-COLD-1", {
+							knows("Evidence", "EV-011"),
+							lacks("Statement", "STMT-SUS-001-HOME"),
+						}),
 					},
+				},
+				["MARA-OPENPHONE-1"] = {
+					id = "MARA-OPENPHONE-1",
+					speaker = "Meera Rozario",
+					text = "...Give it here. He used the same code for everything.",
+					next = "MARA-OPENPHONE-2",
+				},
+				["MARA-OPENPHONE-2"] = {
+					id = "MARA-OPENPHONE-2",
+					speaker = "Meera Rozario",
+					text = "Zero-seven, one-two, zero-nine. Our wedding.",
+					next = "MARA-OPENPHONE-3",
+				},
+				["MARA-OPENPHONE-3"] = {
+					id = "MARA-OPENPHONE-3",
+					speaker = "Meera Rozario",
+					text = "There's a message. He never sent it.",
+					next = "MARA-OPENPHONE-4",
+				},
+				["MARA-OPENPHONE-4"] = {
+					id = "MARA-OPENPHONE-4",
+					speaker = "Meera Rozario",
+					text = [["I'm sorry about tonight. I'm finishing it with V. He's taking it badly. Then I'm coming home."]],
+					next = "MARA-OPENPHONE-5",
+				},
+				["MARA-OPENPHONE-5"] = {
+					id = "MARA-OPENPHONE-5",
+					speaker = "Meera Rozario",
+					text = "He was coming home.",
+					-- Both the message and the watch data are handed over here; the
+					-- statement is what the ending keys on, not who opened the phone.
+					statementId = "STMT-SUS-001-HOME",
+					grantsEvidence = { "EV-011", "EV-012" },
+					choicesFrom = "MARA-HUB",
+				},
+				["MARA-MSG-0"] = {
+					id = "MARA-MSG-0",
+					speaker = YOU,
+					text = "He wrote this to you at 11:48. He never sent it.",
+					isPlayer = true,
+					next = "MARA-MSG-1",
+				},
+				["MARA-MSG-1"] = {
+					id = "MARA-MSG-1",
+					speaker = "Meera Rozario",
+					text = "...",
+					next = "MARA-MSG-2",
+				},
+				["MARA-MSG-2"] = {
+					id = "MARA-MSG-2",
+					speaker = "Meera Rozario",
+					text = "Let me read it again.",
+					next = "MARA-MSG-3",
+				},
+				["MARA-MSG-3"] = {
+					id = "MARA-MSG-3",
+					speaker = "Meera Rozario",
+					text = "...He was coming home.",
+					statementId = "STMT-SUS-001-HOME",
+					-- Whoever reaches her this way is no longer the one who upset her.
+					clearFlags = { "mara_upset" },
+					choicesFrom = "MARA-HUB",
+				},
+				["MARA-MSG-KNOWN"] = {
+					id = "MARA-MSG-KNOWN",
+					speaker = "Meera Rozario",
+					text = "I know what it says. Keep it safe for me.",
+					choicesFrom = "MARA-HUB",
+				},
+				["MARA-MSG-COLD-1"] = {
+					id = "MARA-MSG-COLD-1",
+					speaker = "Meera Rozario",
+					text = "...What message?",
+					next = "MARA-MSG-COLD-2",
+				},
+				["MARA-MSG-COLD-2"] = {
+					id = "MARA-MSG-COLD-2",
+					speaker = YOU,
+					text = "It's on his phone. He wrote it at 11:48.",
+					isPlayer = true,
+					next = "MARA-MSG-COLD-3",
+				},
+				["MARA-MSG-COLD-3"] = {
+					id = "MARA-MSG-COLD-3",
+					speaker = "Meera Rozario",
+					text = "...Show me.",
+					next = "MARA-MSG-1",
 				},
 				["MARA-COLD-THAW"] = {
 					id = "MARA-COLD-THAW",
@@ -1172,6 +1352,13 @@ local Case001: Types.CaseDefinition = {
 									lacks("Flag", "vic_cameras_shown"),
 								},
 								claims = "CONTRA-004",
+							},
+							{
+								-- Phase 5.4: "he was alive when I left" against the watch.
+								evidence = "EV-012",
+								next = "VIC-WATCH-0",
+								requires = { knows("Statement", "STMT-SUS-002-REVISED") },
+								claims = "CONTRA-006",
 							},
 							{
 								evidence = "EV-004",
@@ -1333,6 +1520,27 @@ local Case001: Types.CaseDefinition = {
 					statementId = "STMT-SUS-002-REVISED",
 					choicesFrom = "VIC-HUB",
 				},
+				["VIC-WATCH-0"] = {
+					id = "VIC-WATCH-0",
+					speaker = YOU,
+					text = "Daniel's watch stopped recording at 11:49. Your badge left at 11:52.",
+					isPlayer = true,
+					next = "VIC-WATCH-1",
+				},
+				["VIC-WATCH-1"] = {
+					id = "VIC-WATCH-1",
+					speaker = "Victor Lim",
+					text = "Aiya, those things lose signal all the time. It means nothing.",
+					next = "VIC-WATCH-2",
+				},
+				["VIC-WATCH-2"] = {
+					id = "VIC-WATCH-2",
+					speaker = YOU,
+					text = "It means he was alive at 11:48 and gone by 11:49. You were still in the building.",
+					isPlayer = true,
+					-- From here it is the same break as the phone's: his own words run out.
+					next = "VIC-CONF-3",
+				},
 				["VIC-CONF-0"] = {
 					id = "VIC-CONF-0",
 					speaker = YOU,
@@ -1488,6 +1696,14 @@ local Case001: Types.CaseDefinition = {
 			label = "Not a Word",
 			text = '"I haven\'t said a word to Victor tonight. I won\'t."',
 		},
+		{
+			-- Phase 5.4: what the ending keys on. Neutral about how she came to
+			-- read it: she opened the phone, or she was shown the message.
+			id = "STMT-SUS-001-HOME",
+			suspectId = "SUS-001",
+			label = "Coming Home",
+			text = [["He was coming home." Meera has read Daniel's last message.]],
+		},
 	},
 
 	contradictions = {
@@ -1537,6 +1753,16 @@ local Case001: Types.CaseDefinition = {
 			right = { kind = "Statement", id = "STMT-SUS-003-TAPE" },
 			reason = "Victor knows Daniel's call went unanswered. The phone has been behind the tape since before he "
 				.. "arrived, and all he was told was that Daniel had passed. He knew because he was in the room.",
+		},
+		{
+			-- Phase 5.4: his revised story against the watch.
+			id = "CONTRA-006",
+			claim = true,
+			label = "Still in the Building",
+			left = { kind = "Statement", id = "STMT-SUS-002-REVISED" },
+			right = { kind = "Evidence", id = "EV-012" },
+			reason = "Victor says Daniel was alive when he left. Daniel's watch records his last heartbeat at 11:49. "
+				.. "Victor's badge didn't leave until 11:52.",
 		},
 	},
 
@@ -1651,6 +1877,27 @@ local Case001: Types.CaseDefinition = {
 				answer = "leverage",
 			},
 		},
+		{
+			-- Phase 5.4: the phone's code, worked out from the room. Answering it
+			-- rightly wakes the desk phone's screen (EV-011's revealWhen). The
+			-- wedding outfit and the date on the back of the photo are the only clue.
+			id = "DEDUCT-007",
+			label = "Daniel's Code",
+			requiredFacts = {
+				{ kind = "Evidence", id = "EV-001" },
+				{ kind = "Evidence", id = "EV-013" },
+			},
+			question = {
+				prompt = "Daniel's phone is locked. What would he choose as the code?",
+				options = {
+					{ id = "birthday", text = "Meera's birthday." },
+					{ id = "wedding", text = "Their wedding date." },
+					{ id = "firm", text = "The day the firm opened." },
+					{ id = "born", text = "The day Daniel was born." },
+				},
+				answer = "wedding",
+			},
+		},
 	},
 
 	-- Who may be formally accused. `supportedBy` names the reasoning that
@@ -1669,11 +1916,12 @@ local Case001: Types.CaseDefinition = {
 				deductions = { "DEDUCT-001", "DEDUCT-002", "DEDUCT-004" },
 			},
 			-- Why: the dissolution, coming back to stop it, or what Daniel had found
-			-- in the invoices. What proves it: either lie about the last hour, or the
-			-- slip about a call nobody had told him of. The cameras alone say he planned
-			-- to be unseen, not that he was there.
+			-- in the invoices. What proves it: either lie about the last hour, the
+			-- slip about a call nobody had told him of, or his story against the
+			-- watch. The cameras alone say he planned to be unseen, not that he was
+			-- there.
 			motives = { "DEDUCT-002", "DEDUCT-001", "DEDUCT-006" },
-			proofs = { "CONTRA-001", "CONTRA-002", "CONTRA-005" },
+			proofs = { "CONTRA-001", "CONTRA-002", "CONTRA-005", "CONTRA-006" },
 		},
 		{
 			id = "ACC-002",
@@ -1688,25 +1936,125 @@ local Case001: Types.CaseDefinition = {
 		},
 	} :: { Types.AccusationDefinition },
 
+	-- Phase 5.4: the dawn outro, played after a Solved verdict and before the
+	-- Case Closed screen. Two scenes that differ by one caption: the second is
+	-- for an investigator who has read Daniel's message with Meera
+	-- (STMT-SUS-001-HOME), see solution.solvedCutscenes. Camera, fades and
+	-- captions only; the dawn light itself waits for the intro's sets (5.5).
+	cutscenes = {
+		{
+			id = "CUT-DAWN",
+			shots = {
+				{
+					id = "OFFICE",
+					duration = 6,
+					fadeIn = 1.5,
+					camera = {
+						from = { position = Vector3.new(-18.0, 6.2, -3.6), lookAt = Vector3.new(-22.0, 2.4, -9.4) },
+						to = { position = Vector3.new(-19.5, 5.0, -5.5), lookAt = Vector3.new(-21.5, 2.0, -9.0) },
+						fieldOfView = 55,
+					},
+					lines = { { at = 0.8, duration = 4.4, text = "First light over Kota Arwana." } },
+				},
+				{
+					id = "WINDOW",
+					duration = 7,
+					camera = {
+						from = { position = Vector3.new(-7.5, 5.0, -13.0), lookAt = Vector3.new(-4.0, 4.6, -23.0) },
+						to = { position = Vector3.new(-5.6, 5.0, -15.5), lookAt = Vector3.new(-4.0, 4.6, -23.0) },
+						fieldOfView = 55,
+					},
+					lines = { { at = 1.0, duration = 5.0, text = "She stays at the window." } },
+				},
+				{
+					id = "HOLD",
+					duration = 5,
+					fadeOut = 2,
+					camera = {
+						from = { position = Vector3.new(-4.0, 6.0, -11.0), lookAt = Vector3.new(-4.0, 5.0, -23.5) },
+						fieldOfView = 60,
+					},
+				},
+			},
+		},
+		{
+			id = "CUT-DAWN-HOME",
+			shots = {
+				{
+					id = "OFFICE",
+					duration = 6,
+					fadeIn = 1.5,
+					camera = {
+						from = { position = Vector3.new(-18.0, 6.2, -3.6), lookAt = Vector3.new(-22.0, 2.4, -9.4) },
+						to = { position = Vector3.new(-19.5, 5.0, -5.5), lookAt = Vector3.new(-21.5, 2.0, -9.0) },
+						fieldOfView = 55,
+					},
+					lines = { { at = 0.8, duration = 4.4, text = "First light over Kota Arwana." } },
+				},
+				{
+					id = "WINDOW",
+					duration = 7,
+					camera = {
+						from = { position = Vector3.new(-7.5, 5.0, -13.0), lookAt = Vector3.new(-4.0, 4.6, -23.0) },
+						to = { position = Vector3.new(-5.6, 5.0, -15.5), lookAt = Vector3.new(-4.0, 4.6, -23.0) },
+						fieldOfView = 55,
+					},
+					lines = { { at = 1.0, duration = 5.0, text = "She turns it face up." } },
+				},
+				{
+					id = "HOLD",
+					duration = 5,
+					fadeOut = 2,
+					camera = {
+						from = { position = Vector3.new(-4.0, 6.0, -11.0), lookAt = Vector3.new(-4.0, 5.0, -23.5) },
+						fieldOfView = 60,
+					},
+				},
+			},
+		},
+	},
+
 	-- Server-only (this module lives in ServerStorage). Revealed at the close.
 	solution = {
 		culpritSuspectId = "SUS-002",
-		reveal = "Victor Lim never went home. His badge came back in at 11:04 PM, to stop Daniel signing "
-			.. "the papers that would end their partnership. Daniel made two coffees and tried to talk him "
-			.. "down. At 11:47 he called Meera. She was awake, still angry, and let it ring. Minutes later "
-			.. "Daniel was dead, and at 11:52 Victor's badge was the last to leave. He had known since "
-			.. "Tuesday that no camera would see him go.",
-		solvedEpilogue = "Victor Lim is charged before sunrise. The dissolution papers are still on "
-			.. "Daniel's desk, unsigned, where he left them.",
-		-- P7: the case holds either way; an investigator who pushed Victor
-		-- until he broke gets an ending that says so.
+		reveal = "Victor Lim had been paying himself through a joinery firm that existed only on paper. "
+			.. "Daniel found the invoices and wanted out, tonight, with the folder in his drawer as leverage. "
+			.. "Victor came back at 11:04 to talk him out of it. Daniel made two coffees. At 11:47 he called "
+			.. "Meera; she let it ring. A minute later they were fighting over the drawer, and Daniel fell "
+			.. "against the credenza. Victor didn't call anyone. He turned their photo face down, took the "
+			.. "folder, and his badge left at 11:52. The cameras had been dark since Tuesday. Victor had paid "
+			.. "for that, for the nights he spent emptying that drawer.",
+		solvedEpilogue = "Victor Lim is charged before sunrise. The folder is in the boot of his car. "
+			.. "The papers are still on Daniel's desk, unsigned.",
+		-- P7: the case holds either way; the ending says how it was closed. The
+		-- first variant whose facts are all known wins, so the fullest is first.
 		solvedVariants = {
+			{
+				requiredFacts = {
+					{ kind = "Statement", id = "STMT-SUS-001-HOME" },
+					{ kind = "Statement", id = "STMT-SUS-002-BREAK" },
+				},
+				epilogue = "Victor Lim is charged before sunrise. What he said in that meeting room goes "
+					.. "into the file word for word. The folder is in the boot of his car. Meera takes "
+					.. "Daniel's phone home, and on the train she turns it face up.",
+			},
+			{
+				requiredFacts = { { kind = "Statement", id = "STMT-SUS-001-HOME" } },
+				epilogue = "Victor Lim is charged before sunrise. The folder is in the boot of his car. "
+					.. "Meera takes Daniel's phone home, and on the train she turns it face up.",
+			},
 			{
 				requiredFacts = { { kind = "Statement", id = "STMT-SUS-002-BREAK" } },
 				epilogue = "Victor Lim is charged before sunrise. What he said in that meeting room goes "
-					.. "into the file word for word, and his lawyer can't take it back. The dissolution "
-					.. "papers are still on Daniel's desk, unsigned, where he left them.",
+					.. "into the file word for word, and his lawyer can't take it back. The folder is in "
+					.. "the boot of his car. The papers are still on Daniel's desk, unsigned.",
 			},
+		},
+		-- Phase 5.4: the dawn outro, chosen like the epilogue: the first entry whose
+		-- facts are all known. The phone ending keys on HOME, not on who opened it.
+		solvedCutscenes = {
+			{ cutsceneId = "CUT-DAWN-HOME", requiredFacts = { { kind = "Statement", id = "STMT-SUS-001-HOME" } } },
+			{ cutsceneId = "CUT-DAWN" },
 		},
 		unprovenEpilogue = "Victor Lim walks out at three in the morning with his lawyer. You know what "
 			.. "happened in that office. You couldn't make it hold.",

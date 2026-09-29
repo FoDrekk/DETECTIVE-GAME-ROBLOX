@@ -33,7 +33,7 @@ Config.Environment = {
 	-- never reached. See `815064d` for the incident this exists to catch:
 	-- a floor/grounding fix landed in the builders, but the already-baked
 	-- `.rbxl` was never re-baked, so the fix never reached the saved place.
-	BuilderVersion = 4,
+	BuilderVersion = 5,
 	-- 12:40 AM, after hours (OfficeRoom). Readability first: the local lights
 	-- carry the mood, ambient and exposure keep every room playable.
 	Night = {

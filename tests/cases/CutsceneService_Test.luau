@@ -425,9 +425,22 @@ return function(t)
 		end
 	end)
 
-	t.test("CASE-001 v1 has no scenes yet, and validates clean", function()
+	t.test("CASE-001's two dawn scenes validate clean, and its Solved close names only real ones", function()
 		local case001 = CaseRegistry.get("CASE-001") :: any
-		expect.equal(case001.cutscenes, nil)
+		local ids = {}
+		for _, cutscene in ipairs(case001.cutscenes) do
+			table.insert(ids, cutscene.id)
+		end
+		expect.deepEqual(ids, { "CUT-DAWN", "CUT-DAWN-HOME" })
 		expect.equal(#CutsceneService.validate(case001), 0)
+	end)
+
+	t.test("the validator reports a Solved close that names a scene that isn't there", function()
+		local broken = table.clone(CaseRegistry.get("CASE-001") :: any)
+		broken.solution = table.clone(broken.solution)
+		broken.solution.solvedCutscenes = { { cutsceneId = "CUT-GHOST" } }
+		local problems = CutsceneService.validate(broken)
+		expect.equal(#problems, 1)
+		expect.truthy(string.find(problems[1], "CUT-GHOST", 1, true))
 	end)
 end

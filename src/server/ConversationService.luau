@@ -801,6 +801,41 @@ function ConversationService.validate(caseDef: Types.CaseDefinition): { string }
 		known.Deduction[deduction.id] = true
 	end
 
+	-- Phase 5.4: evidence that hands over other evidence must name real,
+	-- other items, and never loop back on itself.
+	local handsOver: { [string]: { string } } = {}
+	for _, evidence in ipairs(caseDef.evidence) do
+		handsOver[evidence.id] = evidence.grantsEvidence or {}
+		for _, otherId in ipairs(evidence.grantsEvidence or {}) do
+			if otherId == evidence.id then
+				table.insert(problems, `evidence {evidence.id}: grants itself`)
+			elseif not known.Evidence[otherId] then
+				table.insert(problems, `evidence {evidence.id}: grants unknown evidence '{otherId}'`)
+			end
+		end
+	end
+	for startId in pairs(handsOver) do
+		local visited: { [string]: boolean } = {}
+		local function walk(id: string): boolean
+			if id == startId and next(visited) ~= nil then
+				return true
+			end
+			if visited[id] then
+				return false
+			end
+			visited[id] = true
+			for _, otherId in ipairs(handsOver[id] or {}) do
+				if walk(otherId) then
+					return true
+				end
+			end
+			return false
+		end
+		if walk(startId) then
+			table.insert(problems, `evidence {startId}: grants itself through a chain`)
+		end
+	end
+
 	-- Flags must be set somewhere to be worth testing.
 	local flagsSet: { [string]: boolean } = {}
 	for _, conversation in ipairs(caseDef.conversations) do

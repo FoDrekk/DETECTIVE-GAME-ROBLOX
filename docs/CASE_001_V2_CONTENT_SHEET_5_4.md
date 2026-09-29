@@ -1,6 +1,6 @@
 # CASE-001 v2: Phase 5.4 content sheet
 
-Status: **proposal, awaiting owner approval.** Nothing here is applied.
+Status: **approved and applied in Phase 5.4.**
 
 Decisions already taken (owner, 2026-09-29), which this sheet follows:
 1. One examine hands over two items: the readout shows the message with an

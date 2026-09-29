@@ -107,14 +107,18 @@ function EvidencePanel.show(payload: Types.EvidencePayload)
 	end
 
 	-- Phase 2O: authored cross-references to already-discovered evidence.
+	-- Phase 5.4: evidence handed over with this one gets a line of its own
+	-- above the cross-references; its full readout lives in the Case File.
 	if relatedLabel then
-		if payload.related and #payload.related > 0 then
-			relatedLabel.Text = `RELATED  {table.concat(payload.related, ", ")}`
-			relatedLabel.Visible = true
-		else
-			relatedLabel.Text = ""
-			relatedLabel.Visible = false
+		local lines = {}
+		if payload.alsoAdded and #payload.alsoAdded > 0 then
+			table.insert(lines, `ALSO ADDED  {table.concat(payload.alsoAdded, ", ")}`)
 		end
+		if payload.related and #payload.related > 0 then
+			table.insert(lines, `RELATED  {table.concat(payload.related, ", ")}`)
+		end
+		relatedLabel.Text = table.concat(lines, "\n")
+		relatedLabel.Visible = #lines > 0
 	end
 
 	setVisible(true)

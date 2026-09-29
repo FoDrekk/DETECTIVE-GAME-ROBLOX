@@ -298,6 +298,13 @@ function CutsceneService.validate(caseDef: Types.CaseDefinition): { string }
 			table.insert(problems, `{label}: replayFrom '{cutscene.replayFrom}' is not one of its shots`)
 		end
 	end
+	-- Phase 5.4: a Solved close's scenes must be real ones.
+	local solution = caseDef.solution
+	for index, entry in ipairs(solution and solution.solvedCutscenes or {}) do
+		if not ids[entry.cutsceneId] then
+			table.insert(problems, `solvedCutscenes {index}: unknown cutscene '{entry.cutsceneId}'`)
+		end
+	end
 	return problems
 end
 

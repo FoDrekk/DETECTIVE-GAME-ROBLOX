@@ -1049,7 +1049,7 @@ three builders expose a targeted patch, run once in Edit mode:
 Text baked into other props (the fascia, the printout, exit signs, the pantry
 note) was migrated with an explicit old-to-new table, then the place's
 `BuilderVersion` stamp was set to `Config.Environment.BuilderVersion`
-(bumped to 3, then to 4 in Phase 5.3). Bump the version whenever what a builder generates changes.
+(bumped to 3, to 4 in Phase 5.3 and to 5 in Phase 5.4). Bump the version whenever what a builder generates changes.
 In Edit mode, `require` caches a module for the whole session; require a
 `Clone()` of the ModuleScript to run its current source.
 
@@ -1246,6 +1246,49 @@ CASE-001 v1 uses none of them, so it plays exactly as before.
   - `ConversationService.validate` reports unknown granted ids.
   - `OfficeRoom.validateInteractables` doesn't expect a world object for
     granted evidence.
+
+### Evidence that hands over evidence (`EvidenceDefinition.grantsEvidence`, Phase 5.4)
+
+- **Data.** `EvidenceDefinition.grantsEvidence: { string }`. One object, one
+  action, several clues: an unlocked phone gives the message and the watch data.
+- **How it runs.** `EvidenceService` records and announces the examined item
+  first, then hands the others over through `grant` (so each gets the same
+  timeline reveal, StoryEvent and objective credit as any discovery). Already-known
+  ones are skipped. It works the same whether the item is examined or is itself
+  handed over by a conversation.
+- **The readout.** `EvidencePayload.alsoAdded` names only the ones newly added.
+  `EvidencePanel` shows them as an "ALSO ADDED" line; the handed-over items send
+  their own `granted` payloads, so they get the discovery sound and no readout.
+- **A chain can't loop.** The primary is already discovered before the others are
+  asked for, and `ConversationService.validate` rejects unknown ids, a self-grant
+  and a loop.
+- **A prop's own prompt.** `propPlacement.label` sets the prompt ("Read Unlocked
+  Phone"); absent derives it from the evidence's name.
+
+### A scene at a Solved close (`solution.solvedCutscenes`, Phase 5.4)
+
+- **Data.** `CaseSolution.solvedCutscenes: { { cutsceneId, requiredFacts? } }`,
+  chosen like `solvedVariants`: the first entry whose facts the player has
+  established (one without facts always matches, so it goes last).
+  `AccusationService.getOutroCutsceneId` returns it, and only for a Solved
+  verdict.
+- **The close.** `GameStateService.requestConclude` moves to `CaseClosed` as
+  before, then plays that scene and holds the closing summary. When the scene ends
+  (finished, skipped or timed out: the `CutsceneFinished` StoryEvent) the summary
+  is announced. If no scene is authored, or it can't play, the summary comes at once.
+- **The hand-off is `GameStateService.announceClose`**, which `requestConclude` calls, so
+  it can be tested without walking the phase machine. The held summary is keyed by
+  UserId: a BindableEvent hands its listeners a copy of a table, so a mock player
+  would never match itself.
+- **A replay** drops a waiting summary. `GameStateService.isClosingScenePlaying`
+  says whether one is held.
+- **The investigator's avatar is hidden during any scripted shot**
+  (`CameraController.playShot`, shown again by `stopCinematic`): a scene's cameras
+  are placed in the office wherever the player happens to be standing.
+- **On the client** nothing new: the phase is already `CaseClosed`, the scene
+  takes the screen, and the Case Closed card shows when the summary arrives.
+- **Validation.** `CutsceneService.validate` rejects an entry that names a scene
+  the case doesn't have.
 
 ### Scripted scenes (`cutscenes`: CutsceneService and CutsceneView)
 

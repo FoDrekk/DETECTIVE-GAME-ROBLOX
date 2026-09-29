@@ -29,6 +29,8 @@ local savedCameraType: Enum.CameraType? = nil
 -- Phase 5.1: a scripted shot may set its own field of view; the player's is
 -- put back when the cinematic ends.
 local savedFieldOfView: number? = nil
+-- Phase 5.4: set while a scripted shot has hidden the investigator's avatar.
+local shotHidesAvatar = false
 
 -- The close-up framing sits near the player, so their own avatar would fill
 -- the shot. Re-applied every frame after the camera step, because the default
@@ -271,6 +273,11 @@ function CameraController.playShot(from: CFrame, to: CFrame, duration: number, f
 	cam.FieldOfView = fieldOfView or savedFieldOfView :: number
 	cam.CameraType = Enum.CameraType.Scriptable
 	cam.CFrame = from
+	-- Phase 5.4: the investigator is behind the camera, not in the shot: a
+	-- scene's cameras are placed in the office wherever they happen to be
+	-- standing. Shown again when the scene hands the camera back.
+	shotHidesAvatar = true
+	setAvatarHidden(true)
 	setMovementEnabled(false)
 	local length = math.max(duration, 1e-3)
 	local startClock = os.clock()
@@ -300,6 +307,10 @@ function CameraController.stopCinematic()
 	if savedFieldOfView then
 		cam.FieldOfView = savedFieldOfView
 		savedFieldOfView = nil
+	end
+	if shotHidesAvatar then
+		shotHidesAvatar = false
+		setAvatarHidden(false)
 	end
 	setMovementEnabled(true)
 end

@@ -250,21 +250,25 @@ return function(t)
 		end)
 	end)
 
-	t.test("CASE-001 gates exactly one prop: the badge log's printout, held until Sam prints it", function()
+	t.test("CASE-001 gates exactly two props: the badge printout (until Sam prints it) and the phone's screen (until its code is worked out)", function()
 		local evidenceList = (CaseRegistry.get("CASE-001") :: any).evidence
 		local gated = {}
+		local expected: { [string]: any } = {
+			["EV-004"] = { { kind = "Statement", id = "STMT-SUS-003-BADGE" } },
+			["EV-011"] = { { kind = "Deduction", id = "DEDUCT-007" } },
+		}
 		for _, evidence in ipairs(evidenceList) do
 			local placement = evidence.propPlacement
 			if placement and placement.revealWhen then
 				table.insert(gated, evidence.id)
-				expect.deepEqual(placement.revealWhen, { { kind = "Statement", id = "STMT-SUS-003-BADGE" } })
+				expect.deepEqual(placement.revealWhen, expected[evidence.id])
 			end
 		end
-		expect.deepEqual(gated, { "EV-004" })
+		expect.deepEqual(gated, { "EV-004", "EV-011" })
 		RevealService.holdAll("CASE-001")
 		for _, evidence in ipairs(evidenceList) do
 			if evidence.propPlacement then
-				expect.equal(RevealService.isInWorld(evidence.id), evidence.id ~= "EV-004")
+				expect.equal(RevealService.isInWorld(evidence.id), expected[evidence.id] == nil)
 			end
 		end
 	end)

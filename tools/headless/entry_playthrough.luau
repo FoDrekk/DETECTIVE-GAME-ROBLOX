@@ -590,8 +590,18 @@ check(objective() == "OBJ-004", "then: the call nobody answered")
 -- apology.
 converse("SUS-001", "Meera Rozario (pressed)", { "look at something", "Phone", "Why lie" }, nil)
 check(hasFact("contradictions", "Meera's Missed Call"), "showing Meera the phone: 'Meera's Missed Call'")
-converse("SUS-001", "Meera Rozario (again)", { "I'm sorry. I need to understand" }, "let you be")
+-- Phase 5.4, route A: once she has admitted the call (and isn't upset), she
+-- opens his phone for the investigator, and both clues are handed over.
+local handedOver = sentCount("EvidenceDiscovered")
+converse(
+	"SUS-001",
+	"Meera Rozario (again)",
+	{ "I'm sorry. I need to understand", "open his phone" },
+	"let you be"
+)
 Shim.advance(2)
+check(sentCount("EvidenceDiscovered") == handedOver + 2, "route A: she opens his phone, and the message and the watch data arrive")
+check(hasFact("statements", "Coming Home"), "route A: 'Coming Home' is on the record")
 check(
 	string.find(answerQuestion("DEDUCT-001", "victor", "who came back"), "VICTOR CAME BACK", 1, true) ~= nil,
 	"answering who came back: 'Victor Came Back'"
@@ -603,6 +613,16 @@ converse("SUS-002", "Victor Lim (the log)", { "Take a look", "Badge Log" }, "Tha
 converse("SUS-002", "Victor Lim (the phone)", { "Take a look", "Phone" }, nil)
 Shim.advance(2)
 check(hasFact("contradictions", "A Call That Never Connected"), "showing him the phone: 'A Call That Never Connected'")
+check(
+	string.find(
+		claimPair("Fact_Statement_STMT-SUS-002-REVISED", "Fact_Evidence_EV-012", "Victor's story × the watch"),
+		"STILL IN THE BUILDING",
+		1,
+		true
+	) ~= nil,
+	"setting his revised story against the watch data: 'Still in the Building'"
+)
+Shim.advance(2.5)
 check(
 	string.find(answerQuestion("DEDUCT-004", "after", "when he left"), "THERE AT THE END", 1, true) ~= nil,
 	"answering when he left: 'Victor Was There at the End'"
@@ -618,7 +638,15 @@ say("\n== Timeline ==")
 InputController.invoke("Timeline")
 Shim.advance(1)
 local timelineGui = playerGui:FindFirstChild("MysteryCase_Timeline")
-local canonical = { "TIMELINE-005", "TIMELINE-001", "TIMELINE-002", "TIMELINE-004", "TIMELINE-003" }
+local canonical = {
+	"TIMELINE-005",
+	"TIMELINE-001",
+	"TIMELINE-002",
+	"TIMELINE-006",
+	"TIMELINE-007",
+	"TIMELINE-004",
+	"TIMELINE-003",
+}
 local function rowOrder(): { string }
 	local rows = {}
 	for _, d in ipairs((timelineGui :: Instance):GetDescendants()) do
@@ -669,7 +697,29 @@ end
 say("\n== Accusation ==")
 -- Phase 5.3: the new motive (what Daniel found in the invoices) and the new
 -- proof (the slip), chosen from what this run established.
+local closedBefore = sentCount("CaseClosedSummary")
 accuse("ACC-001", "DEDUCT-006", "CONTRA-005")
+
+-- Phase 5.4: a Solved close plays the dawn outro first; the summary waits.
+say("\n== The dawn outro ==")
+local outro = lastSent("CutsceneUpdated")
+check(outro and outro[1].active and outro[1].id == "CUT-DAWN-HOME", "a solved case with the message read plays the phone's dawn outro")
+check(sentCount("CaseClosedSummary") == closedBefore, "the closing summary is held back while the outro plays")
+local closedPhase0 = lastSent("PhaseChanged")
+check(closedPhase0 and closedPhase0[1] == "CaseClosed", "the case is closed while the outro plays")
+if outro and outro[1].shots then
+	local caption = outro[1].shots[2].lines[1].text
+	say("  [OUTRO] " .. outro[1].shots[1].lines[1].text .. " / " .. caption)
+	check(caption == "She turns it face up.", "the second shot's caption is the phone's")
+end
+-- The investigator is behind the camera, not in the shot.
+local head = character():FindFirstChild("Head") :: BasePart
+check(head and head.LocalTransparencyModifier == 1, "the investigator's avatar is out of the outro's shots")
+Shim.advance(20) -- the scene runs its 18 seconds
+check(head and head.LocalTransparencyModifier == 0, "the avatar is back once the outro is over")
+local outroOver = lastSent("CutsceneUpdated")
+check(outroOver and outroOver[1].active == false, "the outro ends by itself")
+check(sentCount("CaseClosedSummary") == closedBefore + 1, "the closing summary follows the outro")
 local summary = lastSent("CaseClosedSummary")
 local verdict = summary and summary[1].verdict
 check(verdict and verdict.grade == "Solved", "the verdict: solved")
@@ -682,7 +732,11 @@ local closedPhase = lastSent("PhaseChanged")
 check(closedPhase and closedPhase[1] == "CaseClosed", "phase CaseClosed")
 Shim.advance(3)
 check(closingText("Title") == "Case solved.", "the closing screen: 'Case solved.'")
-check(string.find(closingText("Epilogue"), "unsigned", 1, true) ~= nil, "the closing screen tells what happened next")
+check(
+	string.find(closingText("Epilogue"), "turns it face up", 1, true) ~= nil
+		and string.find(closingText("Epilogue"), "word for word", 1, true) ~= nil,
+	"the closing screen tells what happened next: the fullest ending"
+)
 -- Phase 3 (R6): objectives read as leads, not a score.
 check(
 	string.find(closingText("Stats"), "Leads followed", 1, true) ~= nil
@@ -746,6 +800,10 @@ do
 		not evidenceProp("EV-004"):IsDescendantOf(workspace),
 		"the replay holds the badge log's printout back again"
 	)
+	check(
+		not evidenceProp("EV-011"):IsDescendantOf(workspace),
+		"the replay keeps the phone's lit screen off again"
+	)
 	local accusationFresh = lastSent("AccusationUpdated")
 	check(accusationFresh and not accusationFresh[1].open, "the replay starts with accusing closed")
 	local timelineFresh = lastSent("TimelineUpdated")
@@ -756,10 +814,118 @@ do
 end
 
 --------------------------------------------------------------------------
--- Second run: sloppy, and an early accusation of the wrong person
+-- Second run (Phase 5.4, route B): harsh with Meera and never thawed, the
+-- phone's code worked out from the drawer photo, the message read alone
 --------------------------------------------------------------------------
 
-say("\n== Second run: in a hurry ==")
+say("\n== Second run: the harsh road, and the code worked out ==")
+converse(
+	"SUS-003",
+	"Sam Gurung (route B)",
+	{ "You found him?", "Has anyone been in his office", "get in after hours" },
+	"That's all"
+)
+Shim.advance(2)
+examine(evidenceProp("EV-001"), "the phone")
+examine(evidenceProp("EV-002"), "the laptop")
+examine(evidenceProp("EV-003"), "the agenda")
+examine(evidenceProp("EV-006"), "the second cup")
+check(not isOpenQuestion("DEDUCT-007"), "with only the locked phone, the code isn't yet a question")
+local drawer = named("DeskDrawer")
+if check(drawer, "the desk drawer is in the world") then
+	local before = sentCount("EvidenceDiscovered")
+	examine(drawer :: Instance, "the desk drawer")
+	local photo = lastSent("EvidenceDiscovered")
+	check(
+		sentCount("EvidenceDiscovered") == before + 1 and photo and photo[1].evidence.id == "EV-013",
+		"the drawer gives the photo of Meera"
+	)
+end
+check(isOpenQuestion("DEDUCT-007"), "the phone and the photo together open the question of the code")
+check(
+	not evidenceProp("EV-011"):IsDescendantOf(workspace),
+	"the phone's screen is still dark before the code is worked out"
+)
+check(
+	string.find(answerQuestion("DEDUCT-007", "wedding", "the phone's code"), "DANIEL'S CODE", 1, true) ~= nil,
+	"answering the code: 'Daniel's Code'"
+)
+Shim.advance(2)
+check(evidenceProp("EV-011"):IsDescendantOf(workspace), "the right code lights the phone's screen")
+do
+	local lit = evidenceProp("EV-011")
+	check(lit:GetAttribute("PromptLabel") == "Read Unlocked Phone", "the lit screen's prompt: 'Read Unlocked Phone'")
+	if approach(lit, "the phone's lit screen") then
+		local found = sentCount("EvidenceDiscovered")
+		pressInteract()
+		check(sentCount("EvidenceDiscovered") == found + 2, "reading the message also hands over the watch data")
+		local shown = find(gui("MysteryCase_Evidence"), "Related")
+		check(
+			shown and shown:IsA("TextLabel") and string.find(shown.Text, "ALSO ADDED  Watch Data", 1, true) ~= nil,
+			"the readout says the watch data was also added"
+		)
+		if EvidencePanel.isOpen() then
+			pressInteract()
+		end
+	end
+end
+Shim.advance(1)
+examine(evidenceProp("EV-004"), "the badge log")
+converse("SUS-002", "Victor Lim (route B, the log)", { "When did you leave", "Take a look", "Badge Log" }, "That's all")
+-- Meera pressed too hard, and never thawed.
+converse(
+	"SUS-001",
+	"Meera Rozario (route B, pressed)",
+	{ "Where were you", "look at something", "Phone", "Why lie" },
+	nil
+)
+Shim.advance(1)
+check(not hasFact("statements", "Coming Home"), "she is still cold: nothing yet about coming home")
+-- The message is the way back to her.
+converse("SUS-001", "Meera Rozario (route B, the message)", { "He left a message for you" }, "let you be")
+Shim.advance(2)
+check(hasFact("statements", "Coming Home"), "route B: shown the message, she says it: 'Coming Home'")
+-- Victor, and the watch.
+converse("SUS-002", "Victor Lim (route B, the watch)", { "Take a look", "Watch Data" }, nil)
+Shim.advance(2)
+check(hasFact("contradictions", "Still in the Building"), "showing Victor the watch data: 'Still in the Building'")
+answerQuestion("DEDUCT-002", "dissolve", "the midnight meeting")
+
+say("\n== Accusation (route B) ==")
+local closedBeforeB = sentCount("CaseClosedSummary")
+accuse("ACC-001", "DEDUCT-002", "CONTRA-006")
+outro = lastSent("CutsceneUpdated")
+check(outro and outro[1].active and outro[1].id == "CUT-DAWN-HOME", "route B: the same dawn outro plays")
+check(sentCount("CaseClosedSummary") == closedBeforeB, "route B: the summary waits for the outro")
+-- Skipped with two presses: the first asks, the second skips.
+pressInteract()
+check(sentCount("CaseClosedSummary") == closedBeforeB, "one press only asks to skip")
+pressInteract()
+Shim.advance(1)
+check(sentCount("CaseClosedSummary") == closedBeforeB + 1, "skipping the outro opens the summary")
+summary = lastSent("CaseClosedSummary")
+verdict = summary and summary[1].verdict
+check(verdict and verdict.grade == "Solved", "route B: the verdict: solved")
+check(
+	verdict and string.find(verdict.epilogue or "", "turns it face up", 1, true) ~= nil,
+	"route B reaches the same ending: she turned it face up"
+)
+Shim.advance(3)
+check(closingText("Title") == "Case solved.", "route B: the closing screen: 'Case solved.'")
+pressInteract()
+Shim.advance(2)
+pressInteract() -- [E] Begin investigation
+Shim.advance(1.5)
+check(
+	not evidenceProp("EV-011"):IsDescendantOf(workspace) and not evidenceProp("EV-004"):IsDescendantOf(workspace),
+	"the next run holds the lit screen and the printout back again"
+)
+
+--------------------------------------------------------------------------
+-- Third run: sloppy, and an early accusation of the wrong person
+--------------------------------------------------------------------------
+
+say("\n== Third run: in a hurry ==")
 converse("SUS-003", "Sam Gurung (second run)", {}, "That's all")
 examine(evidenceProp("EV-001"), "the phone")
 examine(evidenceProp("EV-002"), "the laptop")

@@ -57,7 +57,16 @@ export type EvidenceDefinition = {
 		-- another way (e.g. a line of dialogue that grants it). Absent means
 		-- the prop is there from the start, as before.
 		revealWhen: { DialogueCondition }?,
+		-- Phase 5.4: the prompt the prop shows ("Read Unlocked Phone"); absent
+		-- derives it from the evidence's name, as before.
+		label: string?,
 	}?,
+	-- Phase 5.4: examining (or being handed) this evidence also hands over
+	-- these others, through EvidenceService.grant, in the same moment: one
+	-- object, one action, several clues (an unlocked phone gives the message
+	-- and the watch data). Already-known ones are skipped. The readout names
+	-- the ones newly added (EvidencePayload.alsoAdded).
+	grantsEvidence: { string }?,
 	-- Phase 5.3: this evidence is a Studio-authored (or baked) interactable
 	-- that already exists in the office and is named `instanceName` -- a
 	-- flavour object promoted to a clue. At runtime OfficeRoom gives that
@@ -540,11 +549,21 @@ export type CaseSolution = {
 	-- `solvedEpilogue`. Never changes the grade -- only what a case that
 	-- already held says happened next.
 	solvedVariants: { SolvedEpilogueVariant }?,
+	-- Phase 5.4: a scene played once a Solved verdict is accepted, before the
+	-- Case Closed screen (a dawn outro). The first entry whose facts this
+	-- player has all established plays; an entry with no `requiredFacts`
+	-- always matches, so put it last. Never for a case that didn't hold.
+	solvedCutscenes: { SolvedCutscene }?,
 }
 
 export type SolvedEpilogueVariant = {
 	requiredFacts: { FactReference },
 	epilogue: string,
+}
+
+export type SolvedCutscene = {
+	cutsceneId: string,
+	requiredFacts: { FactReference }?,
 }
 
 export type DiscoveredEvidence = EvidenceDefinition & {
@@ -680,6 +699,10 @@ export type EvidencePayload = {
 	-- an object: there is nothing to frame, and the conversation announces
 	-- it (DialoguePayload.grantedEvidence).
 	granted: boolean?,
+	-- Phase 5.4: display names of the evidence this one handed over with it
+	-- (EvidenceDefinition.grantsEvidence), for an "also added" line under the
+	-- readout. Only ones newly added; never anything already known.
+	alsoAdded: { string }?,
 }
 
 -- Authored, non-evidence description shown when the player examines a
