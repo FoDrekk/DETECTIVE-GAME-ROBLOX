@@ -430,6 +430,26 @@ function PropKit.monitor(parent: Instance, at: CFrame, state: ("off" | "lock" | 
 	return finish(b)
 end
 
+-- Phase 5.3: a low walnut credenza against a wall, `at` on the wall side of its
+-- back, facing into the room. One front corner (the one at local +x) is
+-- chipped: raw wood showing through the veneer, where Daniel's head struck it.
+function PropKit.credenza(parent: Instance, at: CFrame, width: number?): Model
+	local w = width or 2.6
+	local b = begin(parent, "Credenza", at)
+	for _, side in ipairs({ -1, 1 }) do
+		box(b, "Foot", Vector3.new(0.2, 0.3, 0.2), side * (w / 2 - 0.2), 0.15, 0, P.WalnutDark, M.Wood)
+	end
+	box(b, "Body", Vector3.new(w, 2.2, 1.3), 0, 1.4, 0, P.Walnut, M.Wood)
+	box(b, "Top", Vector3.new(w + 0.1, 0.1, 1.4), 0, 2.55, 0, P.WalnutDark, M.Wood)
+	box(b, "DoorSplit", Vector3.new(0.03, 2.0, 0.02), 0, 1.4, -0.66, P.WalnutDark, M.Wood)
+	for _, side in ipairs({ -1, 1 }) do
+		box(b, "Handle", Vector3.new(0.05, 0.4, 0.06), side * 0.14, 1.9, -0.7, P.Steel, M.Metal)
+	end
+	box(b, "Chip", Vector3.new(0.2, 0.16, 0.2), w / 2 - 0.04, 2.5, -0.62, Color3.fromRGB(196, 160, 118), M.SmoothPlastic)
+	collider(b, Vector3.new(w, 2.7, 1.3), 0, 1.35, 0)
+	return finish(b)
+end
+
 export type DeskOptions = {
 	width: number?,
 	depth: number?,
@@ -1171,6 +1191,23 @@ local EVIDENCE_BUILDERS: { [string]: (b: Builder) -> BasePart } = {
 		return sheet
 	end,
 
+	-- Phase 5.3: the paramedics' tag, left on the floor by the numbered marker.
+	AmbulanceTag = function(b)
+		local tag = box(b, "Tag", Vector3.new(0.62, 0.03, 0.86), 0, 0.015, 0, P.Paper, M.SmoothPlastic, rotY(18))
+		tag.CastShadow = false
+		local band = newPart(b.model, "Band", Vector3.new(0.62, 0.032, 0.13), tag.CFrame * CFrame.new(0, 0.001, -0.36), Color3.fromRGB(176, 42, 42), M.SmoothPlastic)
+		band.CastShadow = false
+		label(tag, Enum.NormalId.Top, "PRONOUNCED\n00:26\nHEAD INJURY\nFALL AGAINST\nFURNITURE", {
+			color = Color3.fromRGB(40, 40, 46),
+			font = Enum.Font.Code,
+			pixelsPerStud = 100,
+			size = 7,
+			yAlign = Enum.TextYAlignment.Bottom,
+			padding = 4,
+		})
+		return tag
+	end,
+
 	-- The pantry espresso machine, its display still showing the last brew.
 	EspressoMachine = function(b)
 		local body = box(b, "Body", Vector3.new(1.3, 1.5, 1.2), 0, 0.75, 0.05, P.Steel, M.Metal)
@@ -1229,6 +1266,16 @@ local EVIDENCE_BUILDERS: { [string]: (b: Builder) -> BasePart } = {
 			font = Enum.Font.PermanentMarker,
 			pixelsPerStud = 200,
 			padding = 6,
+		})
+		-- Phase 5.3: the contractor's service sticker, a long-term seed that
+		-- is never required by the case.
+		local sticker = newPart(model, "Sticker", Vector3.new(0.62, 0.34, 0.01), b.at * CFrame.new(-0.85, 1.52, -0.03), Color3.fromRGB(226, 228, 222), M.SmoothPlastic)
+		sticker.CastShadow = false
+		label(sticker, Enum.NormalId.Front, "PANTAU Sekuriti\nServis 24 Jam\nTiket #4471", {
+			color = Color3.fromRGB(28, 44, 92),
+			font = Enum.Font.GothamBold,
+			pixelsPerStud = 200,
+			padding = 3,
 		})
 		return model:FindFirstChild("Bezel") :: BasePart
 	end,

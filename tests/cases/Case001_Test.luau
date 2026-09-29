@@ -237,8 +237,15 @@ return function(t)
 			end
 		end
 		for _, contradiction in ipairs(caseDef.contradictions) do
-			if not claimed[contradiction.id] then
+			-- Phase 5.3: two statements set side by side have no evidence to
+			-- show anyone (CONTRA-005, "Nobody Told Him"); they are claimed in
+			-- the case file, by design.
+			local bothStatements = contradiction.left.kind == "Statement" and contradiction.right.kind == "Statement"
+			if not claimed[contradiction.id] and not bothStatements then
 				error(`{contradiction.id} can only be claimed in the case file`)
+			end
+			if bothStatements then
+				expect.equal(contradiction.id, "CONTRA-005")
 			end
 		end
 	end)

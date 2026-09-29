@@ -347,6 +347,13 @@ end
 -- Rooms
 --------------------------------------------------------------------------
 
+-- Phase 5.3: the credenza on Daniel's north wall, east of the records-room
+-- door gap (x -22..-18), at the head end of the tape outline: where his head
+-- struck it. Its chipped corner is the one nearest the outline.
+local function credenza(room: Instance)
+	PropKit.credenza(room, at(-15.9, -12.85, SOUTH), 2.6)
+end
+
 local function danielsOffice(office: Instance, folder: Instance)
 	local room = Instance.new("Folder")
 	room.Name = "DanielOffice"
@@ -409,6 +416,7 @@ local function danielsOffice(office: Instance, folder: Instance)
 	PropKit.coatRack(room, at(-15.3, -3.4, WEST), Color3.fromRGB(36, 40, 54))
 	PropKit.plant(room, at(-29, -3.2, NORTH), 0.9, "blades")
 	PropKit.bin(room, at(-20.9, -5.2, NORTH))
+	credenza(room)
 end
 
 local function recordsRoom(office: Instance, folder: Instance)
@@ -769,6 +777,19 @@ end
 --------------------------------------------------------------------------
 -- Public entry point
 --------------------------------------------------------------------------
+
+-- Add (or rebuild) the credenza in an already-baked Daniel's office (Edit
+-- mode), leaving everything else untouched. Returns whether it could.
+function OfficeInterior.patchCredenza(): boolean
+	local office = workspace:FindFirstChild(Config.Environment.OfficeModelName)
+	local room = office and office:FindFirstChild(FOLDER_NAME) and (office :: Instance):FindFirstChild(FOLDER_NAME):FindFirstChild("DanielOffice")
+	if not room then
+		return false
+	end
+	destroy(room, { "Credenza" })
+	credenza(room)
+	return true
+end
 
 -- Replace the signage in an already-baked interior (Edit mode), leaving
 -- everything else, and any author edits to it, untouched. Returns whether

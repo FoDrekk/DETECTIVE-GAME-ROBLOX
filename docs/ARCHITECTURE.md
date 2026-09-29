@@ -1038,22 +1038,22 @@ change to their text or props doesn't reach a saved place by itself. Rather
 than a full forced re-bake (which discards any hand edits to baked props),
 three builders expose a targeted patch, run once in Edit mode:
 
-- \`OfficeInterior.patchSignage()\` rebuilds only the \`Interior/Signage\` folder
+- `OfficeInterior.patchSignage()` rebuilds only the `Interior/Signage` folder
   (the small Malay signs);
-- \`OfficeDetailing.patchTapeOutline()\` replaces the chalk outline (v1) or the
+- `OfficeDetailing.patchTapeOutline()` replaces the chalk outline (v1) or the
   tape outline and numbered marker;
-- \`SuspectSpawner.patchIdentities()\` re-applies each suspect's name, prompt,
+- `SuspectSpawner.patchIdentities()` re-applies each suspect's name, prompt,
   name tag and skin tone from case data to the baked NPCs, leaving their
   position, pose, hair and clothes alone.
 
 Text baked into other props (the fascia, the printout, exit signs, the pantry
 note) was migrated with an explicit old-to-new table, then the place's
-\`BuilderVersion\` stamp was set to \`Config.Environment.BuilderVersion\`
-(bumped to 3). Bump the version whenever what a builder generates changes.
-In Edit mode, \`require\` caches a module for the whole session; require a
-\`Clone()\` of the ModuleScript to run its current source.
+`BuilderVersion` stamp was set to `Config.Environment.BuilderVersion`
+(bumped to 3, then to 4 in Phase 5.3). Bump the version whenever what a builder generates changes.
+In Edit mode, `require` caches a module for the whole session; require a
+`Clone()` of the ModuleScript to run its current source.
 
-\`CaseLocalisation_Test\` scans every text in \`Workspace.Office\` for v1 names, so
+`CaseLocalisation_Test` scans every text in `Workspace.Office` for v1 names, so
 it is also the check that a baked place was really patched.
 
 ## Stabilisation (M8)
@@ -1205,6 +1205,22 @@ CASE-001 v1 uses none of them, so it plays exactly as before.
   - The world is shared: one investigator per server (SessionGuard).
     Per-player visibility belongs with per-player sessions
     (`WORLD_SCALABILITY.md` A1).
+
+### Evidence bound to an existing object (`bindTo`, Phase 5.3)
+
+- **Data.** `EvidenceDefinition.bindTo = { instanceName, label? }`.
+- **What it does.** At boot, `OfficeRoom.applyEvidenceBindings` finds the
+  Interactable with that name in the baked office and sets its `EvidenceId`
+  (and `PromptLabel`, if given). It also drops any `ObservationText` the
+  object carried, since it is a clue now and not flavour.
+- **Why.** Two of v2's new clues are objects the place already has (the shelves
+  and the file cabinet). Binding adds no prop and no builder change.
+- **A missing name is reported, never invented** (a warning, and the
+  "missing authored interactable" check still fires).
+- **A new prop in a baked place.** `OfficeRoom.patchEvidenceProps(rebuild?)`
+  builds the `propPlacement` props a baked place lacks, and rebuilds the ids
+  named in `rebuild` (used for EV-007's new sticker). `OfficeInterior.patchCredenza()`
+  adds the credenza to Daniel's office the same way.
 
 ### Evidence handed over in a conversation (`grantsEvidence`)
 

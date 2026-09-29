@@ -58,6 +58,16 @@ export type EvidenceDefinition = {
 		-- the prop is there from the start, as before.
 		revealWhen: { DialogueCondition }?,
 	}?,
+	-- Phase 5.3: this evidence is a Studio-authored (or baked) interactable
+	-- that already exists in the office and is named `instanceName` -- a
+	-- flavour object promoted to a clue. At runtime OfficeRoom gives that
+	-- instance this evidence's id (and `label` as its prompt, if given),
+	-- exactly as observations are applied by instance name. Purely technical
+	-- staging, like propPlacement; mutually exclusive with it.
+	bindTo: {
+		instanceName: string,
+		label: string?,
+	}?,
 }
 
 export type SuspectDefinition = {

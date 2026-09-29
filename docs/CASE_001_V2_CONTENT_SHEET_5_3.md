@@ -1,6 +1,10 @@
 # CASE-001 v2: Phase 5.3 content sheet
 
-Status: **proposal, awaiting owner approval.** Nothing here is applied.
+Status: **approved (decisions 1A to 5A) and applied in Phase 5.3.**
+
+One correction while building: EV-009 and EV-010 sit in the Records Room (the
+shelves and file cabinet are there), not Daniel's Office as the table below says.
+The code has the right location.
 
 This sheet assumes the recommended options in the 5.3 proposal (decisions
 1 to 5). Where an option would change a line, that is noted.

@@ -250,11 +250,21 @@ return function(t)
 		end)
 	end)
 
-	t.test("CASE-001 v1 gates no prop, so nothing is ever held back", function()
-		expect.equal(RevealService.holdAll("CASE-001"), 0)
-		for _, evidence in ipairs((CaseRegistry.get("CASE-001") :: any).evidence) do
+	t.test("CASE-001 gates exactly one prop: the badge log's printout, held until Sam prints it", function()
+		local evidenceList = (CaseRegistry.get("CASE-001") :: any).evidence
+		local gated = {}
+		for _, evidence in ipairs(evidenceList) do
+			local placement = evidence.propPlacement
+			if placement and placement.revealWhen then
+				table.insert(gated, evidence.id)
+				expect.deepEqual(placement.revealWhen, { { kind = "Statement", id = "STMT-SUS-003-BADGE" } })
+			end
+		end
+		expect.deepEqual(gated, { "EV-004" })
+		RevealService.holdAll("CASE-001")
+		for _, evidence in ipairs(evidenceList) do
 			if evidence.propPlacement then
-				expect.truthy(RevealService.isInWorld(evidence.id))
+				expect.equal(RevealService.isInWorld(evidence.id), evidence.id ~= "EV-004")
 			end
 		end
 	end)

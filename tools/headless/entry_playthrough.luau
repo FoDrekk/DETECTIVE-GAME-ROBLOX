@@ -463,9 +463,20 @@ end
 
 say("== The lobby ==")
 check(objective() == "OBJ-000", "first objective: the night guard")
-converse("SUS-003", "Sam Gurung", { "You found him?", "anyone else", "get in after hours", "cameras" }, "That's all")
+-- Phase 5.3: the badge log is only on the counter once Sam has printed it.
+check(
+	not evidenceProp("EV-004"):IsDescendantOf(workspace),
+	"the badge log isn't on the counter before Sam prints it"
+)
+converse(
+	"SUS-003",
+	"Sam Gurung",
+	{ "You found him?", "anyone else", "Has anyone been in his office", "get in after hours", "cameras" },
+	"That's all"
+)
 Shim.advance(3)
 check(objective() == "OBJ-001", "talking to Sam moves on to Daniel's office")
+check(evidenceProp("EV-004"):IsDescendantOf(workspace), "once Sam has printed it, the badge log is on the counter")
 
 say("\n== Daniel's office ==")
 examine(evidenceProp("EV-001"), "the phone")
@@ -480,6 +491,27 @@ for _, flavour in ipairs({ "CoffeeCup", "Pen", "DeskDrawer" }) do
 end
 Shim.advance(3)
 check(objective() == "OBJ-002", "searching the office moves on to the suspects")
+
+-- Phase 5.3: three optional finds. The ambulance tag by the numbered marker,
+-- and the two records-room objects that used to carry only flavour text.
+say("\n== The scene, and the records room ==")
+examine(evidenceProp("EV-008"), "the ambulance tag")
+local shelves = named("Shelf_Frame")
+local cabinet = named("FileCabinet_1")
+if check(shelves and cabinet, "the records room shelves and file cabinet are in the world") then
+	examine(shelves :: Instance, "the shelves")
+	examine(cabinet :: Instance, "the file cabinet")
+end
+check(sentCount("EvidenceDiscovered") >= 4, "the marked floor, the photo and the drawer were all found by examining")
+check(
+	string.find(
+		answerQuestion("DEDUCT-005", "struggle", "the credenza"),
+		"BY THE CREDENZA",
+		1,
+		true
+	) ~= nil,
+	"answering the credenza question: 'By the Credenza'"
+)
 
 say("\n== Around the floor ==")
 examine(evidenceProp("EV-005"), "the coffee machine")
@@ -503,6 +535,10 @@ check(
 		~= nil,
 	"answering the meeting question: 'Daniel Was Ending the Partnership'"
 )
+check(
+	string.find(answerQuestion("DEDUCT-006", "leverage", "why midnight"), "WHY IT COULDN'T WAIT", 1, true) ~= nil,
+	"answering why midnight: 'Why It Couldn't Wait'"
+)
 
 say("\n== Reception ==")
 examine(evidenceProp("EV-004"), "the badge log")
@@ -511,14 +547,31 @@ examine(evidenceProp("EV-007"), "the camera monitor")
 converse(
 	"SUS-002",
 	"Victor Lim",
-	{ "When did you leave", "confirm", "dissolving", "Take a look", "Camera Monitor" },
+	{ "When did you leave", "confirm", "dissolving", "spoken to Meera", "Take a look", "Camera Monitor" },
 	"That's all"
 )
 Shim.advance(1)
 check(hasFact("contradictions", "The Footage"), "showing Victor his own note: 'The Footage'")
-converse("SUS-001", "Meera Rozario", { "sorry", "Where were you", "ending the partnership" }, "let you be")
+converse(
+	"SUS-001",
+	"Meera Rozario",
+	{ "sorry", "Where were you", "ending the partnership", "about Victor" },
+	"let you be"
+)
 Shim.advance(3)
 check(objective() == "OBJ-003", "both spoken to: test Victor's story")
+-- Phase 5.3: Victor's own words against Sam's account of the tape.
+check(not hasFact("contradictions", "Nobody Told Him"), "the slip isn't announced: it has to be noticed")
+check(
+	string.find(
+		claimPair("Fact_Statement_STMT-SUS-002-MEERA", "Fact_Statement_STMT-SUS-003-TAPE", "Victor on Meera × Sam's tape"),
+		"NOBODY TOLD HIM",
+		1,
+		true
+	) ~= nil,
+	"pairing Victor's words with Sam's tape statement: 'Nobody Told Him'"
+)
+Shim.advance(2.5)
 check(not hasFact("contradictions", "Half Past Ten"), "the badge log alone proves nothing")
 check(not hasFact("contradictions", "Meera's Missed Call"), "the phone alone proves nothing")
 check(
@@ -614,7 +667,9 @@ end
 --------------------------------------------------------------------------
 
 say("\n== Accusation ==")
-accuse("ACC-001", "DEDUCT-002", "CONTRA-002")
+-- Phase 5.3: the new motive (what Daniel found in the invoices) and the new
+-- proof (the slip), chosen from what this run established.
+accuse("ACC-001", "DEDUCT-006", "CONTRA-005")
 local summary = lastSent("CaseClosedSummary")
 local verdict = summary and summary[1].verdict
 check(verdict and verdict.grade == "Solved", "the verdict: solved")
@@ -687,6 +742,10 @@ do
 		"the replay starts with an empty case file"
 	)
 	check(objective() == "OBJ-000", "the replay starts at the first objective")
+	check(
+		not evidenceProp("EV-004"):IsDescendantOf(workspace),
+		"the replay holds the badge log's printout back again"
+	)
 	local accusationFresh = lastSent("AccusationUpdated")
 	check(accusationFresh and not accusationFresh[1].open, "the replay starts with accusing closed")
 	local timelineFresh = lastSent("TimelineUpdated")

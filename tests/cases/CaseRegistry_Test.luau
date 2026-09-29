@@ -128,7 +128,7 @@ return function(t)
 		for _, statement in ipairs(caseDef.statements) do
 			facts.Statement[statement.id] = true
 		end
-		expect.equal(#caseDef.contradictions, 4)
+		expect.equal(#caseDef.contradictions, 5) -- v1's four, and CONTRA-005 (Phase 5.3)
 		for _, contradiction in ipairs(caseDef.contradictions) do
 			expect.truthy(facts[contradiction.left.kind][contradiction.left.id])
 			expect.truthy(facts[contradiction.right.kind][contradiction.right.id])
@@ -148,7 +148,7 @@ return function(t)
 		for _, statement in ipairs(caseDef.statements) do
 			facts.Statement[statement.id] = true
 		end
-		expect.equal(#caseDef.deductions, 4)
+		expect.equal(#caseDef.deductions, 6) -- v1's four, and DEDUCT-005/006 (Phase 5.3)
 		for _, deduction in ipairs(caseDef.deductions) do
 			expect.truthy(#deduction.requiredFacts >= 2)
 			for _, fact in ipairs(deduction.requiredFacts) do

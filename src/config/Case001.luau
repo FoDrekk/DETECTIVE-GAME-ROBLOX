@@ -189,10 +189,6 @@ local Case001: Types.CaseDefinition = {
 			text = "Pens. A phone charger. A photo of Meera he never put on the desk. Nothing anyone would come back for.",
 		},
 		{
-			instanceName = "FileCabinet_1",
-			text = "One drawer is labelled R&L — PARTNERSHIP. It was opened tonight: the folders are back in the wrong order.",
-		},
-		{
 			instanceName = "Whiteboard",
 			text = 'Last quarter\'s targets, in Daniel\'s handwriting. Someone has struck through "R&L" and written a single "R" beside it.',
 		},
@@ -207,11 +203,6 @@ local Case001: Types.CaseDefinition = {
 		{
 			instanceName = "Pen",
 			text = "A fountain pen, uncapped, lying across a blank signature line.",
-		},
-		{
-			instanceName = "Shelf_Frame",
-			text = "Binders, and a framed photo: Daniel and Victor at a ribbon-cutting, younger, grinning. "
-				.. "Someone has turned it face down.",
 		},
 		{
 			instanceName = "GuardFlask",
@@ -246,8 +237,9 @@ local Case001: Types.CaseDefinition = {
 			id = "EV-002",
 			name = "Laptop",
 			description = "Daniel's laptop, still awake.",
-			details = 'A draft: "Rozario & Lim: Dissolution of Partnership", last saved 11:42 PM. '
-				.. 'A note in the margin: "V. will fight the buy-out. Don\'t back down."',
+			details = 'A draft: "Rozario & Lim: Termination of Shareholders\' Agreement & Buy-Out", last saved 11:42 PM. '
+				.. 'A note in the margin: "V. will fight the buy-out. Don\'t back down." '
+				.. "Clause 14: if a shareholder dies before completion, his shares pass to his estate.",
 			location = "Daniel's Office",
 			importance = "High",
 			category = "Digital Activity",
@@ -259,7 +251,7 @@ local Case001: Types.CaseDefinition = {
 			id = "EV-003",
 			name = "Agenda",
 			description = "A printed agenda for tonight, squared neatly on the desk.",
-			details = '12:00 AM, with V. Lim: "Sign the dissolution. No more delays."',
+			details = '12:00 AM, with V. Lim: "Sign it. No more delays."',
 			location = "Daniel's Office",
 			importance = "Medium",
 			category = "Document",
@@ -282,6 +274,8 @@ local Case001: Types.CaseDefinition = {
 				position = Vector3.new(23.2, 3.27, 17.4),
 				lookAt = Vector3.new(23.2, 3.27, 10),
 				style = "Printout",
+				-- Phase 5.3: the printout only exists once Sam has offered to print it.
+				revealWhen = { knows("Statement", "STMT-SUS-003-BADGE") },
 			},
 		},
 		{
@@ -320,7 +314,8 @@ local Case001: Types.CaseDefinition = {
 			id = "EV-007",
 			name = "Camera Monitor",
 			description = "The camera monitor behind the reception counter.",
-			details = 'All four feeds: NO SIGNAL. A note on the bezel: "Don\'t call the contractor out. Next week. — V.L."',
+			details = 'All four feeds: NO SIGNAL. A note on the bezel: "Don\'t call the contractor out. Next week. — V.L." '
+				.. 'A sticker beside it: "PANTAU Sekuriti · Servis 24 Jam · Tiket #4471".',
 			location = "Reception",
 			importance = "Medium",
 			category = "Security",
@@ -329,6 +324,45 @@ local Case001: Types.CaseDefinition = {
 				lookAt = Vector3.new(25.8, 3.26, 10),
 				style = "CameraMonitor",
 			},
+		},
+		{
+			id = "EV-008",
+			name = "Marked Floor",
+			description = "Tape marks and a numbered marker on the floor beside the credenza.",
+			details = 'Patrol tape where he lay. Ambulance tag: "Pronounced 12:26 AM. Head injury. Fall against furniture." '
+				.. "The credenza corner is chipped.",
+			location = "Daniel's Office",
+			importance = "Medium",
+			category = "Environment",
+			-- The paramedics' tag on the floor by the numbered marker (OfficeDetailing),
+			-- beside the credenza on the north wall (OfficeInterior).
+			propPlacement = {
+				position = Vector3.new(-15.3, 0.03, -7.7),
+				style = "AmbulanceTag",
+			},
+		},
+		{
+			id = "EV-009",
+			name = "Face-Down Photo",
+			description = "A framed photo on the shelf, turned face down.",
+			details = "Daniel and Victor at a ribbon-cutting, fifteen years younger. "
+				.. "The glass is cracked and the photo has been turned face down.",
+			location = "Records Room",
+			importance = "Medium",
+			category = "Environment",
+			-- The records room shelves, already in the office (flavour text before).
+			bindTo = { instanceName = "Shelf_Frame" },
+		},
+		{
+			id = "EV-010",
+			name = "Partnership Drawer",
+			description = "The file cabinet drawer labelled R&L — PARTNERSHIP.",
+			details = "Opened tonight; the folders are out of order. "
+				.. 'The divider "VENDOR INVOICES — KEMAS" has nothing behind it.',
+			location = "Records Room",
+			importance = "Medium",
+			category = "Document",
+			bindTo = { instanceName = "FileCabinet_1" },
 		},
 	},
 
@@ -426,7 +460,8 @@ local Case001: Types.CaseDefinition = {
 			id = "OBJ-003",
 			title = "Half Past Ten",
 			description = "Victor says he was gone by half ten. If anything in this building says otherwise, "
-				.. "show it to him, or set the two side by side in your case file.",
+				.. "show it to him, or set the two side by side in your case file. "
+				.. "The night guard knows how people get in and out.",
 			requiredEvidence = {},
 			requiredInteractions = {},
 			requirements = {
@@ -541,6 +576,7 @@ local Case001: Types.CaseDefinition = {
 							"SAM-CAM-1",
 							{ lacks("Statement", "STMT-SUS-003-CAMERAS") }
 						),
+						ask("tape", "Has anyone been in his office since?", "SAM-TAPE-1", { lacks("Statement", "STMT-SUS-003-TAPE") }),
 						ask(
 							"coffee",
 							"Did you make coffee for anyone tonight?",
@@ -620,16 +656,22 @@ local Case001: Types.CaseDefinition = {
 				["SAM-BADGE-2"] = {
 					id = "SAM-BADGE-2",
 					speaker = "Sam Gurung",
-					text = "The system keeps a log. I printed tonight's for you. It's on the reception counter.",
-					-- Phase 2P: the case's most load-bearing lead had no
-					-- statement recorded, so it was easy to walk past and
-					-- never revisit. Recorded, not answered -- it still says
-					-- only where the log is, not what it proves.
-					statementId = "STMT-SUS-003-BADGE",
+					text = "You nak tengok the log? I can print it now.",
 					next = "SAM-BADGE-3",
 				},
 				["SAM-BADGE-3"] = {
 					id = "SAM-BADGE-3",
+					speaker = "Sam Gurung",
+					text = "Okay, it's printing. ...There. On the reception counter.",
+					-- Phase 2P: the case's most load-bearing lead is recorded, so it is easy
+					-- to revisit. Phase 5.3: recording it is also what puts the printout on
+					-- the counter (the evidence prop's revealWhen). It still says only where
+					-- the log is, not what it proves.
+					statementId = "STMT-SUS-003-BADGE",
+					next = "SAM-BADGE-4",
+				},
+				["SAM-BADGE-4"] = {
+					id = "SAM-BADGE-4",
 					speaker = "Sam Gurung",
 					text = "Haven't read it. Figured that's your job.",
 					choicesFrom = "SAM-HUB",
@@ -670,6 +712,31 @@ local Case001: Types.CaseDefinition = {
 					speaker = "Sam Gurung",
 					text = "But he'd make one for whoever he was keeping late. Called it a bribe.",
 					statementId = "STMT-SUS-003-COFFEE",
+					choicesFrom = "SAM-HUB",
+				},
+				["SAM-TAPE-1"] = {
+					id = "SAM-TAPE-1",
+					speaker = "Sam Gurung",
+					text = "Nobody, since the ambulance crew.",
+					next = "SAM-TAPE-2",
+				},
+				["SAM-TAPE-2"] = {
+					id = "SAM-TAPE-2",
+					speaker = "Sam Gurung",
+					text = "Mr. Lim came up with the police at half twelve. Wanted to go in the office.",
+					next = "SAM-TAPE-3",
+				},
+				["SAM-TAPE-3"] = {
+					id = "SAM-TAPE-3",
+					speaker = "Sam Gurung",
+					text = "I said sorry boss, police tape. He wasn't happy.",
+					next = "SAM-TAPE-4",
+				},
+				["SAM-TAPE-4"] = {
+					id = "SAM-TAPE-4",
+					speaker = "Sam Gurung",
+					text = "I told him Mr. Rozario passed. That's all I know, what else I'm going to tell him?",
+					statementId = "STMT-SUS-003-TAPE",
 					choicesFrom = "SAM-HUB",
 				},
 				["SAM-MARA-1"] = {
@@ -761,7 +828,7 @@ local Case001: Types.CaseDefinition = {
 							{ lacks("Statement", "STMT-SUS-001-ALIBI") }
 						),
 						ask("last", "When did you last speak to him?", "MARA-LAST-1", nil, true),
-						ask("victor", "Tell me about Victor.", "MARA-VICTOR-1", { lacks("Evidence", "EV-002") }, true),
+						ask("victor", "Tell me about Victor.", "MARA-VICTOR-1", { lacks("Statement", "STMT-SUS-001-SILENT") }),
 						ask(
 							"dissolve",
 							"Did you know Daniel was ending the partnership?",
@@ -862,6 +929,13 @@ local Case001: Types.CaseDefinition = {
 					id = "MARA-VICTOR-3",
 					speaker = "Meera Rozario",
 					text = "They built it together. Lately it felt like Daniel was the only one still building.",
+					next = "MARA-VICTOR-4",
+				},
+				["MARA-VICTOR-4"] = {
+					id = "MARA-VICTOR-4",
+					speaker = "Meera Rozario",
+					text = "I haven't said a word to Victor tonight. I won't.",
+					statementId = "STMT-SUS-001-SILENT",
 					choicesFrom = "MARA-HUB",
 				},
 				["MARA-DISSOLVE-1"] = {
@@ -1056,6 +1130,7 @@ local Case001: Types.CaseDefinition = {
 							"VIC-CONFIRM-1",
 							{ knows("Statement", "STMT-SUS-002-ALIBI"), lacks("Statement", "STMT-SUS-002-CAMERAS") }
 						),
+						ask("meera", "Have you spoken to Meera tonight?", "VIC-MEERA-1", { lacks("Statement", "STMT-SUS-002-MEERA") }),
 						ask(
 							"partner",
 							"How were things with Daniel?",
@@ -1142,6 +1217,19 @@ local Case001: Types.CaseDefinition = {
 					speaker = "Victor Lim",
 					text = "And if that's not good enough, pull the reception footage. The cameras will tell you what I'm telling you.",
 					statementId = "STMT-SUS-002-CAMERAS",
+					choicesFrom = "VIC-HUB",
+				},
+				["VIC-MEERA-1"] = {
+					id = "VIC-MEERA-1",
+					speaker = "Victor Lim",
+					text = "Speak to her? She won't look at me.",
+					next = "VIC-MEERA-2",
+				},
+				["VIC-MEERA-2"] = {
+					id = "VIC-MEERA-2",
+					speaker = "Victor Lim",
+					text = "Ask her why she didn't pick up when he rang. That's your mystery, Detective.",
+					statementId = "STMT-SUS-002-MEERA",
 					choicesFrom = "VIC-HUB",
 				},
 				["VIC-FINE-1"] = {
@@ -1367,7 +1455,7 @@ local Case001: Types.CaseDefinition = {
 			id = "STMT-SUS-003-BADGE",
 			suspectId = "SUS-003",
 			label = "The Badge Log",
-			text = "Every door locks at nine. Sam printed tonight's badge log; it's on the reception counter.",
+			text = "Every door locks at nine. Sam printed tonight's badge log for you at reception.",
 		},
 		{
 			id = "STMT-SUS-003-CAMERAS",
@@ -1380,6 +1468,25 @@ local Case001: Types.CaseDefinition = {
 			suspectId = "SUS-003",
 			label = "Daniel's Coffee",
 			text = "Daniel didn't drink coffee at night, but made one for whoever he kept late.",
+		},
+		{
+			id = "STMT-SUS-003-TAPE",
+			suspectId = "SUS-003",
+			label = "The Tape",
+			text = "Nobody past the tape since the ambulance crew. Mr. Lim asked to go in; Sam said no. "
+				.. "Sam told him only that Daniel had passed.",
+		},
+		{
+			id = "STMT-SUS-002-MEERA",
+			suspectId = "SUS-002",
+			label = "On Meera",
+			text = '"Ask her why she didn\'t pick up when he rang. That\'s your mystery, Detective."',
+		},
+		{
+			id = "STMT-SUS-001-SILENT",
+			suspectId = "SUS-001",
+			label = "Not a Word",
+			text = '"I haven\'t said a word to Victor tonight. I won\'t."',
 		},
 	},
 
@@ -1420,6 +1527,16 @@ local Case001: Types.CaseDefinition = {
 			left = { kind = "Statement", id = "STMT-SUS-002-CAMERAS" },
 			right = { kind = "Evidence", id = "EV-007" },
 			reason = "Victor told you to pull the reception footage. His own note kept the cameras dark.",
+		},
+		{
+			-- The slip: Victor knew about a call nobody had told him about.
+			id = "CONTRA-005",
+			claim = true,
+			label = "Nobody Told Him",
+			left = { kind = "Statement", id = "STMT-SUS-002-MEERA" },
+			right = { kind = "Statement", id = "STMT-SUS-003-TAPE" },
+			reason = "Victor knows Daniel's call went unanswered. The phone has been behind the tape since before he "
+				.. "arrived, and all he was told was that Daniel had passed. He knew because he was in the room.",
 		},
 	},
 
@@ -1498,6 +1615,42 @@ local Case001: Types.CaseDefinition = {
 				answer = "after",
 			},
 		},
+		{
+			id = "DEDUCT-005",
+			label = "By the Credenza",
+			requiredFacts = {
+				{ kind = "Evidence", id = "EV-008" },
+				{ kind = "Evidence", id = "EV-009" },
+			},
+			question = {
+				prompt = "Tape by the credenza, a head injury, a cracked photo turned face down. What happened here?",
+				options = {
+					{ id = "alone", text = "He collapsed alone at his desk." },
+					{ id = "struggle", text = "He fell during a struggle, and someone turned the photo over afterwards." },
+					{ id = "frame", text = "He was hit with the frame." },
+					{ id = "slip", text = "He slipped reaching for a file." },
+				},
+				answer = "struggle",
+			},
+		},
+		{
+			id = "DEDUCT-006",
+			label = "Why It Couldn't Wait",
+			requiredFacts = {
+				{ kind = "Evidence", id = "EV-010" },
+				{ kind = "Evidence", id = "EV-002" },
+			},
+			question = {
+				prompt = "A buy-out that Victor would 'fight', and a folder of vendor invoices gone from tonight's drawer. Why midnight?",
+				options = {
+					{ id = "tax", text = "Daniel wanted to leave before year-end tax." },
+					{ id = "leverage", text = "Daniel had found something in those invoices, and it was his leverage." },
+					{ id = "meera", text = "Meera wanted the money." },
+					{ id = "deadline", text = "The client deadline moved." },
+				},
+				answer = "leverage",
+			},
+		},
 	},
 
 	-- Who may be formally accused. `supportedBy` names the reasoning that
@@ -1515,11 +1668,12 @@ local Case001: Types.CaseDefinition = {
 				contradictions = { "CONTRA-001", "CONTRA-002" },
 				deductions = { "DEDUCT-001", "DEDUCT-002", "DEDUCT-004" },
 			},
-			-- Why: the dissolution, or coming back to stop it. What proves
-			-- it: either lie about the last hour. The cameras alone say he
-			-- planned to be unseen, not that he was there.
-			motives = { "DEDUCT-002", "DEDUCT-001" },
-			proofs = { "CONTRA-001", "CONTRA-002" },
+			-- Why: the dissolution, coming back to stop it, or what Daniel had found
+			-- in the invoices. What proves it: either lie about the last hour, or the
+			-- slip about a call nobody had told him of. The cameras alone say he planned
+			-- to be unseen, not that he was there.
+			motives = { "DEDUCT-002", "DEDUCT-001", "DEDUCT-006" },
+			proofs = { "CONTRA-001", "CONTRA-002", "CONTRA-005" },
 		},
 		{
 			id = "ACC-002",
