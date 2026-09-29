@@ -5,6 +5,12 @@ from spawn to Case Closed. Supersedes the phase-by-phase "out of scope" lists
 in `ARCHITECTURE.md` as the forward plan; those sections remain the record of
 what each phase deliberately did and did not build.
 
+> **Forward vision:** the long-term direction (Kota Arwana, the SCU, the
+> connected city, CASE-001 v2 and beyond) lives in `GAME_VISION.md`. The
+> "Pre-production roadmap" section below is the plan from here. The sections
+> between "The game" and "Phase 3" are the record of CASE-001 v1 as built,
+> including its original names (Reyes, Lane, Okafor).
+
 ## The game
 
 **Mystery Case** is a short (10–15 minute), single-player, single-location
@@ -303,6 +309,100 @@ recommended default; the product owner can redirect.)
   trusted with the real asset. The asset is untouched and
   `OfficeDetailing.settleDanielsDesk` stays. The safe way to do this is in
   Studio by hand (see "Known follow-ups").
+
+## Pre-production roadmap (after Phase 3)
+
+The order follows the owner's priority list (`DESIGN_DECISIONS.md` OD-10):
+
+1. finish CASE-001 QA;
+2. story bible;
+3. intro;
+4. narrative payoff;
+5. CASE-002 concept;
+6. a small connected proof of concept;
+7. only then expand.
+
+Items 2, 3 and 5 exist as design documents for review. Every phase starts with
+a proposal the owner reviews before implementation (OD-12).
+
+### Phase 4 — CASE-001 v1 release QA
+
+| | |
+|---|---|
+| **Goal** | Ship the current case cleanly on PC |
+| **Player-facing** | A polished, published CASE-001 v1 |
+| **Work** | Merge the Phase 3 PR; Max Players = 1 at publish; one real-gamepad pass; **a real-client PC performance baseline** (Studio's numbers carry editor overhead); R8 by hand in Studio if wanted |
+| **Depends on** | — |
+| **Complexity** | Low |
+| **Risks** | None significant |
+| **Not yet** | Any v2 content |
+
+### Phase 5 — CASE-001 v2 and the intro
+
+| | |
+|---|---|
+| **Goal** | The first 20 minutes feel like a real game with its own identity |
+| **Player-facing** | The cinematic opening (cold open, city, Nora, the lift); a Malaysian cast and firm; the phone-unlock payoff; the watch data; *Nobody Told Him*; a dawn outro |
+| **Work** | Localisation per `CASE_001_V2_STORY_BIBLE.md` §5; new evidence EV-008 to 012, CONTRA-005/006, DEDUCT-005/006; the continuity fixes; the capabilities in `WORLD_SCALABILITY.md` A9 (`revealWhen`, `grantsEvidence`, a cinematic sequencer); intro sets after the animatic test |
+| **Depends on** | Phase 4; owner review of the story bible and screenplay |
+| **Complexity** | Medium |
+| **Risks** | Intro scope creep; set art; a localisation review |
+| **Not yet** | Hub, districts, new tools |
+
+### Phase 6 — Connected-world proof of concept (Pelangi Square slice)
+
+| | |
+|---|---|
+| **Goal** | Prove that "evidence moves you through places" feels good, before committing to a full case or city |
+| **Player-facing** | A 10–15 minute playable slice: the Residensi Pelangi guardhouse, the Seri Pagi mamak, the back lane; a short lead chain using the **phone camera, "show anyone", CCTV review and address pins** (the opening act of CASE-002) |
+| **Work** | `WORLD_SCALABILITY.md` A3 (locations and anchors), minimal A5 (two or three Tier-2 locals), A8 (camera, CCTV, pins), the first mesh kit (A4), a streaming test, PC profiling |
+| **Depends on** | Phase 5 |
+| **Complexity** | Medium–high |
+| **Risks** | Art throughput; the camera check's feel; performance |
+| **Not yet** | Persistence, the hub, the full CASE-002, transit |
+
+### Phase 7 — Foundations (mostly invisible)
+
+| | |
+|---|---|
+| **Goal** | Make a game of many cases possible |
+| **Player-facing** | Progress saves; cases can be chosen |
+| **Work** | A1 (per-player session and hub phase), A2 (progression, world state, checkpoint persistence), A6 (case folders), A7 (Case File filters) |
+| **Depends on** | Phase 6's lessons |
+| **Complexity** | Medium |
+| **Risks** | Save and migration bugs; regressions in tested systems |
+| **Not yet** | New districts |
+
+### Phase 8 — CASE-002 and the SCU hub
+
+| | |
+|---|---|
+| **Goal** | The first complete connected case, and a home base |
+| **Player-facing** | *Seventeen-Seven* in full; Balai Lama's SCU office with the case board |
+| **Work** | CASE-002 content per `CASE_002_CONCEPT.md`; the full A5 character registry; the hub interior |
+| **Depends on** | Phases 6 and 7 |
+| **Complexity** | High |
+| **Risks** | Writing volume; pacing between places |
+| **Not yet** | Transit, a second district |
+
+### Phase 9 — The city grows
+
+| | |
+|---|---|
+| **Goal** | Variety, memory and a second district |
+| **Player-facing** | Kota Lama; LRT travel between two districts; side mysteries; CASE-003 (Records Request, Kunang's first tag); CASE-004 (a self-contained case, UV torch) |
+| **Depends on** | Phase 8 |
+| **Complexity** | High |
+| **Not yet** | Driving, simulation systems |
+
+### Phase 10 — Season 1 finale
+
+| | |
+|---|---|
+| **Goal** | Pay off *Titik Buta* |
+| **Player-facing** | CASE-005 (dashcams, scene reconstruction); CASE-006 finale; the Dossier's payoff |
+| **Depends on** | Phase 9; owner approval of `LONG_TERM_MYSTERY.md` as canon |
+| **Complexity** | High |
 
 ## Known follow-ups (not blocking)
 
