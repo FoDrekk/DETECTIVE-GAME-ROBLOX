@@ -421,8 +421,8 @@ export type CaseBriefing = {
 	id: string,
 	title: string,
 	description: string,
-	-- M8: the briefing's time/place line ("12:40 AM", "Reyes & Lane,
-	-- ninth floor"). Optional: absent means the line is not shown.
+	-- M8: the briefing's time/place line ("12:40 AM", "Rozario & Lim ·
+	-- Tingkat 9"). Optional: absent means the line is not shown.
 	time: string?,
 	place: string?,
 }

@@ -368,7 +368,7 @@ a proposal the owner reviews before implementation (OD-12).
 |---|---|---|
 | 5.0 | Owner sign-off on the story items | Done (above) |
 | 5.1 | Engine capabilities: `revealWhen`, `grantsEvidence` and the cutscene player; no story content (`ARCHITECTURE.md`, "Story engine capabilities") | **Approved (built and tested)** |
-| 5.2 | Localisation and continuity fixes, same case structure (`CASE_001_V2_LOCALISATION_SHEET.md`) | **Proposed and decided (D1A targeted patch of the baked place, D2A sheet-first dialogue, D3A skin tones, D4B briefing shot left for 5.5); the sheet and one story question (10:02 vs "half ten") await approval; nothing applied** |
+| 5.2 | Localisation and continuity fixes, same case structure (`CASE_001_V2_LOCALISATION_SHEET.md`) | **Built and tested (362 unit, 179 playthrough, 76 engine checks; Studio Play Mode verified); awaiting owner review.** Timing decision C applied (badge-out 10:28, lift 10:29). Briefing shot left for 5.5 (D4B) |
 | 5.3 | v2 content: EV-008 to EV-012, the new statements, CONTRA-005/006, DEDUCT-005/006, the seven-event timeline, the printed badge log | Not started |
 | 5.4 | The payoff: the phone (per revised D-10), the ending variants, the dawn outro | Not started |
 | 5.5 | Intro: an animatic in a throwaway place first, then the sets | Not started |

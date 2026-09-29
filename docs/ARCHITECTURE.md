@@ -1031,6 +1031,31 @@ the interior receive their text) → `CitySkyline` → `SuspectSpawner`.
   body/hair ids from M6, plus welded wardrobe details from
   `SuspectAppearance.details`.
 
+## Patching a baked place (Phase 5.2)
+
+The environment builders adopt what a baked place already contains, so a
+change to their text or props doesn't reach a saved place by itself. Rather
+than a full forced re-bake (which discards any hand edits to baked props),
+three builders expose a targeted patch, run once in Edit mode:
+
+- \`OfficeInterior.patchSignage()\` rebuilds only the \`Interior/Signage\` folder
+  (the small Malay signs);
+- \`OfficeDetailing.patchTapeOutline()\` replaces the chalk outline (v1) or the
+  tape outline and numbered marker;
+- \`SuspectSpawner.patchIdentities()\` re-applies each suspect's name, prompt,
+  name tag and skin tone from case data to the baked NPCs, leaving their
+  position, pose, hair and clothes alone.
+
+Text baked into other props (the fascia, the printout, exit signs, the pantry
+note) was migrated with an explicit old-to-new table, then the place's
+\`BuilderVersion\` stamp was set to \`Config.Environment.BuilderVersion\`
+(bumped to 3). Bump the version whenever what a builder generates changes.
+In Edit mode, \`require\` caches a module for the whole session; require a
+\`Clone()\` of the ModuleScript to run its current source.
+
+\`CaseLocalisation_Test\` scans every text in \`Workspace.Office\` for v1 names, so
+it is also the check that a baked place was really patched.
+
 ## Stabilisation (M8)
 
 - **Case briefing**: no panel. `CaseBriefingView` plays

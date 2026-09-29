@@ -330,7 +330,8 @@ Format: **Decision**, **Why**, **Alternatives**, **Why not**, **Impact**.
 
 **D-13 — Fix v1's continuity holes**
 - **The holes:**
-  - Victor's missing 10:02 badge-out;
+  - Victor's missing badge-out (10:28 PM; owner's timing decision, 2026-09-29,
+    so it agrees with his "half ten");
   - the lift's "last trip 11:53", despite five later arrivals;
   - chalk instead of tape;
   - the briefing showing the second cup.

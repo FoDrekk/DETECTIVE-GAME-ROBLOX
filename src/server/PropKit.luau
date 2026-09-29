@@ -418,7 +418,7 @@ function PropKit.monitor(parent: Instance, at: CFrame, state: ("off" | "lock" | 
 	if mode ~= "off" then
 		screen.Material = M.Neon
 		screen.Color = if mode == "lock" then Color3.fromRGB(18, 26, 40) else Color3.fromRGB(30, 46, 66)
-		local text = caption or (if mode == "lock" then "REYES & LANE\n\nLocked" else "")
+		local text = caption or (if mode == "lock" then "ROZARIO & LIM\n\nLocked" else "")
 		label(screen, Enum.NormalId.Front, text, {
 			color = Color3.fromRGB(150, 176, 210),
 			font = Enum.Font.GothamMedium,
@@ -917,7 +917,7 @@ function PropKit.exitSign(parent: Instance, at: CFrame): Model
 	local b = begin(parent, "ExitSign", at)
 	local body = box(b, "Body", Vector3.new(1.3, 0.5, 0.12), 0, 0, -0.06, P.Charcoal, M.SmoothPlastic)
 	local face = box(b, "Face", Vector3.new(1.2, 0.4, 0.02), 0, 0, -0.13, P.ExitGreen, M.Neon)
-	label(face, Enum.NormalId.Front, "EXIT", { color = Color3.fromRGB(235, 255, 240), font = Enum.Font.GothamBlack, lightInfluence = 0 })
+	label(face, Enum.NormalId.Front, "KELUAR", { color = Color3.fromRGB(235, 255, 240), font = Enum.Font.GothamBlack, lightInfluence = 0 })
 	light(body, "PointLight", 0.35, 5, P.ExitGreen, nil)
 	face.CastShadow = false
 	return finish(b)
@@ -1089,9 +1089,9 @@ function PropKit.fridge(parent: Instance, at: CFrame): Model
 	for _, y in ipairs({ 2.6, 4.6 }) do
 		box(b, "Handle", Vector3.new(0.08, 1.0, 0.12), 0.9, y, -1.12, P.SteelDark, M.Metal)
 	end
-	-- A note stuck on the door: "Milk -- whose? Label your stuff."
+	-- A note stuck on the door ("Label susu anda. TQ.": label your milk, thanks).
 	local note = box(b, "Note", Vector3.new(0.5, 0.5, 0.01), -0.4, 4.8, -1.07, Color3.fromRGB(236, 224, 128), M.SmoothPlastic, rotZ(4))
-	label(note, Enum.NormalId.Front, "LABEL YOUR MILK", { color = Color3.fromRGB(40, 40, 60), font = Enum.Font.PermanentMarker })
+	label(note, Enum.NormalId.Front, "Label susu anda. TQ.", { color = Color3.fromRGB(40, 40, 60), font = Enum.Font.PermanentMarker })
 	collider(b, Vector3.new(2.3, 6, 2.1), 0, 3, 0)
 	return finish(b)
 end
@@ -1159,7 +1159,7 @@ local EVIDENCE_BUILDERS: { [string]: (b: Builder) -> BasePart } = {
 	Printout = function(b)
 		local sheet = box(b, "Sheet", Vector3.new(0.95, 0.03, 1.25), 0, 0.015, 0, P.Paper, M.SmoothPlastic, rotY(-6))
 		sheet.CastShadow = false
-		label(sheet, Enum.NormalId.Top, "AFTER-HOURS ACCESS · FLOOR 9\n\n21:00  SECURITY  S. OKAFOR\n23:04  LANE, V.   IN\n23:52  LANE, V.   OUT", {
+		label(sheet, Enum.NormalId.Top, "AFTER-HOURS ACCESS · TINGKAT 9\n\n21:00  SECURITY  S. GURUNG\n22:28  LIM, V.    OUT\n23:04  LIM, V.    IN\n23:52  LIM, V.    OUT", {
 			color = Color3.fromRGB(40, 40, 46),
 			font = Enum.Font.Code,
 			pixelsPerStud = 120,

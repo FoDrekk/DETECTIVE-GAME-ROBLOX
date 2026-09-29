@@ -1,6 +1,23 @@
 # CASE-001 v2: Phase 5.2 localisation sheet
 
-Status: **awaiting owner approval.** Nothing in this sheet is applied yet.
+Status: **approved and applied in Phase 5.2 (2026-09-29).** The code-switching
+sheet and the skin tones were approved as written; section E was decided as
+**C**: Victor's badge-out is 10:28 PM and the lift goes down at 10:29 PM (the
+times in section C below are the pre-decision ones; the built values are
+10:28 and 10:29).
+
+Small differences between this sheet and what was built:
+- The name displayed for the guard is "Sam Gurung" (the bible's full name,
+  Samir "Sam" Gurung, would put quotation marks in name tags).
+- The surau sign reads "SURAU · TINGKAT 8" and sits above "Sila imbas kad"
+  by the lift, not on a door: there is no spare door, and the waiting area's
+  walls are too dark to read a sign on.
+- The visitors'-book placard stands beside the printout (the camera monitor
+  hides the book itself from the visitors' side).
+- The EV-007 description now reads "The camera monitor behind the reception
+  counter" (it lost "lobby", and "reception" was already in the sentence).
+- The logo wall's text is set at 50 so "ROZARIO & LIM" fits on one line.
+- The numbered floor marker is 4 (the desk markers are 1 to 3).
 
 Owner decisions so far (2026-09-29):
 - **D1A:** update the baked place with a targeted patch, not a full re-bake.

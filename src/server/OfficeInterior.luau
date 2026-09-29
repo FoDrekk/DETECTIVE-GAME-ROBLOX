@@ -552,7 +552,7 @@ local function reception(office: Instance, folder: Instance): BasePart?
 		fascia.Color = P.Walnut
 		fascia.Material = M.WoodPlanks
 		if not fascia:FindFirstChildOfClass("SurfaceGui") then
-			PropKit.label(fascia, Enum.NormalId.Back, "REYES & LANE", {
+			PropKit.label(fascia, Enum.NormalId.Back, "ROZARIO & LIM", {
 				color = Color3.fromRGB(206, 176, 112),
 				font = Enum.Font.GothamBold,
 				pixelsPerStud = 50,
@@ -578,11 +578,11 @@ local function reception(office: Instance, folder: Instance): BasePart?
 
 	-- The firm's name on the east wall, lit from below.
 	local logo = PropKit.newPart(room, "LogoWall", Vector3.new(0.2, 5, 8.5), CFrame.new(29.35, 5.6, 15.2), P.Walnut, M.WoodPlanks)
-	PropKit.label(logo, Enum.NormalId.Left, "REYES & LANE\n<font size=\"22\">ADVISORY PARTNERS · EST. 2010</font>", {
+	PropKit.label(logo, Enum.NormalId.Left, "ROZARIO & LIM\n<font size=\"22\">DESIGN SDN. BHD. · EST. 2010</font>", {
 		color = Color3.fromRGB(214, 184, 118),
 		font = Enum.Font.GothamBold,
 		pixelsPerStud = 50,
-		size = 64,
+		size = 50, -- "ROZARIO & LIM" is longer than the old name: one line on this wall
 		lightInfluence = 0.4,
 		lineHeight = 1.1,
 	})
@@ -675,7 +675,7 @@ local function openPlan(folder: Instance)
 	type Note = { x: number, y: number, text: string, color: Color3, tilt: number }
 	local notes: { Note } = {
 		{ x = -1.6, y = 0.6, text = "FIRE DRILL\nThursday 10:00", color = Color3.fromRGB(236, 226, 150), tilt = -4 },
-		{ x = 0.1, y = 0.5, text = "REYES & LANE\n15 YEARS\nFriday drinks, 6pm\n<font color=\"#a02222\">CANCELLED</font>", color = P.Paper, tilt = 3 },
+		{ x = 0.1, y = 0.5, text = "ROZARIO & LIM\n15 YEARS\nFriday drinks, 6pm\n<font color=\"#a02222\">CANCELLED</font>", color = P.Paper, tilt = 3 },
 		{ x = 1.7, y = 0.7, text = "Kitchen rota:\nweek 3 — Sam", color = Color3.fromRGB(190, 220, 236), tilt = -2 },
 		{ x = -1.5, y = -0.8, text = "Lost: grey scarf", color = Color3.fromRGB(236, 226, 150), tilt = 6 },
 	}
@@ -728,8 +728,61 @@ local function centre(folder: Instance)
 end
 
 --------------------------------------------------------------------------
+-- Signage (Phase 5.2)
+--------------------------------------------------------------------------
+
+-- Small Malaysian office signage: environment only, no gameplay, nothing
+-- tagged. Built into its own folder so a baked place can be patched with
+-- OfficeInterior.patchSignage() instead of a full re-bake.
+local function signage(interior: Instance)
+	local room = Instance.new("Folder")
+	room.Name = "Signage"
+	room.Parent = interior
+
+	-- "Sila imbas kad" (please tap your card) on the wall between the lift
+	-- surround (x 23.7..28.3) and the entrance doors (frames end at x 22),
+	-- with a surau wayfinding plate above it (the prayer room is on another
+	-- floor; no room or door is implied here). Both are in the reception's
+	-- light: the waiting area's walls are too dark to read a sign on.
+	PropKit.sign(room, at(22.85, 23.4, NORTH, 4.5), "Sila imbas kad", Vector2.new(1.3, 0.34))
+	PropKit.sign(room, at(22.85, 23.4, NORTH, 5.05), "SURAU · TINGKAT 8", Vector2.new(1.55, 0.34))
+
+	-- "DILARANG MEROKOK" (no smoking) on the pantry wall, by the extinguisher.
+	PropKit.sign(room, at(-13.42, -12.9, EAST, 5.2), "DILARANG MEROKOK", Vector2.new(2.0, 0.42), {
+		plate = Color3.fromRGB(232, 232, 226),
+		color = Color3.fromRGB(170, 30, 30),
+	})
+
+	-- "BUKU PELAWAT" (visitors' book): a small placard on a flat foot, on
+	-- the reception counter in the gap between the printout and the camera
+	-- monitor (which hides the book itself from the visitors' side).
+	local ink = Color3.fromRGB(34, 36, 40)
+	local plate = PropKit.newPart(room, "BookPlate", Vector3.new(0.86, 0.28, 0.04), at(24.1, 18.55, SOUTH, 3.26 + 0.04 + 0.14), ink, M.Metal)
+	PropKit.label(plate, Enum.NormalId.Front, "BUKU PELAWAT", {
+		color = Color3.fromRGB(214, 190, 138),
+		font = Enum.Font.GothamBold,
+		padding = 3,
+	})
+	PropKit.newPart(room, "BookFoot", Vector3.new(0.86, 0.04, 0.24), CFrame.new(24.1, 3.26 + 0.02, 18.55), ink, M.Metal)
+end
+
+--------------------------------------------------------------------------
 -- Public entry point
 --------------------------------------------------------------------------
+
+-- Replace the signage in an already-baked interior (Edit mode), leaving
+-- everything else, and any author edits to it, untouched. Returns whether
+-- there was an interior to patch.
+function OfficeInterior.patchSignage(): boolean
+	local office = workspace:FindFirstChild(Config.Environment.OfficeModelName)
+	local interior = office and office:FindFirstChild(FOLDER_NAME)
+	if not interior then
+		return false
+	end
+	destroy(interior, { "Signage" })
+	signage(interior)
+	return true
+end
 
 function OfficeInterior.start()
 	local office = workspace:FindFirstChild(Config.Environment.OfficeModelName)
@@ -757,6 +810,7 @@ function OfficeInterior.start()
 		reception(office, interior)
 		openPlan(interior)
 		centre(interior)
+		signage(interior)
 		-- The shell's authored block desks, chairs and monitors are replaced.
 		for i = 1, 3 do
 			destroy(office, { "Furniture", `MainDesk_{i}` })

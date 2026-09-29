@@ -33,7 +33,7 @@ Config.Environment = {
 	-- never reached. See `815064d` for the incident this exists to catch:
 	-- a floor/grounding fix landed in the builders, but the already-baked
 	-- `.rbxl` was never re-baked, so the fix never reached the saved place.
-	BuilderVersion = 2,
+	BuilderVersion = 3,
 	-- 12:40 AM, after hours (OfficeRoom). Readability first: the local lights
 	-- carry the mood, ambient and exposure keep every room playable.
 	Night = {
@@ -215,7 +215,7 @@ Config.Presentation = {
 		Duration = 26,
 	},
 	-- M8: the case briefing opens on the scene: from the far corner of
-	-- Daniel's office across the chalk outline to his desk (lamp still on,
+	-- Daniel's office across the tape outline to his desk (lamp still on,
 	-- the second cup, the visitor's chair pushed back) and the taped door.
 	BriefingShot = {
 		From = { Position = Vector3.new(-15.6, 6.2, -12.6), LookAt = Vector3.new(-24.5, 2.2, -6.5) },

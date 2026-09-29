@@ -65,11 +65,11 @@ are in `DESIGN_DECISIONS.md` (D-05 to D-16).
 
 ### Continuity holes found in v1 (must fix)
 1. **Victor never badges out at ten.**
-   - Sam hears "Night, Sam. I'm off" around ten.
+   - Sam hears "Night, Sam. I'm off" around half ten.
    - The log's only entries are 11:04 IN and 11:52 OUT, with "no other badge
      used after 9 PM".
    - He cannot badge *in* at 11:04 without having left. The log needs a
-     **10:02 PM OUT** line.
+     **10:28 PM OUT** line.
 2. **The lift "remembers one last trip tonight: down, 11:53 PM".** The
    ambulance crew, the patrol, Victor, Meera and the detective all came up after
    midnight. The panel becomes a trip log (§8).
@@ -103,7 +103,7 @@ This is the version the player can reconstruct, and the reveal tells.
 |---|---|---|
 | 7:00 PM | Daniel calls Meera: he'll miss dinner, again. They argue. He tells her Victor is "coming back tonight to talk me out of it". | Meera (statements) |
 | 9:00 PM | Doors lock; after hours is badge only | Sam |
-| 10:02 PM | Victor says "Night, Sam. I'm off" and **badges out**. The lift goes down at 10:03. | Sam, badge log, lift log |
+| 10:28 PM | Victor says "Night, Sam. I'm off" and **badges out**. The lift goes down at 10:29. | Sam, badge log, lift log |
 | 11:03 / 11:04 PM | Lift up; **Victor badges back in** | Lift log, badge log |
 | 11:31 PM | Two espressos from the pantry machine. Daniel is trying to keep it civil. | Coffee machine, second cup, Sam |
 | 11:42 PM | Daniel saves the buy-out draft | Laptop |
@@ -241,7 +241,7 @@ panic, not from who he is. The casting ledger across cases is in
 | Sam: "Came in about twenty past twelve" | "Came in about half twelve" | Matches the v2 timeline (Meera arrives 12:35) |
 | Sam: "I called it in from the lobby" | "I called it in from reception" | Matches the lift trip log (Sam isn't in it) |
 | "your officers" / "your lot" | unchanged in spirit | Patrol officers of the Kota Arwana Police |
-| "LANE, V." (log) | "LIM, V." | Plus the 10:02 PM OUT line |
+| "LANE, V." (log) | "LIM, V." | Plus the 10:28 PM OUT line |
 | Pantry note "LABEL YOUR MILK" | "Label susu anda. TQ." | Office humour; TQ is Malaysian shorthand for thank you |
 | (none) | Stairwell "KELUAR", "DILARANG MEROKOK"; reader "Sila imbas kad"; "BUKU PELAWAT"; a small **Surau** door sign | Environment only; no gameplay on religious spaces |
 
@@ -260,7 +260,7 @@ Legend:
 | EV-001 | Phone | Daniel's desk | Last call 11:47 PM to MEERA ♥, rang 31s, **declined**. The screen is locked beyond the call log. | Why he called; who declined | Contact reads "MEERA ♥"; "locked" line added |
 | EV-002 | Laptop | Desk | Draft *Termination of Shareholders' Agreement & Buy-Out*, saved 11:42 PM. Margin: "V. will fight the buy-out. Don't back down." **Clause 14:** on a shareholder's death before completion, the shares pass to the estate. | That Victor was there | Retitled; Clause 14 added (misdirection toward Meera) |
 | EV-003 | Agenda | Desk | 12:00 AM with V. Lim: "Sign it. No more delays." | — | Name only |
-| EV-004 | Badge Log | **Reception printer (G: appears after Sam prints it)** | 10:02 PM LIM V. OUT · 11:04 PM LIM V. IN · 11:52 PM LIM V. OUT · "Printed 12:16 AM" | That he was in Daniel's office | 10:02 OUT line (continuity fix); print time; **gated** |
+| EV-004 | Badge Log | **Reception printer (G: appears after Sam prints it)** | 10:28 PM LIM V. OUT · 11:04 PM LIM V. IN · 11:52 PM LIM V. OUT · "Printed 12:16 AM" | That he was in Daniel's office | 10:02 OUT line (continuity fix); print time; **gated** |
 | EV-005 | Coffee Machine | Pantry | LAST BREW 11:31 PM · 2 × ESPRESSO | Who drank it | — |
 | EV-006 | Second Cup | Visitor's side of the desk | Half-finished espresso; Daniel's mug holds tea | Whose it was | — |
 | EV-007 | Camera Monitor | Reception | All four feeds NO SIGNAL. Note: "Don't call the contractor out. Next week. — V.L." Sticker: **PANTAU Sekuriti · Servis 24 Jam · Tiket #4471** | Why they're dark | Sticker added (long-term seed, never required) |
@@ -276,7 +276,7 @@ Flavour observations that stay flavour (updated for v2):
 - **Desk drawer:** the photo of Meera.
 - **Daniel's mug:** chamomile.
 - **Guard's flask**, **meeting-room water**.
-- **Lift panel:** now a trip log. "10:03 PM ↓ · 11:03 PM ↑ · 11:53 PM ↓ ·
+- **Lift panel:** now a trip log. "10:29 PM ↓ · 11:03 PM ↑ · 11:53 PM ↓ ·
   12:22 AM ↑ · 12:31 AM ↑ · 12:34 AM ↓ · 12:35 AM ↑ · 12:38 AM ↑".
   - The 11:53 is the one that matters.
   - The rest explain everyone else: the ambulance and patrol, Victor, the
@@ -300,7 +300,7 @@ Existing statements stay, with names localised. New ones:
 
 | ID | Label | Left | Right | Reason text | Proof for ACC-001? |
 |---|---|---|---|---|---|
-| CONTRA-001 | Half Past Ten | Victor's alibi | EV-004 Badge Log | "He left at 10:02, came back at 11:04 and left again at 11:52, five minutes after Daniel's last call." | Yes (v1) |
+| CONTRA-001 | Half Past Ten | Victor's alibi | EV-004 Badge Log | "He left at 10:28, came back at 11:04 and left again at 11:52, five minutes after Daniel's last call." | Yes (v1) |
 | CONTRA-002 | A Call That Never Connected | Victor's revised story | EV-001 Phone | unchanged | Yes (v1) |
 | CONTRA-003 | Meera's Missed Call | Meera's alibi | EV-001 Phone | unchanged (the innocent contradiction) | No |
 | CONTRA-004 | The Footage | Victor: "pull the footage" | EV-007 Monitor | unchanged | No (shows planning to be unseen, not presence) |

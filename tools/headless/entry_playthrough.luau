@@ -142,7 +142,7 @@ check(briefingText("Title") == "THE LAST CALL", "briefing: title")
 check(string.find(briefingText("Hook"), "never answered", 1, true) ~= nil, "briefing: story hook")
 local settingLine = briefingText("Setting")
 check(
-	string.find(settingLine, "12:40 AM", 1, true) and string.find(settingLine, "Reyes &amp; Lane", 1, true),
+	string.find(settingLine, "12:40 AM", 1, true) and string.find(settingLine, "Rozario &amp; Lim", 1, true),
 	"briefing: time and place (rich text, escaped)"
 )
 local camera = workspace.CurrentCamera :: Camera
@@ -463,7 +463,7 @@ end
 
 say("== The lobby ==")
 check(objective() == "OBJ-000", "first objective: the night guard")
-converse("SUS-003", "Sam Okafor", { "You found him?", "anyone else", "get in after hours", "cameras" }, "That's all")
+converse("SUS-003", "Sam Gurung", { "You found him?", "anyone else", "get in after hours", "cameras" }, "That's all")
 Shim.advance(3)
 check(objective() == "OBJ-001", "talking to Sam moves on to Daniel's office")
 
@@ -510,17 +510,17 @@ examine(evidenceProp("EV-007"), "the camera monitor")
 
 converse(
 	"SUS-002",
-	"Victor Lane",
+	"Victor Lim",
 	{ "When did you leave", "confirm", "dissolving", "Take a look", "Camera Monitor" },
 	"That's all"
 )
 Shim.advance(1)
 check(hasFact("contradictions", "The Footage"), "showing Victor his own note: 'The Footage'")
-converse("SUS-001", "Mara Reyes", { "sorry", "Where were you", "ending the partnership" }, "let you be")
+converse("SUS-001", "Meera Rozario", { "sorry", "Where were you", "ending the partnership" }, "let you be")
 Shim.advance(3)
 check(objective() == "OBJ-003", "both spoken to: test Victor's story")
 check(not hasFact("contradictions", "Half Past Ten"), "the badge log alone proves nothing")
-check(not hasFact("contradictions", "Mara's Missed Call"), "the phone alone proves nothing")
+check(not hasFact("contradictions", "Meera's Missed Call"), "the phone alone proves nothing")
 check(
 	string.find(
 		claimPair("Fact_Statement_STMT-SUS-002-ALIBI", "Fact_Evidence_EV-004", "Victor's 'half ten' × the badge log"),
@@ -533,11 +533,11 @@ check(
 Shim.advance(3)
 check(objective() == "OBJ-004", "then: the call nobody answered")
 
--- Mara, shown the phone and pressed too hard: she shuts down, then an
+-- Meera, shown the phone and pressed too hard: she shuts down, then an
 -- apology.
-converse("SUS-001", "Mara Reyes (pressed)", { "look at something", "Phone", "Why lie" }, nil)
-check(hasFact("contradictions", "Mara's Missed Call"), "showing Mara the phone: 'Mara's Missed Call'")
-converse("SUS-001", "Mara Reyes (again)", { "I'm sorry. I need to understand" }, "let you be")
+converse("SUS-001", "Meera Rozario (pressed)", { "look at something", "Phone", "Why lie" }, nil)
+check(hasFact("contradictions", "Meera's Missed Call"), "showing Meera the phone: 'Meera's Missed Call'")
+converse("SUS-001", "Meera Rozario (again)", { "I'm sorry. I need to understand" }, "let you be")
 Shim.advance(2)
 check(
 	string.find(answerQuestion("DEDUCT-001", "victor", "who came back"), "VICTOR CAME BACK", 1, true) ~= nil,
@@ -546,8 +546,8 @@ check(
 Shim.advance(3)
 check(objective() == "OBJ-005", "then: the last ten minutes")
 
-converse("SUS-002", "Victor Lane (the log)", { "Take a look", "Badge Log" }, "That's all")
-converse("SUS-002", "Victor Lane (the phone)", { "Take a look", "Phone" }, nil)
+converse("SUS-002", "Victor Lim (the log)", { "Take a look", "Badge Log" }, "That's all")
+converse("SUS-002", "Victor Lim (the phone)", { "Take a look", "Phone" }, nil)
 Shim.advance(2)
 check(hasFact("contradictions", "A Call That Never Connected"), "showing him the phone: 'A Call That Never Connected'")
 check(
@@ -701,14 +701,14 @@ end
 --------------------------------------------------------------------------
 
 say("\n== Second run: in a hurry ==")
-converse("SUS-003", "Sam Okafor (second run)", {}, "That's all")
+converse("SUS-003", "Sam Gurung (second run)", {}, "That's all")
 examine(evidenceProp("EV-001"), "the phone")
 examine(evidenceProp("EV-002"), "the laptop")
 examine(evidenceProp("EV-003"), "the agenda")
 examine(evidenceProp("EV-006"), "the second cup")
-converse("SUS-002", "Victor Lane (second run)", { "Take a look", "Laptop" }, "That's all")
+converse("SUS-002", "Victor Lim (second run)", { "Take a look", "Laptop" }, "That's all")
 check(sentCount("DialogueUpdated") > 0, "shown something that means nothing, Victor shrugs")
-converse("SUS-001", "Mara Reyes (second run)", { "Where were you" }, "let you be")
+converse("SUS-001", "Meera Rozario (second run)", { "Where were you" }, "let you be")
 Shim.advance(3)
 local accusationState = lastSent("AccusationUpdated")
 check(accusationState and accusationState[1].open, "with both suspects spoken to, accusing is open")
@@ -722,19 +722,19 @@ end
 check(announced, "the player is told, once, that they can accuse")
 
 check(
-	claimPair("Fact_Statement_STMT-SUS-001-ALIBI", "Fact_Evidence_EV-002", "Mara's alibi × the laptop")
+	claimPair("Fact_Statement_STMT-SUS-001-ALIBI", "Fact_Evidence_EV-002", "Meera's alibi × the laptop")
 		== "Those two don't conflict.",
 	"a pairing that doesn't conflict is only told so"
 )
 Shim.advance(2.5)
 check(
 	string.find(
-		claimPair("Fact_Statement_STMT-SUS-001-ALIBI", "Fact_Evidence_EV-001", "Mara's alibi × the phone"),
-		"MARA'S MISSED CALL",
+		claimPair("Fact_Statement_STMT-SUS-001-ALIBI", "Fact_Evidence_EV-001", "Meera's alibi × the phone"),
+		"MEERA'S MISSED CALL",
 		1,
 		true
 	) ~= nil,
-	"then a pairing that holds: 'Mara's Missed Call'"
+	"then a pairing that holds: 'Meera's Missed Call'"
 )
 Shim.advance(2.5)
 -- A guess, then straight away the right answer: the second has to wait.
@@ -758,7 +758,7 @@ say("\n== Accusation (second run) ==")
 accuse("ACC-002", "DEDUCT-002", "CONTRA-003")
 summary = lastSent("CaseClosedSummary")
 verdict = summary and summary[1].verdict
-check(verdict and verdict.grade == "Wrong", "accusing Mara: the wrong person")
+check(verdict and verdict.grade == "Wrong", "accusing Meera: the wrong person")
 check(summary and summary[1].mistakes == 2, "two missteps on the record")
 check(summary and summary[1].objectivesCompleted < summary[1].objectivesTotal, "accused with the case still open")
 -- Phase 3 (R7): this rushed run never opened the timeline, so nothing to reward.
