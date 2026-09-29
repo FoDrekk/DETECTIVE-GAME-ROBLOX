@@ -185,6 +185,7 @@ Format: **Decision**, **Why**, **Alternatives**, **Why not**, **Impact**.
     the culprit.
 - **Impact:** the casting ledger (D-35). A Chinese Malaysian culprit here is
   balanced by Chinese Malaysian key allies in CASE-002 and the recurring cast.
+- **Owner review (2026-09-29):** approved.
 
 **D-06 — The firm: Rozario & Lim Design Sdn. Bhd., interior design and fit-out**
 - **Why:**
@@ -213,6 +214,7 @@ Format: **Decision**, **Why**, **Alternatives**, **Why not**, **Impact**.
   - Planned murder conflicts with Victor's panicked lies.
   - Natural causes deflates the verdict.
 - **Impact:** EV-008, EV-009 and DEDUCT-005.
+- **Owner review (2026-09-29):** approved.
 
 **D-08 — Victor's motive is fraud; the death was unplanned; the cameras were bought for the theft**
 - **Why:** it fixes v1's contradiction ("dark since Tuesday" implied
@@ -224,6 +226,7 @@ Format: **Decision**, **Why**, **Alternatives**, **Why not**, **Impact**.
   - Premeditation clashes with his improvised lies.
   - The dissolution alone is thin and leaves the dark cameras unexplained.
 - **Impact:** EV-010, DEDUCT-006, the reveal text, the PANTAU receipt.
+- **Owner review (2026-09-29):** approved.
 
 **D-09 — Meera gets a surface motive (Clause 14, the estate) and Victor points at her**
 - **Why:** v1's misdirection was one declined call. A money motive plus a
@@ -252,6 +255,52 @@ Format: **Decision**, **Why**, **Alternatives**, **Why not**, **Impact**.
   - Forensics removes the player's hand.
 - **Impact:** EV-011 and EV-012, TIMELINE 11:48 and 11:49, a
   `grantsEvidence` capability.
+- **Owner revision (2026-09-29): not approved as written.** Keep the emotional
+  payoff and the Meera interaction, but preserve detective agency:
+  - the evidence stays obtainable through investigation;
+  - the player's approach changes *how* it is obtained (the route, the
+    dialogue, the difficulty);
+  - never a simple "be kind, get the evidence; be harsh, lose it for good".
+- **Approved implementation (owner, 2026-09-29): "two ways into the phone"**
+  (built in step 5.4; nothing built yet):
+  - **Route A, trust** (the gentle path, or thawed by apologising). As written
+    in story bible §11:
+    - Meera types the date and reads the message aloud.
+    - The line grants EV-011 and EV-012 (`grantsEvidence`) and records
+      STMT-SUS-001-HOME.
+    - Quicker, and the emotional scene is hers.
+  - **Route B, investigation** (any approach, including harsh and never
+    thawed). The passcode can be worked out from the room:
+    - The photo of Meera in Daniel's desk drawer (today flavour text) carries
+      the date on its back ("07.12.09").
+    - A Case File question asks what Daniel would use to lock his phone.
+    - Answering it reveals an "unlocked phone" at the desk
+      (`propPlacement.revealWhen` on that deduction). Examining it discovers
+      EV-011 and EV-012, and the investigator reads the message alone.
+    - Slower, and it asks for a deduction.
+    - Meera's moment can still come later, differently: showing her the
+      message (an ordinary `present` outcome) gets her "He was coming home."
+  - **Both routes** reach CONTRA-006, the 11:48 and 11:49 timeline events, and
+    the phone-face-up ending (key that ending on STMT-SUS-001-HOME, not on who
+    unlocked the phone).
+  - **Engine note.** One examine discovers one evidence item. So Route B needs
+    either a second revealed prop for the watch data, or a small addition in
+    5.4: evidence that hands over further evidence when discovered, reusing
+    `EvidenceService.grant`. Recommended: the addition (one object, one
+    action).
+  - **Decisions taken by the owner (2026-09-29):**
+    - **The clue:** the back of the drawer photo carries "07.12.09". It
+      becomes a new optional evidence item.
+    - **The Case File question:** "Daniel's phone is locked. What would he
+      choose as the code?" Options: their wedding date (correct); Meera's
+      birthday; the day the firm opened; the day Daniel was born.
+    - **Meera's line when shown the message (Route B):** she reads it twice,
+      then says "...He was coming home."
+    - **Engine:** a small addition in 5.4, so discovering one item also hands
+      over another (one examine gives the message and the watch data), reusing
+      `EvidenceService.grant`.
+  - **Not yet decided:** the passcode question's difficulty tuning, and the
+    exact text on the back of the photo. Both are for step 5.4's review.
 
 **D-11 — *Nobody Told Him*: Victor's own misdirection becomes his slip**
 - **Why:**
@@ -281,7 +330,8 @@ Format: **Decision**, **Why**, **Alternatives**, **Why not**, **Impact**.
 
 **D-13 — Fix v1's continuity holes**
 - **The holes:**
-  - Victor's missing 10:02 badge-out;
+  - Victor's missing badge-out (10:28 PM; owner's timing decision, 2026-09-29,
+    so it agrees with his "half ten");
   - the lift's "last trip 11:53", despite five later arrivals;
   - chalk instead of tape;
   - the briefing showing the second cup.
@@ -415,6 +465,7 @@ Format: **Decision**, **Why**, **Alternatives**, **Why not**, **Impact**.
   - The dawn azan would be beautiful in the CASE-001 outro, but only after a
     cultural review.
 - **Impact:** the guardrails (`KOTA_ARWANA_WORLD_FOUNDATION.md` §8).
+- **Owner review (2026-09-29):** approved.
 
 **D-28 — All brands and apps fictional; every name checked before shipping**
 - **Why:** it avoids real-business and real-agency representation and legal
@@ -547,13 +598,19 @@ Format: **Decision**, **Why**, **Alternatives**, **Why not**, **Impact**.
 
 ## 3. Decisions that most need the owner's eye
 
+Owner review of 2026-09-29: items 1, 2 and 6 approved; item 3 revised and
+then approved as the two-route design (see D-10); items 4 and 5 not yet
+reviewed (they don't block CASE-001 v2).
+
 1. **The cast's communities and names** (D-05). Especially the Chinese Malaysian
    culprit in the first case, and the Nepali guard. Both are written with care
-   and balanced by the ledger, but they're sensitive choices.
+   and balanced by the ledger, but they're sensitive choices. *Approved.*
 2. **Victor's fraud and the unplanned death** (D-07, D-08). This changes v1's
-   implied premeditation.
+   implied premeditation. *Approved.*
 3. **The phone-unlock payoff gated by kindness** (D-10). Players who push Meera
    hard miss the title's answer. That's intended, but it is a design stance.
+   *Revised by the owner: see D-10.*
 4. **No driving, ever (for now)** (D-24).
 5. ***Titik Buta* and Kunang** (D-36, D-37), as working concepts only.
 6. **The Subuh call in the outro** (D-27). It needs a cultural review.
+   *Approved.*

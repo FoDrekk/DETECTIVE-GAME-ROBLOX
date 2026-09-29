@@ -144,8 +144,21 @@ local function validateInteractables()
 		return
 	end
 
+	-- Phase 5.1: evidence a conversation hands over needs no object in the
+	-- world (DialogueNodeDefinition.grantsEvidence).
+	local grantedByDialogue: { [string]: boolean } = {}
+	for _, conversation in ipairs(caseDef.conversations) do
+		for _, node in pairs(conversation.nodes) do
+			for _, evidenceId in ipairs(node.grantsEvidence or {}) do
+				grantedByDialogue[evidenceId] = true
+			end
+		end
+	end
+
 	for _, evidence in ipairs(caseDef.evidence) do
-		if not presentEvidence[evidence.id] then
+		-- Phase 5.3: bound evidence is present once its named object carries
+		-- the id (applyEvidenceBindings ran before this).
+		if not presentEvidence[evidence.id] and not grantedByDialogue[evidence.id] then
 			log:warn("missing authored interactable for case evidence", {
 				evidenceId = evidence.id,
 				name = evidence.name,
@@ -315,6 +328,50 @@ local function buildLocationSigns()
 end
 
 --[[
+	Phase 5.3: promote flavour objects to clues. Evidence that authors
+	bindTo names an existing interactable (a Studio-authored or baked object);
+	that instance is given the evidence id (and its prompt label, if the case
+	authors one), so examining it discovers the evidence. Runtime-only and
+	idempotent, like applyObservations (which skips any interactable that
+	carries evidence, so a promoted object's old flavour text can never shadow
+	its clue). An instance that isn't there is reported, never invented.
+]]
+local function applyEvidenceBindings()
+	local caseDef = CaseRegistry.get(Config.Game.AutoStartCase)
+	if not caseDef then
+		return
+	end
+	local bound = 0
+	for _, evidence in ipairs(caseDef.evidence) do
+		local binding = evidence.bindTo
+		if binding then
+			local found = false
+			for _, instance in ipairs(Interactable.getAll()) do
+				if instance.Name == binding.instanceName then
+					instance:SetAttribute(Interactable.AttributeName.EvidenceId, evidence.id)
+					-- The object is a clue now, not flavour: drop any old note.
+					instance:SetAttribute(Interactable.AttributeName.ObservationText, nil)
+					if binding.label then
+						instance:SetAttribute(Interactable.AttributeName.PromptLabel, binding.label)
+					end
+					found = true
+					bound += 1
+				end
+			end
+			if not found then
+				log:warn("evidence is bound to an interactable that isn't in the world", {
+					evidenceId = evidence.id,
+					instanceName = binding.instanceName,
+				})
+			end
+		end
+	end
+	if bound > 0 then
+		log:info("evidence bound to existing objects", { count = bound })
+	end
+end
+
+--[[
 	Apply authored flavour text (Phase 2O) to no-evidence interactables by
 	instance name. Additive and runtime-only: an entry whose instance is
 	absent is skipped, and any interactable that carries evidence is never
@@ -377,6 +434,48 @@ local function warnIfBakeStale(office: Instance?)
 	end
 end
 
+--[[
+	Phase 5.3: bring a baked place's evidence props in line with case data
+	without a re-bake (Edit mode). Builds any prop the case authors that the
+	place lacks; ids in `rebuild` are destroyed and built again first (for a
+	prop whose look changed). Everything else, and any author edits to it, is
+	left alone. Returns the ids built.
+]]
+function OfficeRoom.patchEvidenceProps(rebuild: { string }?): { string }
+	local office = workspace:FindFirstChild(Config.Environment.OfficeModelName)
+	local folder = (office or workspace):FindFirstChild(EVIDENCE_PROPS_FOLDER_NAME)
+	local caseDef = CaseRegistry.get(Config.Game.AutoStartCase)
+	local built: { string } = {}
+	if not folder or not caseDef then
+		return built
+	end
+	local again: { [string]: boolean } = {}
+	for _, id in ipairs(rebuild or {}) do
+		again[id] = true
+	end
+	for _, evidence in ipairs(caseDef.evidence) do
+		if evidence.propPlacement then
+			local existing = folder:FindFirstChild(evidence.id)
+			if existing and again[evidence.id] then
+				existing:Destroy()
+				local look = folder:FindFirstChild(`{evidence.id}_Look`)
+				if look then
+					look:Destroy()
+				end
+				existing = nil
+			end
+			if not existing then
+				local prop = buildEvidenceProp(evidence, folder)
+				if prop then
+					prop.Parent = folder
+					table.insert(built, evidence.id)
+				end
+			end
+		end
+	end
+	return built
+end
+
 function OfficeRoom.start()
 	clearDefaultGround()
 
@@ -395,6 +494,7 @@ end
 -- Runs once every environment module has built its props (the interior
 -- adds interactable flavour objects), so authored observations find them.
 function OfficeRoom.finalize()
+	applyEvidenceBindings()
 	applyObservations()
 	validateInteractables()
 end

@@ -25,6 +25,20 @@ return function(t)
 
 	local caseDef = CaseRegistry.get("CASE-001") :: any
 
+	-- People are named in case data; tests ask it, so a rename never needs
+	-- editing them again (Phase 5.2).
+	local function nameOf(suspectId: string): string
+		for _, suspect in ipairs(caseDef.suspects) do
+			if suspect.id == suspectId then
+				return suspect.name
+			end
+		end
+		error(`no suspect {suspectId}`)
+	end
+	local function firstNameOf(suspectId: string): string
+		return (string.match(nameOf(suspectId), "^%S+")) :: string
+	end
+
 	local function makePlayer(): any
 		local id = t.nextUserId()
 		local player = { UserId = id, Name = `C1-{id}` }
@@ -223,8 +237,15 @@ return function(t)
 			end
 		end
 		for _, contradiction in ipairs(caseDef.contradictions) do
-			if not claimed[contradiction.id] then
+			-- Phase 5.3: two statements set side by side have no evidence to
+			-- show anyone (CONTRA-005, "Nobody Told Him"); they are claimed in
+			-- the case file, by design.
+			local bothStatements = contradiction.left.kind == "Statement" and contradiction.right.kind == "Statement"
+			if not claimed[contradiction.id] and not bothStatements then
 				error(`{contradiction.id} can only be claimed in the case file`)
+			end
+			if bothStatements then
+				expect.equal(contradiction.id, "CONTRA-005")
 			end
 		end
 	end)
@@ -269,7 +290,7 @@ return function(t)
 		inspect(player, "EV-007")
 		talk(player, "SUS-002", { "left", "confirm", "dissolve", "show:EV-007" }, "bye")
 		expect.truthy(unlocked(player, "Contradictions", "CONTRA-004"))
-		-- Mara: her account.
+		-- Meera: her account.
 		talk(player, "SUS-001", { "sorry", "where", "dissolve" }, "bye")
 		expect.equal(active(player), "OBJ-003")
 		-- The phone is found, her account is known: still nothing concluded.
@@ -284,7 +305,7 @@ return function(t)
 		)
 		expect.equal(active(player), "OBJ-004")
 
-		-- Mara, shown the phone and asked gently: the truth, and the lead.
+		-- Meera, shown the phone and asked gently: the truth, and the lead.
 		talk(player, "SUS-001", { "show:EV-001", "gentle" }, "bye")
 		expect.truthy(unlocked(player, "Contradictions", "CONTRA-003"))
 		expect.truthy(knowsStatement(player, "STMT-SUS-001-VICTOR"))
@@ -318,7 +339,7 @@ return function(t)
 		local verdict = AccusationService.getVerdict(player) :: any
 		expect.truthy(verdict.correct)
 		expect.equal(verdict.grade, "Solved")
-		expect.equal(verdict.culpritName, "Victor Lane")
+		expect.equal(verdict.culpritName, nameOf("SUS-002"))
 		expect.truthy(verdict.epilogue)
 		-- P7: Victor was pushed until he broke, so the ending says so.
 		expect.truthy(string.find(verdict.epilogue, "word for word", 1, true))
@@ -508,7 +529,7 @@ return function(t)
 	end)
 
 	------------------------------------------------------------------
-	-- Consequences with Mara
+	-- Consequences with Meera
 	------------------------------------------------------------------
 
 	local function readyForTheCall(player: any)
@@ -517,7 +538,7 @@ return function(t)
 		expect.falsy(unlocked(player, "Contradictions", "CONTRA-003"))
 	end
 
-	t.test("accusing Mara of lying makes her shut the conversation down", function()
+	t.test("accusing Meera of lying makes her shut the conversation down", function()
 		local player = makePlayer()
 		readyForTheCall(player)
 		talk(player, "SUS-001", { "show:EV-001", "harsh" }, nil)
@@ -644,23 +665,23 @@ return function(t)
 		-- Phase 2P: the named motive/proof aren't authorized for this
 		-- accusation, so the shortfall says so -- never the true pairing.
 		expect.truthy(verdict.shortfall)
-		expect.truthy(string.find(verdict.shortfall, "Victor Lane", 1, true))
+		expect.truthy(string.find(verdict.shortfall, nameOf("SUS-002"), 1, true))
 		expect.falsy(string.find(verdict.shortfall, "Ending the Partnership", 1, true))
 	end)
 
-	t.test("accusing Mara is a wrong verdict that still tells the truth", function()
+	t.test("accusing Meera is a wrong verdict that still tells the truth", function()
 		local player = makePlayer()
 		establish(player, { "DEDUCT-003" }, { "CONTRA-003" })
 		expect.truthy(AccusationService.accuse(player, "ACC-002", "DEDUCT-003", "CONTRA-003"))
 		local verdict = AccusationService.getVerdict(player) :: any
 		expect.falsy(verdict.correct)
 		expect.equal(verdict.grade, "Wrong")
-		expect.equal(verdict.culpritName, "Victor Lane")
-		expect.truthy(string.find(verdict.epilogue, "Mara", 1, true))
+		expect.equal(verdict.culpritName, nameOf("SUS-002"))
+		expect.truthy(string.find(verdict.epilogue, firstNameOf("SUS-001"), 1, true))
 		-- Phase 2P: ACC-002 authors no motives/proofs at all, so neither
 		-- holds up against the person actually accused.
 		expect.truthy(verdict.shortfall)
-		expect.truthy(string.find(verdict.shortfall, "Mara Reyes", 1, true))
+		expect.truthy(string.find(verdict.shortfall, nameOf("SUS-001"), 1, true))
 	end)
 
 	------------------------------------------------------------------

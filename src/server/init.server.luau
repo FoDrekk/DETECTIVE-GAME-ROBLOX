@@ -25,6 +25,8 @@ local ObjectiveService = require(Services:WaitForChild("ObjectiveService"))
 local ConversationService = require(Services:WaitForChild("ConversationService"))
 local ReasoningService = require(Services:WaitForChild("ReasoningService"))
 local AccusationService = require(Services:WaitForChild("AccusationService"))
+local CutsceneService = require(Services:WaitForChild("CutsceneService"))
+local RevealService = require(Services:WaitForChild("RevealService"))
 local InteractionService = require(Services:WaitForChild("InteractionService"))
 local GameStateService = require(Services:WaitForChild("GameStateService"))
 local OfficeRoom = require(Services:WaitForChild("OfficeRoom"))
@@ -71,6 +73,7 @@ local function bootstrap()
 	local observationEvent = Signals.get(Signals.Names.ObservationShown)
 	local caseClosedSummaryEvent = Signals.get(Signals.Names.CaseClosedSummary)
 	local reasoningFeedbackEvent = Signals.get(Signals.Names.ReasoningFeedback)
+	local cutsceneEvent = Signals.get(Signals.Names.CutsceneUpdated)
 	local requestObjectives = Signals.get(Signals.Names.RequestObjectives)
 	local requestTimeline = Signals.get(Signals.Names.RequestTimeline)
 
@@ -83,6 +86,10 @@ local function bootstrap()
 	ConversationService.start()
 	ReasoningService.start()
 	AccusationService.start()
+	-- Phase 5.1: scripted scenes, and evidence props held back until the
+	-- story reveals them (after the environment built them, step 0).
+	CutsceneService.start()
+	RevealService.start()
 	InteractionService.start()
 
 	-- 3. Bridge service events to clients.
@@ -127,9 +134,16 @@ local function bootstrap()
 		caseClosedSummaryEvent:FireClient(player, summary)
 	end)
 
+	-- Phase 5.1: a scene to play, or the server ending the current one.
+	CutsceneService.onUpdated().Event:Connect(function(player: Player, payload)
+		cutsceneEvent:FireClient(player, payload)
+	end)
+
 	-- M4: a replay starts the investigator back in the lobby with a clean
 	-- case, pushing the same fresh state a newly joined player receives.
 	GameStateService.onReplay().Event:Connect(function(player: Player)
+		-- Phase 5.1: props the last run revealed go back out of the world.
+		RevealService.refresh(player)
 		-- The unit harness replays with mock player tables; only a real
 		-- Player can be respawned or sent remotes.
 		if typeof(player) ~= "Instance" then
@@ -160,6 +174,7 @@ local function bootstrap()
 			return
 		end
 		PlayerDataService.initialize(player, Config.Game.AutoStartCase)
+		RevealService.refresh(player)
 		GameStateService.enterBriefingFor(player)
 		ObjectiveService.sendCurrent(player)
 		TimelineService.sendCurrent(player)
@@ -291,6 +306,15 @@ local function bootstrap()
 			-- Now — and only now — the case may conclude.
 			GameStateService.requestConclude(player)
 		end
+	end)
+
+	-- 12. Phase 5.1: the client reached the end of a scene, or the
+	-- investigator skipped it. Only the id and the skip flag travel;
+	-- CutsceneService checks it is the scene playing, that it may be
+	-- skipped, and that it has actually had time to finish.
+	local cutsceneFinished = Signals.get(Signals.Names.CutsceneFinished)
+	cutsceneFinished.OnServerEvent:Connect(function(player: Player, cutsceneId, skipped)
+		CutsceneService.finish(player, cutsceneId, skipped == true)
 	end)
 
 	log:info("server ready", {

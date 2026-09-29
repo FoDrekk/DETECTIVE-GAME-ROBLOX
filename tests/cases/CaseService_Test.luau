@@ -11,6 +11,7 @@ return function(t)
 	local Server = ServerScriptService:WaitForChild("Server")
 	local CaseService = require(Server:WaitForChild("CaseService"))
 	local PlayerDataService = require(Server:WaitForChild("PlayerDataService"))
+	local CaseRegistry = require(game:GetService("ServerStorage"):WaitForChild("Config"):WaitForChild("CaseRegistry"))
 	local expect = t.expect
 
 	local function makePlayer(): any
@@ -46,12 +47,18 @@ return function(t)
 		for _, suspect in ipairs(suspects) do
 			byId[suspect.id] = suspect
 		end
+		-- Unchanged: exactly what the case authors, whoever they are named
+		-- (Phase 5.2 renamed them; names are case data, not test data).
+		local authored = (CaseRegistry.get("CASE-001") :: any).suspects
+		for index, expected in ipairs(authored) do
+			expect.truthy(byId[expected.id])
+			expect.equal(byId[expected.id], suspects[index])
+			expect.equal(byId[expected.id].name, expected.name)
+			expect.equal(byId[expected.id].role, expected.role)
+		end
 		expect.truthy(byId["SUS-001"])
-		expect.equal(byId["SUS-001"].name, "Mara Reyes")
 		expect.truthy(byId["SUS-002"])
-		expect.equal(byId["SUS-002"].name, "Victor Lane")
 		expect.truthy(byId["SUS-003"])
-		expect.equal(byId["SUS-003"].name, "Sam Okafor")
 	end)
 
 	t.test("getSuspect resolves a single suspect by id", function()

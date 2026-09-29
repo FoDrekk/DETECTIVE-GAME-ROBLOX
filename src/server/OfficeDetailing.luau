@@ -189,16 +189,20 @@ local function buildCrimeSceneTape(folder: Instance)
 	tapeStrip("SceneTape_2", Vector3.new(doorGapMinX, high, doorZ), Vector3.new(doorGapMaxX, low, doorZ), folder)
 end
 
--- A chalk outline on the floor of Daniel's office, in the open floor east
--- of the desk -- clear of the desk, of the walkway between the office and
--- records-room doors (x -22..-18), and in view from the doorway. Thin chalk
--- strokes tracing a silhouette (one arm flung up, one down, as found), not
--- filled shapes. The origin's Y is the stroke centre: it clears the room
--- finish (top at 0.03; see OfficeInterior's floor layering) by ~0.001.
-local CHALK_ORIGIN = Vector3.new(-17.0, 0.037, -8.6)
-local CHALK_SCALE = 0.9
+-- Phase 5.2: a tape outline on the floor of Daniel's office (patrol tape,
+-- not chalk: tape is what a Kota Arwana patrol carries), in the open floor
+-- east of the desk -- clear of the desk, of the walkway between the office
+-- and records-room doors (x -22..-18), and in view from the doorway. Thin
+-- strips tracing a silhouette (one arm flung up, one down, as found), not
+-- filled shapes, with a numbered evidence marker beside it. The origin's Y
+-- is the strip centre: it clears the room finish (top at 0.03; see
+-- OfficeInterior's floor layering) by ~0.001.
+local TAPE_OUTLINE_NAME = "TapeOutline"
+local FLOOR_MARKER_NAME = "FloorMarker"
+local TAPE_ORIGIN = Vector3.new(-17.0, 0.037, -8.6)
+local TAPE_SCALE = 0.9
 -- Outline points (x, z) around the torso centre, head toward -z.
-local CHALK_BODY = {
+local TAPE_BODY = {
 	{ 0.3, -1.5 }, { 0.9, -1.3 }, { 1.9, -1.9 }, { 2.4, -2.6 }, { 2.1, -2.85 },
 	{ 1.6, -2.15 }, { 0.9, -0.8 }, { 0.8, 0.9 }, { 1.2, 2.3 }, { 1.6, 3.4 },
 	{ 1.1, 3.5 }, { 0.7, 2.35 }, { 0.1, 1.3 }, { -0.6, 2.4 }, { -0.8, 3.5 },
@@ -206,11 +210,10 @@ local CHALK_BODY = {
 	{ -1.9, 0.9 }, { -2.3, 0.7 }, { -2.0, -0.1 }, { -0.9, -1.3 }, { -0.3, -1.5 },
 }
 
-local function buildChalkOutline(folder: Instance)
+local function buildTapeOutline(folder: Instance)
 	local outline = Instance.new("Folder")
-	outline.Name = "ChalkOutline"
+	outline.Name = TAPE_OUTLINE_NAME
 	outline.Parent = folder
-	local chalk = Color3.fromRGB(232, 232, 226)
 
 	local function stroke(a: Vector3, b: Vector3)
 		local length = (b - a).Magnitude
@@ -219,10 +222,10 @@ local function buildChalkOutline(folder: Instance)
 		end
 		local p = Instance.new("Part")
 		p.Name = "Stroke"
-		p.Size = Vector3.new(0.09, 0.012, length + 0.06)
+		p.Size = Vector3.new(0.1, 0.012, length + 0.06)
 		p.CFrame = CFrame.lookAt((a + b) / 2, b)
-		p.Color = chalk
-		p.Material = Enum.Material.Sand
+		p.Color = TAPE_YELLOW
+		p.Material = Enum.Material.SmoothPlastic
 		p.Anchored = true
 		p.CanCollide = false
 		p.CanTouch = false
@@ -232,12 +235,12 @@ local function buildChalkOutline(folder: Instance)
 	end
 
 	local function point(x: number, z: number): Vector3
-		return CHALK_ORIGIN + Vector3.new(x * CHALK_SCALE, 0, z * CHALK_SCALE)
+		return TAPE_ORIGIN + Vector3.new(x * TAPE_SCALE, 0, z * TAPE_SCALE)
 	end
-	for i = 1, #CHALK_BODY do
-		local here = CHALK_BODY[i]
-		local nextPoint = CHALK_BODY[i % #CHALK_BODY + 1]
-		if i < #CHALK_BODY then
+	for i = 1, #TAPE_BODY do
+		local here = TAPE_BODY[i]
+		local nextPoint = TAPE_BODY[i % #TAPE_BODY + 1]
+		if i < #TAPE_BODY then
 			stroke(point(here[1], here[2]), point(nextPoint[1], nextPoint[2]))
 		end
 	end
@@ -253,6 +256,68 @@ local function buildChalkOutline(folder: Instance)
 			point(head[1] + math.cos(a1) * radius, head[2] + math.sin(a1) * radius)
 		)
 	end
+end
+
+-- A numbered evidence marker standing on the floor beside the outline: two
+-- yellow plates leaning together into a tent, the number on both faces.
+local function buildFloorMarker(folder: Instance, number: number)
+	local marker = Instance.new("Model")
+	marker.Name = FLOOR_MARKER_NAME
+	marker.Parent = folder
+	-- Beside the torso, in the gap between the raised arm and the leg.
+	local base = TAPE_ORIGIN + Vector3.new(1.45, 0, 0)
+	for side = -1, 1, 2 do
+		local plate = Instance.new("Part")
+		plate.Name = "Plate"
+		plate.Size = Vector3.new(0.55, 0.75, 0.02)
+		plate.Color = TAPE_YELLOW
+		plate.Material = Enum.Material.SmoothPlastic
+		plate.Anchored = true
+		plate.CanCollide = false
+		plate.CanTouch = false
+		plate.CanQuery = false
+		plate.CastShadow = false
+		-- side -1 faces -Z leaning toward +Z; side 1 faces +Z leaning toward -Z.
+		local lean = CFrame.Angles(math.rad(15), 0, 0)
+		local turn = if side == 1 then CFrame.Angles(0, math.pi, 0) else CFrame.new()
+		plate.CFrame = CFrame.new(base + Vector3.new(0, 0.37, side * 0.09)) * turn * lean
+		plate.Parent = marker
+
+		local gui = Instance.new("SurfaceGui")
+		gui.Face = Enum.NormalId.Front
+		gui.LightInfluence = 0.6
+		gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+		gui.PixelsPerStud = 80
+		gui.Parent = plate
+		local text = Instance.new("TextLabel")
+		text.BackgroundTransparency = 1
+		text.Size = UDim2.fromScale(1, 1)
+		text.Text = tostring(number)
+		text.Font = Enum.Font.GothamBold
+		text.TextColor3 = Color3.fromRGB(20, 20, 20)
+		text.TextScaled = true
+		text.Parent = gui
+	end
+end
+
+-- Replace the tape outline and floor marker in an already-baked place (Edit
+-- mode), or replace the v1 chalk outline with them, leaving everything else
+-- in the detailing folder alone. Returns whether there was a folder to patch.
+function OfficeDetailing.patchTapeOutline(): boolean
+	local office = workspace:FindFirstChild(Config.Environment.OfficeModelName)
+	local folder = office and office:FindFirstChild(DETAIL_FOLDER_NAME)
+	if not folder then
+		return false
+	end
+	for _, name in ipairs({ "ChalkOutline", TAPE_OUTLINE_NAME, FLOOR_MARKER_NAME }) do
+		local old = folder:FindFirstChild(name)
+		if old then
+			old:Destroy()
+		end
+	end
+	buildTapeOutline(folder)
+	buildFloorMarker(folder, 4)
+	return true
 end
 
 -- Small numbered evidence markers beside the desk items (M3). Purely
@@ -526,7 +591,8 @@ function OfficeDetailing.start()
 	buildMeetingRoomGlazing(folder)
 	buildDroppedCeilings(folder)
 	buildCrimeSceneTape(folder)
-	buildChalkOutline(folder)
+	buildTapeOutline(folder)
+	buildFloorMarker(folder, 4)
 	buildEvidenceMarkers(folder)
 	dressDeskProps(office, folder)
 

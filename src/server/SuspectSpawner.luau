@@ -457,6 +457,57 @@ local function findBakedNpc(folder: Instance, suspect: Types.SuspectDefinition):
 	return nil
 end
 
+--[[
+	Phase 5.2: bring baked NPCs' identities in line with case data after a
+	rename or a change of skin tone, without rebuilding them: the model name,
+	display name, "Talk to" prompt, floating name tag and skin-coloured parts.
+	Position, pose, hair and clothes are left alone, and so are any author
+	edits to them. Meant for Edit mode (the bake persists on save). Returns
+	how many NPCs were patched.
+]]
+function SuspectSpawner.patchIdentities(): number
+	local office = workspace:FindFirstChild(Config.Environment.OfficeModelName)
+	local folder = (office or workspace):FindFirstChild(NPC_FOLDER_NAME)
+	if not folder then
+		return 0
+	end
+	local patched = 0
+	for _, suspect in ipairs(CaseService.getSuspects(Config.Game.AutoStartCase)) do
+		local model = findBakedNpc(folder, suspect)
+		if model then
+			model.Name = suspect.name
+			local humanoid = model:FindFirstChildOfClass("Humanoid")
+			if humanoid then
+				humanoid.DisplayName = suspect.name
+			end
+			local hitbox = model:FindFirstChild(suspect.id, true)
+			if hitbox then
+				hitbox:SetAttribute(Interactable.AttributeName.PromptLabel, `Talk to {suspect.name}`)
+			end
+			local nameTag = model:FindFirstChild("NameTag", true)
+			local labels = nameTag and nameTag:GetChildren() or {}
+			for _, child in ipairs(labels) do
+				-- The tag's first label is the name, its second the role.
+				if child:IsA("TextLabel") and child.Position == UDim2.new() then
+					child.Text = suspect.name
+				elseif child:IsA("TextLabel") then
+					child.Text = string.upper(suspect.role)
+				end
+			end
+			if suspect.appearance then
+				for _, partName in ipairs({ "Head", "LeftHand", "RightHand" }) do
+					local limb = model:FindFirstChild(partName)
+					if limb and limb:IsA("BasePart") then
+						limb.Color = suspect.appearance.skin
+					end
+				end
+			end
+			patched += 1
+		end
+	end
+	return patched
+end
+
 function SuspectSpawner.start()
 	local office = workspace:FindFirstChild(Config.Environment.OfficeModelName)
 	local parent = office or workspace

@@ -198,6 +198,9 @@ done ahead of its trigger.
   intro and outro.
 - **Trigger:** Phase 5.
 - **Risk:** low. Each is additive and testable headlessly.
+- **Status:** built in step 5.1 (`RevealService`, `EvidenceService.grant`,
+  `CutsceneService` / `CutsceneView`; see `ARCHITECTURE.md`, "Story engine
+  capabilities"). No case content uses them yet.
 
 ## 5. World streaming
 

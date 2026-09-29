@@ -40,6 +40,8 @@ local function createCaseState(caseId: string): Types.PlayerCaseState
 		accusationProof = nil,
 		reasoningMistakes = 0,
 		timelineEstablished = nil,
+		revealedProps = {},
+		activeCutscene = nil,
 	}
 end
 

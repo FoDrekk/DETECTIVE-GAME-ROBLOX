@@ -36,6 +36,11 @@
 	from here) registers with onPresented and unlocks it synchronously,
 	before the reaction line is sent.
 
+	Handing evidence over (Phase 5.1): a node with `grantsEvidence` discovers
+	that evidence through EvidenceService.grant the moment it is reached,
+	before its line is sent (so questions about it are offered at once);
+	the line carries the names of what it newly handed over.
+
 	Conversation mode: while a conversation is active, the player's Humanoid
 	is speed/jump-locked server-side (see lockMovement/unlockMovement below).
 	This is what keeps a conversation from going stale if the player would
@@ -53,6 +58,7 @@ local Logger = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Lo
 local PlayerDataService = require(script.Parent:WaitForChild("PlayerDataService"))
 local CaseService = require(script.Parent:WaitForChild("CaseService"))
 local StoryEvents = require(script.Parent:WaitForChild("StoryEvents"))
+local EvidenceService = require(script.Parent:WaitForChild("EvidenceService"))
 local CaseRegistry = require(game:GetService("ServerStorage"):WaitForChild("Config"):WaitForChild("CaseRegistry"))
 
 local log = Logger.scoped("ConversationService")
@@ -283,6 +289,22 @@ local function presentableEvidence(data: Types.PlayerData): { { id: string, name
 	return out
 end
 
+-- Phase 5.1: hand over the evidence a line grants, through EvidenceService
+-- (idempotent: anything already found is skipped). Returns the display
+-- names of what this line newly discovered, for the line's own notice.
+local function grantEvidence(player: Player, data: Types.PlayerData, evidenceIds: { string }): { string }?
+	local names = {}
+	for _, evidenceId in ipairs(evidenceIds) do
+		if EvidenceService.grant(player, evidenceId) then
+			local found = data.caseState.discovered[evidenceId]
+			if found then
+				table.insert(names, found.name)
+			end
+		end
+	end
+	return if #names > 0 then names else nil
+end
+
 local function buildNodePayload(
 	suspect: Types.SuspectDefinition,
 	node: Types.DialogueNodeDefinition,
@@ -361,7 +383,8 @@ local function completeConversation(player: Player, data: Types.PlayerData, susp
 end
 
 -- Make `node` the player's current line: remember what it sets, unlock its
--- statement, and send it (with whatever choices it now offers).
+-- statement, hand over any evidence it grants (Phase 5.1), and send it
+-- (with whatever choices it now offers).
 local function enterNode(
 	player: Player,
 	data: Types.PlayerData,
@@ -383,10 +406,10 @@ local function enterNode(
 		end
 	end
 	local unlocked = if node.statementId then unlockStatement(player, data, node.statementId) else nil
-	dialogueUpdatedEvent:Fire(
-		player,
-		buildNodePayload(suspect, node, unlocked, availableChoices(data, conversation, node), prompt, presented)
-	)
+	local granted = if node.grantsEvidence then grantEvidence(player, data, node.grantsEvidence) else nil
+	local payload = buildNodePayload(suspect, node, unlocked, availableChoices(data, conversation, node), prompt, presented)
+	payload.grantedEvidence = granted
+	dialogueUpdatedEvent:Fire(player, payload)
 end
 
 -- Where this player's conversation with the suspect starts right now.
@@ -424,6 +447,10 @@ function ConversationService.begin(player: Player, suspectId: string): (boolean,
 
 	if data.caseState.activeConversation then
 		return false, "conversation-in-progress"
+	end
+	-- Phase 5.1: a scene is playing (CutsceneService owns activeCutscene).
+	if data.caseState.activeCutscene then
+		return false, "cutscene-in-progress"
 	end
 
 	local suspect = CaseService.getSuspect(data.caseState.caseId, suspectId)
@@ -714,6 +741,18 @@ function ConversationService.isTalking(player: Player): boolean
 	return data ~= nil and data.caseState.activeConversation ~= nil
 end
 
+-- Phase 5.1: the condition check dialogue uses for choices and entries,
+-- against this player's own state, so other systems (RevealService's
+-- propPlacement.revealWhen) speak the same condition language rather than a
+-- second copy of it. Every condition must hold; nil or empty holds.
+function ConversationService.conditionsHold(player: Player, conditions: { Types.DialogueCondition }?): boolean
+	local data = PlayerDataService.get(player)
+	if not data then
+		return false
+	end
+	return conditionsHold(data, conditions)
+end
+
 -- Read-only statement accessors for other systems (ReasoningService) that
 -- need to know whether a statement is known, without duplicating the
 -- unlock/lookup logic above. Never expose a statement before it is unlocked.
@@ -808,6 +847,11 @@ function ConversationService.validate(caseDef: Types.CaseDefinition): { string }
 			end
 			if node.statementId and not statements[node.statementId] then
 				table.insert(problems, `{where}: unknown statement '{node.statementId}'`)
+			end
+			for _, evidenceId in ipairs(node.grantsEvidence or {}) do
+				if not known.Evidence[evidenceId] then
+					table.insert(problems, `{where}: grants unknown evidence '{evidenceId}'`)
+				end
 			end
 			if node.choicesFrom then
 				local source = nodes[node.choicesFrom]

@@ -11,6 +11,7 @@
 	  * it is a well-formed, enabled interactable
 	  * the requested kind matches the authored kind
 	  * the player is within the configured prompt range
+	  * no scripted scene is playing for the player (Phase 5.1)
 
 	Each interaction kind has a handler with the shared contract:
 	    handler(player, descriptor) -> boolean   -- true if accepted
@@ -33,6 +34,7 @@ local EvidenceService = require(script.Parent:WaitForChild("EvidenceService"))
 local PlayerDataService = require(script.Parent:WaitForChild("PlayerDataService"))
 local ObjectiveService = require(script.Parent:WaitForChild("ObjectiveService"))
 local ConversationService = require(script.Parent:WaitForChild("ConversationService"))
+local CutsceneService = require(script.Parent:WaitForChild("CutsceneService"))
 
 local log = Logger.scoped("InteractionService")
 
@@ -180,6 +182,10 @@ function InteractionService.handleRequest(player: Player, instance: Instance, ki
 	end
 
 	if not PlayerDataService.get(player) then
+		return
+	end
+	-- Phase 5.1: nothing in the world can be used while a scene plays.
+	if CutsceneService.isPlaying(player) then
 		return
 	end
 

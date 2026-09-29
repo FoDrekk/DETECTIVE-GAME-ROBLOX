@@ -18,6 +18,7 @@ and regressions in the test suite.
 | `build.js` | Recreates the Rojo project (`default.project.json`) on top of the shim, including `assets/Office.rbxm` converted to instances, and appends an entry script. Output is one Luau file. |
 | `entry_tests.luau` | Entry: runs the server bootstrap (as Studio Play would), then the unit-test suite (`tests/cases`). |
 | `entry_playthrough.luau` | Entry: a scripted end-to-end playthrough: the real server and client scripts together, driven only through player inputs (prompt targeting, the interact key, dialogue choice buttons, timeline buttons, ACCUSE). Prints a transcript. |
+| `entry_engine.luau` | Entry (Phase 5.1): the same real server and client, on a small fixture case made active for that run only. It checks, end to end: a prop held back until the story reveals it (`revealWhen`); evidence handed over mid-conversation (`grantsEvidence`); and scripted scenes (letterbox, subtitles, the two-press skip, touch, unskippable scenes, and the server ending a scene the client never reported). CASE-001 is untouched. |
 | `entry_scene_dump.luau` | Entry: boots the server and prints every visible part and light (for layout previews). |
 | `render_scene.py` | Rough layout previews from a scene dump: a top-down plan and a few ray-cast perspective shots (numpy + pillow). Not Roblox's renderer: boxes, no shadows, flat materials -- for catching floating/overlapping/misplaced props, not for judging the look. |
 | `sourcemap.js` | Writes a Rojo-compatible `sourcemap.json` so `luau-lsp analyze` can resolve Roblox-style requires without Rojo. |
@@ -40,6 +41,10 @@ luau /tmp/tests.luau
 # End-to-end playthrough through the remotes
 node tools/headless/build.js tools/headless/entry_playthrough.luau /tmp/play.luau
 luau /tmp/play.luau
+
+# Phase 5.1 engine capabilities, end to end (fixture case)
+node tools/headless/build.js tools/headless/entry_engine.luau /tmp/engine.luau
+luau /tmp/engine.luau
 
 # Layout previews
 node tools/headless/build.js tools/headless/entry_scene_dump.luau /tmp/dump.luau

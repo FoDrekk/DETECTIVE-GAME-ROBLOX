@@ -418,7 +418,7 @@ function PropKit.monitor(parent: Instance, at: CFrame, state: ("off" | "lock" | 
 	if mode ~= "off" then
 		screen.Material = M.Neon
 		screen.Color = if mode == "lock" then Color3.fromRGB(18, 26, 40) else Color3.fromRGB(30, 46, 66)
-		local text = caption or (if mode == "lock" then "REYES & LANE\n\nLocked" else "")
+		local text = caption or (if mode == "lock" then "ROZARIO & LIM\n\nLocked" else "")
 		label(screen, Enum.NormalId.Front, text, {
 			color = Color3.fromRGB(150, 176, 210),
 			font = Enum.Font.GothamMedium,
@@ -427,6 +427,26 @@ function PropKit.monitor(parent: Instance, at: CFrame, state: ("off" | "lock" | 
 			lightInfluence = 0,
 		})
 	end
+	return finish(b)
+end
+
+-- Phase 5.3: a low walnut credenza against a wall, `at` on the wall side of its
+-- back, facing into the room. One front corner (the one at local +x) is
+-- chipped: raw wood showing through the veneer, where Daniel's head struck it.
+function PropKit.credenza(parent: Instance, at: CFrame, width: number?): Model
+	local w = width or 2.6
+	local b = begin(parent, "Credenza", at)
+	for _, side in ipairs({ -1, 1 }) do
+		box(b, "Foot", Vector3.new(0.2, 0.3, 0.2), side * (w / 2 - 0.2), 0.15, 0, P.WalnutDark, M.Wood)
+	end
+	box(b, "Body", Vector3.new(w, 2.2, 1.3), 0, 1.4, 0, P.Walnut, M.Wood)
+	box(b, "Top", Vector3.new(w + 0.1, 0.1, 1.4), 0, 2.55, 0, P.WalnutDark, M.Wood)
+	box(b, "DoorSplit", Vector3.new(0.03, 2.0, 0.02), 0, 1.4, -0.66, P.WalnutDark, M.Wood)
+	for _, side in ipairs({ -1, 1 }) do
+		box(b, "Handle", Vector3.new(0.05, 0.4, 0.06), side * 0.14, 1.9, -0.7, P.Steel, M.Metal)
+	end
+	box(b, "Chip", Vector3.new(0.2, 0.16, 0.2), w / 2 - 0.04, 2.5, -0.62, Color3.fromRGB(196, 160, 118), M.SmoothPlastic)
+	collider(b, Vector3.new(w, 2.7, 1.3), 0, 1.35, 0)
 	return finish(b)
 end
 
@@ -917,7 +937,7 @@ function PropKit.exitSign(parent: Instance, at: CFrame): Model
 	local b = begin(parent, "ExitSign", at)
 	local body = box(b, "Body", Vector3.new(1.3, 0.5, 0.12), 0, 0, -0.06, P.Charcoal, M.SmoothPlastic)
 	local face = box(b, "Face", Vector3.new(1.2, 0.4, 0.02), 0, 0, -0.13, P.ExitGreen, M.Neon)
-	label(face, Enum.NormalId.Front, "EXIT", { color = Color3.fromRGB(235, 255, 240), font = Enum.Font.GothamBlack, lightInfluence = 0 })
+	label(face, Enum.NormalId.Front, "KELUAR", { color = Color3.fromRGB(235, 255, 240), font = Enum.Font.GothamBlack, lightInfluence = 0 })
 	light(body, "PointLight", 0.35, 5, P.ExitGreen, nil)
 	face.CastShadow = false
 	return finish(b)
@@ -1089,9 +1109,9 @@ function PropKit.fridge(parent: Instance, at: CFrame): Model
 	for _, y in ipairs({ 2.6, 4.6 }) do
 		box(b, "Handle", Vector3.new(0.08, 1.0, 0.12), 0.9, y, -1.12, P.SteelDark, M.Metal)
 	end
-	-- A note stuck on the door: "Milk -- whose? Label your stuff."
+	-- A note stuck on the door ("Label susu anda. TQ.": label your milk, thanks).
 	local note = box(b, "Note", Vector3.new(0.5, 0.5, 0.01), -0.4, 4.8, -1.07, Color3.fromRGB(236, 224, 128), M.SmoothPlastic, rotZ(4))
-	label(note, Enum.NormalId.Front, "LABEL YOUR MILK", { color = Color3.fromRGB(40, 40, 60), font = Enum.Font.PermanentMarker })
+	label(note, Enum.NormalId.Front, "Label susu anda. TQ.", { color = Color3.fromRGB(40, 40, 60), font = Enum.Font.PermanentMarker })
 	collider(b, Vector3.new(2.3, 6, 2.1), 0, 3, 0)
 	return finish(b)
 end
@@ -1159,7 +1179,7 @@ local EVIDENCE_BUILDERS: { [string]: (b: Builder) -> BasePart } = {
 	Printout = function(b)
 		local sheet = box(b, "Sheet", Vector3.new(0.95, 0.03, 1.25), 0, 0.015, 0, P.Paper, M.SmoothPlastic, rotY(-6))
 		sheet.CastShadow = false
-		label(sheet, Enum.NormalId.Top, "AFTER-HOURS ACCESS · FLOOR 9\n\n21:00  SECURITY  S. OKAFOR\n23:04  LANE, V.   IN\n23:52  LANE, V.   OUT", {
+		label(sheet, Enum.NormalId.Top, "AFTER-HOURS ACCESS · TINGKAT 9\n\n21:00  SECURITY  S. GURUNG\n22:28  LIM, V.    OUT\n23:04  LIM, V.    IN\n23:52  LIM, V.    OUT", {
 			color = Color3.fromRGB(40, 40, 46),
 			font = Enum.Font.Code,
 			pixelsPerStud = 120,
@@ -1169,6 +1189,23 @@ local EVIDENCE_BUILDERS: { [string]: (b: Builder) -> BasePart } = {
 			padding = 8,
 		})
 		return sheet
+	end,
+
+	-- Phase 5.3: the paramedics' tag, left on the floor by the numbered marker.
+	AmbulanceTag = function(b)
+		local tag = box(b, "Tag", Vector3.new(0.62, 0.03, 0.86), 0, 0.015, 0, P.Paper, M.SmoothPlastic, rotY(18))
+		tag.CastShadow = false
+		local band = newPart(b.model, "Band", Vector3.new(0.62, 0.032, 0.13), tag.CFrame * CFrame.new(0, 0.001, -0.36), Color3.fromRGB(176, 42, 42), M.SmoothPlastic)
+		band.CastShadow = false
+		label(tag, Enum.NormalId.Top, "PRONOUNCED\n00:26\nHEAD INJURY\nFALL AGAINST\nFURNITURE", {
+			color = Color3.fromRGB(40, 40, 46),
+			font = Enum.Font.Code,
+			pixelsPerStud = 100,
+			size = 7,
+			yAlign = Enum.TextYAlignment.Bottom,
+			padding = 4,
+		})
+		return tag
 	end,
 
 	-- The pantry espresso machine, its display still showing the last brew.
@@ -1229,6 +1266,16 @@ local EVIDENCE_BUILDERS: { [string]: (b: Builder) -> BasePart } = {
 			font = Enum.Font.PermanentMarker,
 			pixelsPerStud = 200,
 			padding = 6,
+		})
+		-- Phase 5.3: the contractor's service sticker, a long-term seed that
+		-- is never required by the case.
+		local sticker = newPart(model, "Sticker", Vector3.new(0.62, 0.34, 0.01), b.at * CFrame.new(-0.85, 1.52, -0.03), Color3.fromRGB(226, 228, 222), M.SmoothPlastic)
+		sticker.CastShadow = false
+		label(sticker, Enum.NormalId.Front, "PANTAU Sekuriti\nServis 24 Jam\nTiket #4471", {
+			color = Color3.fromRGB(28, 44, 92),
+			font = Enum.Font.GothamBold,
+			pixelsPerStud = 200,
+			padding = 3,
 		})
 		return model:FindFirstChild("Bezel") :: BasePart
 	end,

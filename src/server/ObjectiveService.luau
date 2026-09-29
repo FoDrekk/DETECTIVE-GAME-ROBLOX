@@ -13,6 +13,8 @@
 	  * interaction performed  (InteractionService)
 	  * a reasoning fact unlocked (ReasoningService, via StoryEvents
 	    "ContradictionUnlocked"/"DeductionUnlocked" -- Phase 2J)
+	  (Phase 5.1: evidence handed over in a conversation counts as evidence
+	  discovered, via recordEvidence.)
 
 	All three are server-authoritative. The client never supplies progress
 	state. The first two reach this service through direct, synchronous calls
@@ -311,6 +313,25 @@ function ObjectiveService.recordInteraction(
 		return false
 	end
 	return evaluateObjectives(player, data, kind, evidenceId, targetName)
+end
+
+--[[
+	Phase 5.1: record evidence that was discovered without an interaction --
+	handed over in a conversation (EvidenceService.grant). The counterpart of
+	the evaluation InteractionService triggers after an examine: requirements
+	keyed on this evidence advance, and an `interaction` gate is implied by
+	the evidence being known (see requirementSatisfied), exactly as for a
+	clue found before its objective was active.
+]]
+function ObjectiveService.recordEvidence(player: Player, evidenceId: string): boolean
+	if type(evidenceId) ~= "string" or evidenceId == "" then
+		return false
+	end
+	local data = PlayerDataService.get(player)
+	if not data then
+		return false
+	end
+	return evaluateObjectives(player, data, nil, evidenceId, nil)
 end
 
 export type FactKind = "Contradiction" | "Deduction" | "Timeline"

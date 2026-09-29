@@ -5,13 +5,13 @@
 	Pure data only: no gameplay logic belongs here.
 
 	The story (canon):
-	  Daniel Reyes was ending his partnership with Victor Lane; the papers
+	  Daniel Rozario was ending his partnership with Victor Lim; the papers
 	  were to be signed at midnight. Victor told the night guard he was off
-	  around ten, but his badge came back in at 11:04 PM. Daniel made two
+	  around half ten, but his badge came back in at 11:04 PM. Daniel made two
 	  espressos at 11:31 and tried to talk him down. At 11:47 Daniel called
-	  his wife Mara. She was awake -- they had argued -- and she declined it.
+	  his wife Meera. She was awake -- they had argued -- and she declined it.
 	  Minutes later Daniel was dead, and at 11:52 Victor's badge was the last
-	  to leave. Victor had known since Tuesday the lobby cameras were dark.
+	  to leave. Victor had known since Tuesday the reception cameras were dark.
 
 	How the player gets there (no step is handed over):
 	  Sam, the night guard, is the ordinary person who found him: he points at
@@ -19,7 +19,7 @@
 	  Daniel's desk holds a phone, a draft, an agenda -- and a second cup on
 	  the visitor's side. Victor's alibi breaks against the badge log, so he
 	  revises it ("he was alive, on the phone, laughing") -- which breaks
-	  against the phone itself. Mara's alibi also breaks against the phone
+	  against the phone itself. Meera's alibi also breaks against the phone
 	  (the call was declined, not missed): a real contradiction with an
 	  innocent, human explanation, and the lead that Victor was coming back.
 	  Whether the investigator is gentle or accusing with her changes what
@@ -77,14 +77,14 @@ end
 local Case001: Types.CaseDefinition = {
 	id = "CASE-001",
 	title = "THE LAST CALL",
-	description = "Daniel Reyes never went home. The night guard found him on his office floor. "
+	description = "Daniel Rozario never went home. The night guard found him on his office floor. "
 		.. "His phone shows one last call, minutes before he died. It was never answered.",
-	setting = { time = "12:40 AM", place = "Reyes & Lane · Ninth floor" },
+	setting = { time = "12:40 AM", place = "Rozario & Lim · Tingkat 9" },
 
 	suspects = {
 		{
 			id = "SUS-001",
-			name = "Mara Reyes",
+			name = "Meera Rozario",
 			role = "Daniel's Wife",
 			alibi = '"Home. Asleep since ten. I never heard his call."',
 			-- At the corridor's north window, looking out at the city, her back
@@ -99,7 +99,7 @@ local Case001: Types.CaseDefinition = {
 				body = "Woman",
 				hair = 48474294,
 				hairColor = Color3.fromRGB(58, 38, 30),
-				skin = Color3.fromRGB(234, 198, 170),
+				skin = Color3.fromRGB(150, 102, 72),
 				top = Color3.fromRGB(104, 38, 48),
 				bottom = Color3.fromRGB(46, 46, 54),
 				shoes = Color3.fromRGB(28, 26, 26),
@@ -109,7 +109,7 @@ local Case001: Types.CaseDefinition = {
 		},
 		{
 			id = "SUS-002",
-			name = "Victor Lane",
+			name = "Victor Lim",
 			role = "Business Partner",
 			alibi = '"Half ten. Daniel was still at his desk. Whatever happened, it happened after I\'d gone."',
 			-- In the meeting room, at the end of the table where the papers
@@ -136,7 +136,7 @@ local Case001: Types.CaseDefinition = {
 			-- Not a suspect: the ordinary person who found him. Speakable, never
 			-- accusable (no AccusationDefinition names him).
 			id = "SUS-003",
-			name = "Sam Okafor",
+			name = "Sam Gurung",
 			role = "Night Security",
 			alibi = '"Ten past twelve, on my rounds. His light was on. It\'s always on."',
 			-- Just past the lobby partition, where the investigator arrives,
@@ -149,7 +149,7 @@ local Case001: Types.CaseDefinition = {
 			appearance = {
 				body = "Man",
 				hairColor = Color3.fromRGB(20, 18, 18),
-				skin = Color3.fromRGB(116, 78, 56),
+				skin = Color3.fromRGB(176, 130, 96),
 				top = Color3.fromRGB(34, 44, 66),
 				bottom = Color3.fromRGB(30, 34, 44),
 				shoes = Color3.fromRGB(16, 16, 16),
@@ -170,7 +170,7 @@ local Case001: Types.CaseDefinition = {
 			signPlacement = {
 				position = Vector3.new(-16.3, 5.5, -1.45),
 				lookAt = Vector3.new(-16.3, 5.5, 6),
-				text = "Daniel Reyes",
+				text = "Daniel Rozario",
 			},
 		},
 	},
@@ -186,11 +186,7 @@ local Case001: Types.CaseDefinition = {
 		},
 		{
 			instanceName = "DeskDrawer",
-			text = "Pens. A phone charger. A photo of Mara he never put on the desk. Nothing anyone would come back for.",
-		},
-		{
-			instanceName = "FileCabinet_1",
-			text = "One drawer is labelled R&L — PARTNERSHIP. It was opened tonight: the folders are back in the wrong order.",
+			text = "Pens. A phone charger. A photo of Meera he never put on the desk. Nothing anyone would come back for.",
 		},
 		{
 			instanceName = "Whiteboard",
@@ -209,11 +205,6 @@ local Case001: Types.CaseDefinition = {
 			text = "A fountain pen, uncapped, lying across a blank signature line.",
 		},
 		{
-			instanceName = "Shelf_Frame",
-			text = "Binders, and a framed photo: Daniel and Victor at a ribbon-cutting, younger, grinning. "
-				.. "Someone has turned it face down.",
-		},
-		{
 			instanceName = "GuardFlask",
 			text = "A dented steel flask of tea, strong enough to stand a spoon in. Sam doesn't trust the office machine.",
 		},
@@ -223,7 +214,8 @@ local Case001: Types.CaseDefinition = {
 		},
 		{
 			instanceName = "ElevatorPanel",
-			text = "The lift is parked on this floor. Its display remembers one last trip tonight: down, 11:53 PM.",
+			text = "The lift is parked on this floor. Its display keeps tonight's trips: 10:29 PM down · 11:03 PM up · "
+				.. "11:53 PM down · 12:22 AM up · 12:31 AM up · 12:34 AM down · 12:35 AM up · 12:38 AM up.",
 		},
 	},
 
@@ -245,8 +237,9 @@ local Case001: Types.CaseDefinition = {
 			id = "EV-002",
 			name = "Laptop",
 			description = "Daniel's laptop, still awake.",
-			details = 'A draft: "Reyes & Lane: Dissolution of Partnership", last saved 11:42 PM. '
-				.. 'A note in the margin: "V. will fight the buy-out. Don\'t back down."',
+			details = 'A draft: "Rozario & Lim: Termination of Shareholders\' Agreement & Buy-Out", last saved 11:42 PM. '
+				.. 'A note in the margin: "V. will fight the buy-out. Don\'t back down." '
+				.. "Clause 14: if a shareholder dies before completion, his shares pass to his estate.",
 			location = "Daniel's Office",
 			importance = "High",
 			category = "Digital Activity",
@@ -258,7 +251,7 @@ local Case001: Types.CaseDefinition = {
 			id = "EV-003",
 			name = "Agenda",
 			description = "A printed agenda for tonight, squared neatly on the desk.",
-			details = '12:00 AM, with V. Lane: "Sign the dissolution. No more delays."',
+			details = '12:00 AM, with V. Lim: "Sign it. No more delays."',
 			location = "Daniel's Office",
 			importance = "Medium",
 			category = "Document",
@@ -269,7 +262,7 @@ local Case001: Types.CaseDefinition = {
 			id = "EV-004",
 			name = "Badge Log",
 			description = "Tonight's after-hours access log, printed at reception.",
-			details = "11:04 PM  LANE, V.  IN.   11:52 PM  LANE, V.  OUT.   "
+			details = "10:28 PM  LIM, V.  OUT.   11:04 PM  LIM, V.  IN.   11:52 PM  LIM, V.  OUT.   "
 				.. "No other badge used after 9 PM except security.",
 			location = "Reception",
 			importance = "High",
@@ -281,6 +274,8 @@ local Case001: Types.CaseDefinition = {
 				position = Vector3.new(23.2, 3.27, 17.4),
 				lookAt = Vector3.new(23.2, 3.27, 10),
 				style = "Printout",
+				-- Phase 5.3: the printout only exists once Sam has offered to print it.
+				revealWhen = { knows("Statement", "STMT-SUS-003-BADGE") },
 			},
 		},
 		{
@@ -318,8 +313,9 @@ local Case001: Types.CaseDefinition = {
 		{
 			id = "EV-007",
 			name = "Camera Monitor",
-			description = "The lobby camera monitor behind the reception counter.",
-			details = 'All four feeds: NO SIGNAL. A note on the bezel: "Don\'t call the contractor out. Next week. — V.L."',
+			description = "The camera monitor behind the reception counter.",
+			details = 'All four feeds: NO SIGNAL. A note on the bezel: "Don\'t call the contractor out. Next week. — V.L." '
+				.. 'A sticker beside it: "PANTAU Sekuriti · Servis 24 Jam · Tiket #4471".',
 			location = "Reception",
 			importance = "Medium",
 			category = "Security",
@@ -328,6 +324,45 @@ local Case001: Types.CaseDefinition = {
 				lookAt = Vector3.new(25.8, 3.26, 10),
 				style = "CameraMonitor",
 			},
+		},
+		{
+			id = "EV-008",
+			name = "Marked Floor",
+			description = "Tape marks and a numbered marker on the floor beside the credenza.",
+			details = 'Patrol tape where he lay. Ambulance tag: "Pronounced 12:26 AM. Head injury. Fall against furniture." '
+				.. "The credenza corner is chipped.",
+			location = "Daniel's Office",
+			importance = "Medium",
+			category = "Environment",
+			-- The paramedics' tag on the floor by the numbered marker (OfficeDetailing),
+			-- beside the credenza on the north wall (OfficeInterior).
+			propPlacement = {
+				position = Vector3.new(-15.3, 0.03, -7.7),
+				style = "AmbulanceTag",
+			},
+		},
+		{
+			id = "EV-009",
+			name = "Face-Down Photo",
+			description = "A framed photo on the shelf, turned face down.",
+			details = "Daniel and Victor at a ribbon-cutting, fifteen years younger. "
+				.. "The glass is cracked and the photo has been turned face down.",
+			location = "Records Room",
+			importance = "Medium",
+			category = "Environment",
+			-- The records room shelves, already in the office (flavour text before).
+			bindTo = { instanceName = "Shelf_Frame" },
+		},
+		{
+			id = "EV-010",
+			name = "Partnership Drawer",
+			description = "The file cabinet drawer labelled R&L — PARTNERSHIP.",
+			details = "Opened tonight; the folders are out of order. "
+				.. 'The divider "VENDOR INVOICES — KEMAS" has nothing behind it.',
+			location = "Records Room",
+			importance = "Medium",
+			category = "Document",
+			bindTo = { instanceName = "FileCabinet_1" },
 		},
 	},
 
@@ -345,7 +380,7 @@ local Case001: Types.CaseDefinition = {
 			timestamp = "11:42 PM",
 			timeMinutes = 1422,
 			title = "The draft is saved",
-			description = "Daniel saves the papers ending his partnership with Victor Lane.",
+			description = "Daniel saves the papers ending his partnership with Victor Lim.",
 			sourceEvidenceIds = { "EV-002" },
 		},
 		{
@@ -353,7 +388,7 @@ local Case001: Types.CaseDefinition = {
 			timestamp = "11:47 PM",
 			timeMinutes = 1427,
 			title = "The last call",
-			description = "Daniel calls Mara. The call is declined.",
+			description = "Daniel calls Meera. The call is declined.",
 			sourceEvidenceIds = { "EV-001" },
 		},
 		{
@@ -361,7 +396,7 @@ local Case001: Types.CaseDefinition = {
 			timestamp = "11:52 PM",
 			timeMinutes = 1432,
 			title = "A badge leaves",
-			description = "Victor Lane's badge exits the building. It came back in at 11:04 PM.",
+			description = "Victor Lim's badge exits the building. It came back in at 11:04 PM.",
 			sourceEvidenceIds = { "EV-004" },
 		},
 		{
@@ -416,8 +451,8 @@ local Case001: Types.CaseDefinition = {
 			requiredEvidence = {},
 			requiredInteractions = { "Talk" },
 			requirements = {
-				{ id = "REQ-004", label = "Talk to Victor Lane", interaction = "Talk", target = "SUS-002" },
-				{ id = "REQ-009", label = "Talk to Mara Reyes", interaction = "Talk", target = "SUS-001" },
+				{ id = "REQ-004", label = "Talk to Victor Lim", interaction = "Talk", target = "SUS-002" },
+				{ id = "REQ-009", label = "Talk to Meera Rozario", interaction = "Talk", target = "SUS-001" },
 			},
 			prerequisites = { "OBJ-001" },
 		},
@@ -425,7 +460,8 @@ local Case001: Types.CaseDefinition = {
 			id = "OBJ-003",
 			title = "Half Past Ten",
 			description = "Victor says he was gone by half ten. If anything in this building says otherwise, "
-				.. "show it to him, or set the two side by side in your case file.",
+				.. "show it to him, or set the two side by side in your case file. "
+				.. "The night guard knows how people get in and out.",
 			requiredEvidence = {},
 			requiredInteractions = {},
 			requirements = {
@@ -436,7 +472,7 @@ local Case001: Types.CaseDefinition = {
 		{
 			id = "OBJ-004",
 			title = "The Call Nobody Answered",
-			description = "Daniel's last call, at 11:47, went to Mara. She is the one person he tried to reach.",
+			description = "Daniel's last call, at 11:47, went to Meera. She is the one person he tried to reach.",
 			requiredEvidence = {},
 			requiredInteractions = {},
 			requirements = {
@@ -487,7 +523,7 @@ local Case001: Types.CaseDefinition = {
 	--------------------------------------------------------------------
 	conversations = {
 		----------------------------------------------------------------
-		-- Sam Okafor: casual, chatty, a little shaken, genuinely helpful.
+		-- Sam Gurung: casual, chatty, a little shaken, genuinely helpful.
 		-- Knows the building, not the case.
 		----------------------------------------------------------------
 		{
@@ -499,26 +535,26 @@ local Case001: Types.CaseDefinition = {
 			nodes = {
 				["SAM-OPEN"] = {
 					id = "SAM-OPEN",
-					speaker = "Sam Okafor",
+					speaker = "Sam Gurung",
 					text = "Detective? Hey. Over here.",
 					next = "SAM-OPEN-2",
 					setFlags = { "sam_met" },
 				},
 				["SAM-OPEN-2"] = {
 					id = "SAM-OPEN-2",
-					speaker = "Sam Okafor",
-					text = "Sorry. I've been stood here half an hour. Didn't know if I was allowed to sit down.",
+					speaker = "Sam Gurung",
+					text = "Sorry ah. I've been standing here half an hour. Didn't know if I'm allowed to sit down.",
 					choicesFrom = "SAM-HUB",
 				},
 				["SAM-AGAIN"] = {
 					id = "SAM-AGAIN",
-					speaker = "Sam Okafor",
-					text = "Still here. Not going anywhere, apparently.",
+					speaker = "Sam Gurung",
+					text = "Still here lah. Not going anywhere, apparently.",
 					choicesFrom = "SAM-HUB",
 				},
 				["SAM-HUB"] = {
 					id = "SAM-HUB",
-					speaker = "Sam Okafor",
+					speaker = "Sam Gurung",
 					text = "What do you need?",
 					choices = {
 						ask("found", "You found him?", "SAM-FOUND-1", { lacks("Statement", "STMT-SUS-003-FOUND") }),
@@ -540,13 +576,14 @@ local Case001: Types.CaseDefinition = {
 							"SAM-CAM-1",
 							{ lacks("Statement", "STMT-SUS-003-CAMERAS") }
 						),
+						ask("tape", "Has anyone been in his office since?", "SAM-TAPE-1", { lacks("Statement", "STMT-SUS-003-TAPE") }),
 						ask(
 							"coffee",
 							"Did you make coffee for anyone tonight?",
 							"SAM-COFFEE-1",
 							{ knows("Evidence", "EV-006"), lacks("Statement", "STMT-SUS-003-COFFEE") }
 						),
-						ask("mara", "Is Mrs. Reyes here?", "SAM-MARA-1", nil, true),
+						ask("mara", "Is Puan Meera here?", "SAM-MARA-1", nil, true),
 						show("show", "Does this mean anything to you?", "Show Sam…", "SAM-SHOW-NOTHING", {
 							{
 								evidence = "EV-006",
@@ -561,33 +598,33 @@ local Case001: Types.CaseDefinition = {
 				},
 				["SAM-FOUND-1"] = {
 					id = "SAM-FOUND-1",
-					speaker = "Sam Okafor",
+					speaker = "Sam Gurung",
 					text = "Ten past twelve. I do rounds on the hour. Well. Roughly on the hour.",
 					next = "SAM-FOUND-2",
 				},
 				["SAM-FOUND-2"] = {
 					id = "SAM-FOUND-2",
-					speaker = "Sam Okafor",
-					text = "His light was on. It's always on. I knocked, 'cause you knock, right?",
+					speaker = "Sam Gurung",
+					text = "His light was on. It's always on. I knocked, 'cause you knock, kan?",
 					next = "SAM-FOUND-3",
 				},
 				["SAM-FOUND-3"] = {
 					id = "SAM-FOUND-3",
-					speaker = "Sam Okafor",
+					speaker = "Sam Gurung",
 					text = "Nobody said anything. So I went in, and...",
 					next = "SAM-FOUND-4",
 				},
 				["SAM-FOUND-4"] = {
 					id = "SAM-FOUND-4",
-					speaker = "Sam Okafor",
-					text = "Yeah. I called it in from the lobby. Didn't touch anything. I watch the shows.",
+					speaker = "Sam Gurung",
+					text = "Yeah. I called it in from reception. Didn't touch anything. I watch the shows.",
 					statementId = "STMT-SUS-003-FOUND",
 					choicesFrom = "SAM-HUB",
 				},
 				["SAM-ANYONE-1"] = {
 					id = "SAM-ANYONE-1",
-					speaker = "Sam Okafor",
-					text = "Tonight? Just Mr. Lane. Earlier.",
+					speaker = "Sam Gurung",
+					text = "Tonight? Just Mr. Lim. Earlier.",
 					next = "SAM-ANYONE-2",
 				},
 				["SAM-ANYONE-2"] = {
@@ -599,118 +636,149 @@ local Case001: Types.CaseDefinition = {
 				},
 				["SAM-ANYONE-3"] = {
 					id = "SAM-ANYONE-3",
-					speaker = "Sam Okafor",
-					text = "He stuck his head in about ten. \"Night, Sam. I'm off.\" He always tells me. Like I'm keeping a diary.",
+					speaker = "Sam Gurung",
+					text = "He stuck his head in about half ten. \"Night, Sam. I'm off.\" He always tells me. Like I'm keeping a diary.",
 					next = "SAM-ANYONE-4",
 				},
 				["SAM-ANYONE-4"] = {
 					id = "SAM-ANYONE-4",
-					speaker = "Sam Okafor",
+					speaker = "Sam Gurung",
 					text = "Did I actually see him go? ...No. I was up on eleven.",
 					statementId = "STMT-SUS-003-VICTOR",
 					choicesFrom = "SAM-HUB",
 				},
 				["SAM-BADGE-1"] = {
 					id = "SAM-BADGE-1",
-					speaker = "Sam Okafor",
+					speaker = "Sam Gurung",
 					text = "Badge. Every door locks at nine.",
 					next = "SAM-BADGE-2",
 				},
 				["SAM-BADGE-2"] = {
 					id = "SAM-BADGE-2",
-					speaker = "Sam Okafor",
-					text = "The system keeps a log. I printed tonight's for you. It's on the reception counter.",
-					-- Phase 2P: the case's most load-bearing lead had no
-					-- statement recorded, so it was easy to walk past and
-					-- never revisit. Recorded, not answered -- it still says
-					-- only where the log is, not what it proves.
-					statementId = "STMT-SUS-003-BADGE",
+					speaker = "Sam Gurung",
+					text = "You nak tengok the log? I can print it now.",
 					next = "SAM-BADGE-3",
 				},
 				["SAM-BADGE-3"] = {
 					id = "SAM-BADGE-3",
-					speaker = "Sam Okafor",
+					speaker = "Sam Gurung",
+					text = "Okay, it's printing. ...There. On the reception counter.",
+					-- Phase 2P: the case's most load-bearing lead is recorded, so it is easy
+					-- to revisit. Phase 5.3: recording it is also what puts the printout on
+					-- the counter (the evidence prop's revealWhen). It still says only where
+					-- the log is, not what it proves.
+					statementId = "STMT-SUS-003-BADGE",
+					next = "SAM-BADGE-4",
+				},
+				["SAM-BADGE-4"] = {
+					id = "SAM-BADGE-4",
+					speaker = "Sam Gurung",
 					text = "Haven't read it. Figured that's your job.",
 					choicesFrom = "SAM-HUB",
 				},
 				["SAM-CAM-1"] = {
 					id = "SAM-CAM-1",
-					speaker = "Sam Okafor",
+					speaker = "Sam Gurung",
 					text = "Has. Past tense.",
 					next = "SAM-CAM-2",
 				},
 				["SAM-CAM-2"] = {
 					id = "SAM-CAM-2",
-					speaker = "Sam Okafor",
+					speaker = "Sam Gurung",
 					text = "All four went dark on Tuesday. I logged it.",
 					next = "SAM-CAM-3",
 				},
 				["SAM-CAM-3"] = {
 					id = "SAM-CAM-3",
-					speaker = "Sam Okafor",
-					text = "Mr. Lane said leave it till next week. Contractor's expensive. It's all on the monitor, if you want to see.",
+					speaker = "Sam Gurung",
+					text = "Mr. Lim said leave it till next week. Contractor's expensive. It's all on the monitor, if you want to see.",
 					statementId = "STMT-SUS-003-CAMERAS",
 					choicesFrom = "SAM-HUB",
 				},
 				["SAM-COFFEE-1"] = {
 					id = "SAM-COFFEE-1",
-					speaker = "Sam Okafor",
-					text = "From that machine? No chance. I bring a flask. That thing hates me.",
+					speaker = "Sam Gurung",
+					text = "From that machine? No chance lah. I bring a flask. That thing hates me.",
 					next = "SAM-COFFEE-2",
 				},
 				["SAM-COFFEE-2"] = {
 					id = "SAM-COFFEE-2",
-					speaker = "Sam Okafor",
-					text = "Mr. Reyes didn't drink it at night either. Said it kept him up.",
+					speaker = "Sam Gurung",
+					text = "Mr. Rozario didn't drink it at night either. Said it kept him up.",
 					next = "SAM-COFFEE-3",
 				},
 				["SAM-COFFEE-3"] = {
 					id = "SAM-COFFEE-3",
-					speaker = "Sam Okafor",
+					speaker = "Sam Gurung",
 					text = "But he'd make one for whoever he was keeping late. Called it a bribe.",
 					statementId = "STMT-SUS-003-COFFEE",
 					choicesFrom = "SAM-HUB",
 				},
+				["SAM-TAPE-1"] = {
+					id = "SAM-TAPE-1",
+					speaker = "Sam Gurung",
+					text = "Nobody, since the ambulance crew.",
+					next = "SAM-TAPE-2",
+				},
+				["SAM-TAPE-2"] = {
+					id = "SAM-TAPE-2",
+					speaker = "Sam Gurung",
+					text = "Mr. Lim came up with the police at half twelve. Wanted to go in the office.",
+					next = "SAM-TAPE-3",
+				},
+				["SAM-TAPE-3"] = {
+					id = "SAM-TAPE-3",
+					speaker = "Sam Gurung",
+					text = "I said sorry boss, police tape. He wasn't happy.",
+					next = "SAM-TAPE-4",
+				},
+				["SAM-TAPE-4"] = {
+					id = "SAM-TAPE-4",
+					speaker = "Sam Gurung",
+					text = "I told him Mr. Rozario passed. That's all I know, what else I'm going to tell him?",
+					statementId = "STMT-SUS-003-TAPE",
+					choicesFrom = "SAM-HUB",
+				},
 				["SAM-MARA-1"] = {
 					id = "SAM-MARA-1",
-					speaker = "Sam Okafor",
-					text = "Came in about twenty past twelve. Your lot called her.",
+					speaker = "Sam Gurung",
+					text = "Came in about half twelve. Your lot called her.",
 					next = "SAM-MARA-2",
 				},
 				["SAM-MARA-2"] = {
 					id = "SAM-MARA-2",
-					speaker = "Sam Okafor",
-					text = "She's by the window at the end of the corridor. Hasn't moved. Hasn't said a word to me.",
+					speaker = "Sam Gurung",
+					text = "Puan Meera's by the window at the end of the corridor. Hasn't moved. Hasn't said a word to me. Kesian.",
 					choicesFrom = "SAM-HUB",
 				},
 				["SAM-SHOW-NOTHING"] = {
 					id = "SAM-SHOW-NOTHING",
-					speaker = "Sam Okafor",
+					speaker = "Sam Gurung",
 					text = "Sorry. Doesn't mean anything to me. I do the doors.",
 					choicesFrom = "SAM-HUB",
 				},
 				["SAM-SHOW-LOG"] = {
 					id = "SAM-SHOW-LOG",
-					speaker = "Sam Okafor",
+					speaker = "Sam Gurung",
 					text = "That's the log I printed you. Told you, I haven't read it. Didn't want to.",
 					choicesFrom = "SAM-HUB",
 				},
 				["SAM-SHOW-MONITOR"] = {
 					id = "SAM-SHOW-MONITOR",
-					speaker = "Sam Okafor",
+					speaker = "Sam Gurung",
 					text = "Yeah. That note's been there since Tuesday. I wasn't going to argue with it.",
 					choicesFrom = "SAM-HUB",
 				},
 				["SAM-BYE"] = {
 					id = "SAM-BYE",
-					speaker = "Sam Okafor",
-					text = "Sure. I'll be... here. Obviously.",
+					speaker = "Sam Gurung",
+					text = "Okay, okay. I'll be... here. Obviously.",
 				},
 			},
 		},
 
 		----------------------------------------------------------------
-		-- Mara Reyes: grieving, guarded, sharp when pushed. She lies about
+		-- Meera Rozario: grieving, guarded, sharp when pushed. She lies about
 		-- the call out of guilt, not guilt of the crime.
 		----------------------------------------------------------------
 		{
@@ -724,32 +792,32 @@ local Case001: Types.CaseDefinition = {
 			nodes = {
 				["MARA-OPEN"] = {
 					id = "MARA-OPEN",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "They told me to wait here. So I'm waiting.",
 					next = "MARA-OPEN-2",
 					setFlags = { "mara_met" },
 				},
 				["MARA-OPEN-2"] = {
 					id = "MARA-OPEN-2",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "Nobody will tell me anything. Only that I can't see him.",
 					choicesFrom = "MARA-HUB",
 				},
 				["MARA-AGAIN"] = {
 					id = "MARA-AGAIN",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "You're back.",
 					choicesFrom = "MARA-HUB",
 				},
 				["MARA-AFTER"] = {
 					id = "MARA-AFTER",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "I keep looking at that phone. As if it'll ring again.",
 					choicesFrom = "MARA-HUB",
 				},
 				["MARA-HUB"] = {
 					id = "MARA-HUB",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "What is it?",
 					choices = {
 						ask("sorry", "I'm sorry about Daniel.", "MARA-SORRY-1", nil, true),
@@ -760,14 +828,14 @@ local Case001: Types.CaseDefinition = {
 							{ lacks("Statement", "STMT-SUS-001-ALIBI") }
 						),
 						ask("last", "When did you last speak to him?", "MARA-LAST-1", nil, true),
-						ask("victor", "Tell me about Victor.", "MARA-VICTOR-1", { lacks("Evidence", "EV-002") }, true),
+						ask("victor", "Tell me about Victor.", "MARA-VICTOR-1", { lacks("Statement", "STMT-SUS-001-SILENT") }),
 						ask(
 							"dissolve",
 							"Did you know Daniel was ending the partnership?",
 							"MARA-DISSOLVE-1",
 							{ knows("Evidence", "EV-002"), lacks("Statement", "STMT-SUS-001-MOTIVE") }
 						),
-						show("show", "Can you look at something for me?", "Show Mara…", "MARA-SHOW-NOTHING", {
+						show("show", "Can you look at something for me?", "Show Meera…", "MARA-SHOW-NOTHING", {
 							{
 								-- Her alibi against the phone: the call was
 								-- declined, not missed.
@@ -791,19 +859,19 @@ local Case001: Types.CaseDefinition = {
 				},
 				["MARA-SORRY-1"] = {
 					id = "MARA-SORRY-1",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "Everyone keeps saying that.",
 					next = "MARA-SORRY-2",
 				},
 				["MARA-SORRY-2"] = {
 					id = "MARA-SORRY-2",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "...Thank you. I mean it. I just don't know what to do with my hands.",
 					choicesFrom = "MARA-HUB",
 				},
 				["MARA-WHERE-1"] = {
 					id = "MARA-WHERE-1",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "Home. Asleep.",
 					next = "MARA-WHERE-2",
 				},
@@ -816,68 +884,75 @@ local Case001: Types.CaseDefinition = {
 				},
 				["MARA-WHERE-3"] = {
 					id = "MARA-WHERE-3",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "Migraine. I took something. I was out by ten.",
 					next = "MARA-WHERE-4",
 				},
 				["MARA-WHERE-4"] = {
 					id = "MARA-WHERE-4",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "I never heard his call. I only saw it when the police woke me.",
 					statementId = "STMT-SUS-001-ALIBI",
 					choicesFrom = "MARA-HUB",
 				},
 				["MARA-LAST-1"] = {
 					id = "MARA-LAST-1",
-					speaker = "Mara Reyes",
-					text = "He rang at seven to say he'd miss dinner. Again.",
+					speaker = "Meera Rozario",
+					text = 'He rang at seven. "Sayang, sorry, I\'ll miss dinner." Again.',
 					next = "MARA-LAST-2",
 				},
 				["MARA-LAST-2"] = {
 					id = "MARA-LAST-2",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = 'He sounded wound up. Said tonight he\'d finally "sort it out".',
 					next = "MARA-LAST-3",
 				},
 				["MARA-LAST-3"] = {
 					id = "MARA-LAST-3",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "I didn't ask what. I was tired of asking.",
 					choicesFrom = "MARA-HUB",
 				},
 				["MARA-VICTOR-1"] = {
 					id = "MARA-VICTOR-1",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "Victor.",
 					next = "MARA-VICTOR-2",
 				},
 				["MARA-VICTOR-2"] = {
 					id = "MARA-VICTOR-2",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "Victor is why Daniel slept at that desk three nights a week.",
 					next = "MARA-VICTOR-3",
 				},
 				["MARA-VICTOR-3"] = {
 					id = "MARA-VICTOR-3",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "They built it together. Lately it felt like Daniel was the only one still building.",
+					next = "MARA-VICTOR-4",
+				},
+				["MARA-VICTOR-4"] = {
+					id = "MARA-VICTOR-4",
+					speaker = "Meera Rozario",
+					text = "I haven't said a word to Victor tonight. I won't.",
+					statementId = "STMT-SUS-001-SILENT",
 					choicesFrom = "MARA-HUB",
 				},
 				["MARA-DISSOLVE-1"] = {
 					id = "MARA-DISSOLVE-1",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "...You found that.",
 					next = "MARA-DISSOLVE-2",
 				},
 				["MARA-DISSOLVE-2"] = {
 					id = "MARA-DISSOLVE-2",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "He'd talked about it for a year. I never thought he'd do it.",
 					next = "MARA-DISSOLVE-3",
 				},
 				["MARA-DISSOLVE-3"] = {
 					id = "MARA-DISSOLVE-3",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "Victor would never let him walk away clean. Daniel knew that. He used to say it like a joke.",
 					statementId = "STMT-SUS-001-MOTIVE",
 					choicesFrom = "MARA-HUB",
@@ -891,31 +966,31 @@ local Case001: Types.CaseDefinition = {
 				},
 				["MARA-PHONE-EARLY"] = {
 					id = "MARA-PHONE-EARLY",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "That's his phone. ...Please put it away.",
 					choicesFrom = "MARA-HUB",
 				},
 				["MARA-PHONE-KNOWN"] = {
 					id = "MARA-PHONE-KNOWN",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "I know what it says. I was the one holding the other end.",
 					choicesFrom = "MARA-HUB",
 				},
 				["MARA-SHOW-NOTHING"] = {
 					id = "MARA-SHOW-NOTHING",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "I don't know what you want me to see.",
 					choicesFrom = "MARA-HUB",
 				},
 				["MARA-CALL-1"] = {
 					id = "MARA-CALL-1",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "I—",
 					next = "MARA-CALL-2",
 				},
 				["MARA-CALL-2"] = {
 					id = "MARA-CALL-2",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "What are you saying?",
 					choices = {
 						ask("gentle", "Tell me what really happened with that call.", "MARA-ADMIT-1"),
@@ -924,91 +999,91 @@ local Case001: Types.CaseDefinition = {
 				},
 				["MARA-ADMIT-1"] = {
 					id = "MARA-ADMIT-1",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "...I was awake.",
 					next = "MARA-ADMIT-2",
 				},
 				["MARA-ADMIT-2"] = {
 					id = "MARA-ADMIT-2",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "We'd argued. At seven, on the phone. About him staying late. About Victor. It's always Victor.",
 					next = "MARA-ADMIT-3",
 				},
 				["MARA-ADMIT-3"] = {
 					id = "MARA-ADMIT-3",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "When his name came up I thought he was calling to apologise. I wanted him to wait until morning.",
 					next = "MARA-ADMIT-4",
 				},
 				["MARA-ADMIT-4"] = {
 					id = "MARA-ADMIT-4",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "So I pressed a button. So I wouldn't have to hear his voice.",
 					statementId = "STMT-SUS-001-ADMISSION",
 					next = "MARA-ADMIT-5",
 				},
 				["MARA-ADMIT-5"] = {
 					id = "MARA-ADMIT-5",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = 'At seven he told me Victor was coming back tonight. "To talk me out of it," he said.',
 					statementId = "STMT-SUS-001-VICTOR",
 					next = "MARA-ADMIT-6",
 				},
 				["MARA-ADMIT-6"] = {
 					id = "MARA-ADMIT-6",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "I thought he was being dramatic.",
 					choicesFrom = "MARA-HUB",
 				},
 				["MARA-UPSET-1"] = {
 					id = "MARA-UPSET-1",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "Lie?",
 					next = "MARA-UPSET-2",
 				},
 				["MARA-UPSET-2"] = {
 					id = "MARA-UPSET-2",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "My husband is dead, and you want to talk about which button I pressed?",
 					next = "MARA-UPSET-3",
 				},
 				["MARA-UPSET-3"] = {
 					id = "MARA-UPSET-3",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "Leave me alone. Please. Just... give me a minute.",
 					setFlags = { "mara_upset" },
 				},
 				["MARA-COLD"] = {
 					id = "MARA-COLD",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "Come to call me a liar again?",
 					choices = {
 						ask("apologise", "I'm sorry. I need to understand that call.", "MARA-COLD-THAW"),
-						ask("insist", "I need the truth, Mrs. Reyes.", "MARA-COLD-NO"),
+						ask("insist", "I need the truth, Puan Meera.", "MARA-COLD-NO"),
 					},
 				},
 				["MARA-COLD-THAW"] = {
 					id = "MARA-COLD-THAW",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "...",
 					clearFlags = { "mara_upset" },
 					next = "MARA-ADMIT-1",
 				},
 				["MARA-COLD-NO"] = {
 					id = "MARA-COLD-NO",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "Then you can wait for it.",
 				},
 				["MARA-BYE"] = {
 					id = "MARA-BYE",
-					speaker = "Mara Reyes",
+					speaker = "Meera Rozario",
 					text = "Find out what happened to him. That's all I want from you.",
 				},
 			},
 		},
 
 		----------------------------------------------------------------
-		-- Victor Lane: polished, overconfident, impatient. Lies, then
+		-- Victor Lim: polished, overconfident, impatient. Lies, then
 		-- revises the lie when cornered, then breaks.
 		----------------------------------------------------------------
 		{
@@ -1021,26 +1096,26 @@ local Case001: Types.CaseDefinition = {
 			nodes = {
 				["VIC-OPEN"] = {
 					id = "VIC-OPEN",
-					speaker = "Victor Lane",
+					speaker = "Victor Lim",
 					text = "Detective.",
 					next = "VIC-OPEN-2",
 					setFlags = { "victor_met" },
 				},
 				["VIC-OPEN-2"] = {
 					id = "VIC-OPEN-2",
-					speaker = "Victor Lane",
+					speaker = "Victor Lim",
 					text = "I've given your officers a statement. I'd like to go home at some point tonight.",
 					choicesFrom = "VIC-HUB",
 				},
 				["VIC-AGAIN"] = {
 					id = "VIC-AGAIN",
-					speaker = "Victor Lane",
+					speaker = "Victor Lim",
 					text = "Again? Fine. Quickly.",
 					choicesFrom = "VIC-HUB",
 				},
 				["VIC-HUB"] = {
 					id = "VIC-HUB",
-					speaker = "Victor Lane",
+					speaker = "Victor Lim",
 					text = "Well?",
 					choices = {
 						ask(
@@ -1055,6 +1130,7 @@ local Case001: Types.CaseDefinition = {
 							"VIC-CONFIRM-1",
 							{ knows("Statement", "STMT-SUS-002-ALIBI"), lacks("Statement", "STMT-SUS-002-CAMERAS") }
 						),
+						ask("meera", "Have you spoken to Meera tonight?", "VIC-MEERA-1", { lacks("Statement", "STMT-SUS-002-MEERA") }),
 						ask(
 							"partner",
 							"How were things with Daniel?",
@@ -1113,75 +1189,88 @@ local Case001: Types.CaseDefinition = {
 				},
 				["VIC-LEFT-1"] = {
 					id = "VIC-LEFT-1",
-					speaker = "Victor Lane",
+					speaker = "Victor Lim",
 					text = "Half ten. Give or take.",
 					next = "VIC-LEFT-2",
 				},
 				["VIC-LEFT-2"] = {
 					id = "VIC-LEFT-2",
-					speaker = "Victor Lane",
+					speaker = "Victor Lim",
 					text = "Daniel was still at his desk. Working late, like always. He liked an audience for it.",
 					next = "VIC-LEFT-3",
 				},
 				["VIC-LEFT-3"] = {
 					id = "VIC-LEFT-3",
-					speaker = "Victor Lane",
+					speaker = "Victor Lim",
 					text = "Whatever happened, it happened after I'd gone.",
 					statementId = "STMT-SUS-002-ALIBI",
 					choicesFrom = "VIC-HUB",
 				},
 				["VIC-CONFIRM-1"] = {
 					id = "VIC-CONFIRM-1",
-					speaker = "Victor Lane",
+					speaker = "Victor Lim",
 					text = "Sam saw me go. Ask him.",
 					next = "VIC-CONFIRM-2",
 				},
 				["VIC-CONFIRM-2"] = {
 					id = "VIC-CONFIRM-2",
-					speaker = "Victor Lane",
-					text = "And if that's not good enough, pull the lobby footage. The cameras will tell you what I'm telling you.",
+					speaker = "Victor Lim",
+					text = "And if that's not good enough, pull the reception footage. The cameras will tell you what I'm telling you.",
 					statementId = "STMT-SUS-002-CAMERAS",
+					choicesFrom = "VIC-HUB",
+				},
+				["VIC-MEERA-1"] = {
+					id = "VIC-MEERA-1",
+					speaker = "Victor Lim",
+					text = "Speak to her? She won't look at me.",
+					next = "VIC-MEERA-2",
+				},
+				["VIC-MEERA-2"] = {
+					id = "VIC-MEERA-2",
+					speaker = "Victor Lim",
+					text = "Ask her why she didn't pick up when he rang. That's your mystery, Detective.",
+					statementId = "STMT-SUS-002-MEERA",
 					choicesFrom = "VIC-HUB",
 				},
 				["VIC-FINE-1"] = {
 					id = "VIC-FINE-1",
-					speaker = "Victor Lane",
+					speaker = "Victor Lim",
 					text = "Fine. Good. Fifteen years good.",
 					next = "VIC-FINE-2",
 				},
 				["VIC-FINE-2"] = {
 					id = "VIC-FINE-2",
-					speaker = "Victor Lane",
+					speaker = "Victor Lim",
 					text = "Every partnership has arguments. Ours had fewer than most.",
 					choicesFrom = "VIC-HUB",
 				},
 				["VIC-DISSOLVE-1"] = {
 					id = "VIC-DISSOLVE-1",
-					speaker = "Victor Lane",
+					speaker = "Victor Lim",
 					text = "...He'd been threatening that for a year.",
 					next = "VIC-DISSOLVE-2",
 				},
 				["VIC-DISSOLVE-2"] = {
 					id = "VIC-DISSOLVE-2",
-					speaker = "Victor Lane",
+					speaker = "Victor Lim",
 					text = "It was a negotiating tactic. Daniel loved a gesture. Midnight signings. Honestly.",
 					next = "VIC-DISSOLVE-3",
 				},
 				["VIC-DISSOLVE-3"] = {
 					id = "VIC-DISSOLVE-3",
-					speaker = "Victor Lane",
+					speaker = "Victor Lim",
 					text = "I wasn't going to be there. I'd gone home.",
 					choicesFrom = "VIC-HUB",
 				},
 				["VIC-SHOW-NOTHING"] = {
 					id = "VIC-SHOW-NOTHING",
-					speaker = "Victor Lane",
+					speaker = "Victor Lim",
 					text = "And? Am I supposed to be impressed?",
 					choicesFrom = "VIC-HUB",
 				},
 				["VIC-SHOW-AGAIN"] = {
 					id = "VIC-SHOW-AGAIN",
-					speaker = "Victor Lane",
+					speaker = "Victor Lim",
 					text = "You've shown me that. It didn't improve the second time.",
 					choicesFrom = "VIC-HUB",
 				},
@@ -1195,13 +1284,13 @@ local Case001: Types.CaseDefinition = {
 				},
 				["VIC-CAM-1"] = {
 					id = "VIC-CAM-1",
-					speaker = "Victor Lane",
+					speaker = "Victor Lim",
 					text = "Did I write that?",
 					next = "VIC-CAM-2",
 				},
 				["VIC-CAM-2"] = {
 					id = "VIC-CAM-2",
-					speaker = "Victor Lane",
+					speaker = "Victor Lim",
 					text = "I sign forty things a week, detective. I don't memorise them.",
 					choicesFrom = "VIC-HUB",
 				},
@@ -1214,8 +1303,8 @@ local Case001: Types.CaseDefinition = {
 				},
 				["VIC-BADGE-1"] = {
 					id = "VIC-BADGE-1",
-					speaker = "Victor Lane",
-					text = "Then the system's wrong.",
+					speaker = "Victor Lim",
+					text = "Aiya. Then the system's wrong, lah.",
 					next = "VIC-BADGE-2",
 				},
 				["VIC-BADGE-2"] = {
@@ -1227,19 +1316,19 @@ local Case001: Types.CaseDefinition = {
 				},
 				["VIC-BADGE-3"] = {
 					id = "VIC-BADGE-3",
-					speaker = "Victor Lane",
+					speaker = "Victor Lim",
 					text = "...",
 					next = "VIC-BADGE-4",
 				},
 				["VIC-BADGE-4"] = {
 					id = "VIC-BADGE-4",
-					speaker = "Victor Lane",
+					speaker = "Victor Lim",
 					text = "Fine. I came back. I'd left my charger. Ten minutes, in and out.",
 					next = "VIC-BADGE-5",
 				},
 				["VIC-BADGE-5"] = {
 					id = "VIC-BADGE-5",
-					speaker = "Victor Lane",
+					speaker = "Victor Lim",
 					text = "He was alive when I left. On the phone. Laughing, for God's sake.",
 					statementId = "STMT-SUS-002-REVISED",
 					choicesFrom = "VIC-HUB",
@@ -1253,7 +1342,7 @@ local Case001: Types.CaseDefinition = {
 				},
 				["VIC-CONF-1"] = {
 					id = "VIC-CONF-1",
-					speaker = "Victor Lane",
+					speaker = "Victor Lim",
 					text = "Then he was on another call.",
 					next = "VIC-CONF-2",
 				},
@@ -1266,42 +1355,42 @@ local Case001: Types.CaseDefinition = {
 				},
 				["VIC-CONF-3"] = {
 					id = "VIC-CONF-3",
-					speaker = "Victor Lane",
+					speaker = "Victor Lim",
 					text = "...",
 					next = "VIC-CONF-4",
 				},
 				["VIC-CONF-4"] = {
 					id = "VIC-CONF-4",
-					speaker = "Victor Lane",
+					speaker = "Victor Lim",
 					text = "What do you want me to say?",
 					next = "VIC-CONF-5",
 				},
 				["VIC-CONF-5"] = {
 					id = "VIC-CONF-5",
-					speaker = "Victor Lane",
+					speaker = "Victor Lim",
 					text = "That I stood in that office and watched him throw away fifteen years because he was tired of me?",
 					next = "VIC-CONF-6",
 				},
 				["VIC-CONF-6"] = {
 					id = "VIC-CONF-6",
-					speaker = "Victor Lane",
+					speaker = "Victor Lim",
 					text = "He wouldn't listen. He never listened.",
 					next = "VIC-CONF-7",
 				},
 				["VIC-CONF-7"] = {
 					id = "VIC-CONF-7",
-					speaker = "Victor Lane",
+					speaker = "Victor Lim",
 					text = "...I'd like a lawyer now.",
 					statementId = "STMT-SUS-002-BREAK",
 				},
 				["VIC-DONE"] = {
 					id = "VIC-DONE",
-					speaker = "Victor Lane",
+					speaker = "Victor Lim",
 					text = "I've said all I'm saying without a lawyer.",
 				},
 				["VIC-BYE"] = {
 					id = "VIC-BYE",
-					speaker = "Victor Lane",
+					speaker = "Victor Lim",
 					text = "Good.",
 				},
 			},
@@ -1335,7 +1424,7 @@ local Case001: Types.CaseDefinition = {
 			id = "STMT-SUS-002-CAMERAS",
 			suspectId = "SUS-002",
 			label = "The Footage",
-			text = '"Pull the lobby footage. The cameras will tell you what I\'m telling you."',
+			text = '"Pull the reception footage. The cameras will tell you what I\'m telling you."',
 		},
 		{
 			id = "STMT-SUS-002-REVISED",
@@ -1359,26 +1448,45 @@ local Case001: Types.CaseDefinition = {
 			id = "STMT-SUS-003-VICTOR",
 			suspectId = "SUS-003",
 			label = "Victor Leaving",
-			text = "Victor said goodnight around ten. Sam never saw him actually leave.",
+			text = "Victor said goodnight around half ten. Sam never saw him actually leave.",
 		},
 		{
 			-- Phase 2P: a lead, not an answer -- only where the log is.
 			id = "STMT-SUS-003-BADGE",
 			suspectId = "SUS-003",
 			label = "The Badge Log",
-			text = "Every door locks at nine. Sam printed tonight's badge log; it's on the reception counter.",
+			text = "Every door locks at nine. Sam printed tonight's badge log for you at reception.",
 		},
 		{
 			id = "STMT-SUS-003-CAMERAS",
 			suspectId = "SUS-003",
 			label = "The Cameras",
-			text = "All four lobby cameras dark since Tuesday. Victor told him not to call anyone out.",
+			text = "All four reception cameras dark since Tuesday. Victor told him not to call anyone out.",
 		},
 		{
 			id = "STMT-SUS-003-COFFEE",
 			suspectId = "SUS-003",
 			label = "Daniel's Coffee",
 			text = "Daniel didn't drink coffee at night, but made one for whoever he kept late.",
+		},
+		{
+			id = "STMT-SUS-003-TAPE",
+			suspectId = "SUS-003",
+			label = "The Tape",
+			text = "Nobody past the tape since the ambulance crew. Mr. Lim asked to go in; Sam said no. "
+				.. "Sam told him only that Daniel had passed.",
+		},
+		{
+			id = "STMT-SUS-002-MEERA",
+			suspectId = "SUS-002",
+			label = "On Meera",
+			text = '"Ask her why she didn\'t pick up when he rang. That\'s your mystery, Detective."',
+		},
+		{
+			id = "STMT-SUS-001-SILENT",
+			suspectId = "SUS-001",
+			label = "Not a Word",
+			text = '"I haven\'t said a word to Victor tonight. I won\'t."',
 		},
 	},
 
@@ -1407,10 +1515,10 @@ local Case001: Types.CaseDefinition = {
 			-- The red herring: real, and innocent.
 			id = "CONTRA-003",
 			claim = true,
-			label = "Mara's Missed Call",
+			label = "Meera's Missed Call",
 			left = { kind = "Statement", id = "STMT-SUS-001-ALIBI" },
 			right = { kind = "Evidence", id = "EV-001" },
-			reason = "Mara says she never heard the call. It wasn't missed. Someone declined it.",
+			reason = "Meera says she never heard the call. It wasn't missed. Someone declined it.",
 		},
 		{
 			id = "CONTRA-004",
@@ -1418,13 +1526,23 @@ local Case001: Types.CaseDefinition = {
 			label = "The Footage",
 			left = { kind = "Statement", id = "STMT-SUS-002-CAMERAS" },
 			right = { kind = "Evidence", id = "EV-007" },
-			reason = "Victor told you to pull the lobby footage. His own note kept the cameras dark.",
+			reason = "Victor told you to pull the reception footage. His own note kept the cameras dark.",
+		},
+		{
+			-- The slip: Victor knew about a call nobody had told him about.
+			id = "CONTRA-005",
+			claim = true,
+			label = "Nobody Told Him",
+			left = { kind = "Statement", id = "STMT-SUS-002-MEERA" },
+			right = { kind = "Statement", id = "STMT-SUS-003-TAPE" },
+			reason = "Victor knows Daniel's call went unanswered. The phone has been behind the tape since before he "
+				.. "arrived, and all he was told was that Daniel had passed. He knew because he was in the room.",
 		},
 	},
 
 	deductions = {
 		{
-			-- Mara's lead and the badge log agree.
+			-- Meera's lead and the badge log agree.
 			id = "DEDUCT-001",
 			label = "Victor Came Back",
 			requiredFacts = {
@@ -1436,7 +1554,7 @@ local Case001: Types.CaseDefinition = {
 				options = {
 					{ id = "sam", text = "Sam, finishing his rounds." },
 					{ id = "victor", text = "Victor, to talk Daniel out of signing." },
-					{ id = "mara", text = "Mara, to have it out with Daniel." },
+					{ id = "mara", text = "Meera, to have it out with Daniel." },
 					{ id = "fault", text = "Nobody. The badge system is wrong." },
 				},
 				answer = "victor",
@@ -1454,9 +1572,9 @@ local Case001: Types.CaseDefinition = {
 				prompt = "What was the midnight meeting for?",
 				options = {
 					{ id = "client", text = "A late call with a client abroad." },
-					{ id = "dissolve", text = "Signing the end of Reyes & Lane." },
+					{ id = "dissolve", text = "Signing the end of Rozario & Lim." },
 					{ id = "resign", text = "Daniel handing in his notice." },
-					{ id = "mara", text = "Making it up to Mara." },
+					{ id = "mara", text = "Making it up to Meera." },
 				},
 				answer = "dissolve",
 			},
@@ -1497,6 +1615,42 @@ local Case001: Types.CaseDefinition = {
 				answer = "after",
 			},
 		},
+		{
+			id = "DEDUCT-005",
+			label = "By the Credenza",
+			requiredFacts = {
+				{ kind = "Evidence", id = "EV-008" },
+				{ kind = "Evidence", id = "EV-009" },
+			},
+			question = {
+				prompt = "Tape by the credenza, a head injury, a cracked photo turned face down. What happened here?",
+				options = {
+					{ id = "alone", text = "He collapsed alone at his desk." },
+					{ id = "struggle", text = "He fell during a struggle, and someone turned the photo over afterwards." },
+					{ id = "frame", text = "He was hit with the frame." },
+					{ id = "slip", text = "He slipped reaching for a file." },
+				},
+				answer = "struggle",
+			},
+		},
+		{
+			id = "DEDUCT-006",
+			label = "Why It Couldn't Wait",
+			requiredFacts = {
+				{ kind = "Evidence", id = "EV-010" },
+				{ kind = "Evidence", id = "EV-002" },
+			},
+			question = {
+				prompt = "A buy-out that Victor would 'fight', and a folder of vendor invoices gone from tonight's drawer. Why midnight?",
+				options = {
+					{ id = "tax", text = "Daniel wanted to leave before year-end tax." },
+					{ id = "leverage", text = "Daniel had found something in those invoices, and it was his leverage." },
+					{ id = "meera", text = "Meera wanted the money." },
+					{ id = "deadline", text = "The client deadline moved." },
+				},
+				answer = "leverage",
+			},
+		},
 	},
 
 	-- Who may be formally accused. `supportedBy` names the reasoning that
@@ -1509,51 +1663,52 @@ local Case001: Types.CaseDefinition = {
 		{
 			id = "ACC-001",
 			suspectId = "SUS-002",
-			label = "Accuse Victor Lane",
+			label = "Accuse Victor Lim",
 			supportedBy = {
 				contradictions = { "CONTRA-001", "CONTRA-002" },
 				deductions = { "DEDUCT-001", "DEDUCT-002", "DEDUCT-004" },
 			},
-			-- Why: the dissolution, or coming back to stop it. What proves
-			-- it: either lie about the last hour. The cameras alone say he
-			-- planned to be unseen, not that he was there.
-			motives = { "DEDUCT-002", "DEDUCT-001" },
-			proofs = { "CONTRA-001", "CONTRA-002" },
+			-- Why: the dissolution, coming back to stop it, or what Daniel had found
+			-- in the invoices. What proves it: either lie about the last hour, or the
+			-- slip about a call nobody had told him of. The cameras alone say he planned
+			-- to be unseen, not that he was there.
+			motives = { "DEDUCT-002", "DEDUCT-001", "DEDUCT-006" },
+			proofs = { "CONTRA-001", "CONTRA-002", "CONTRA-005" },
 		},
 		{
 			id = "ACC-002",
 			suspectId = "SUS-001",
-			label = "Accuse Mara Reyes",
+			label = "Accuse Meera Rozario",
 			supportedBy = {
 				contradictions = { "CONTRA-003" },
 			},
-			wrongEpilogue = "Mara Reyes is charged at four in the morning. She doesn't say a word in the car. "
-				.. "Three weeks later the case against her comes apart, and by then Victor Lane is running "
-				.. "Reyes & Lane on his own.",
+			wrongEpilogue = "Meera Rozario is charged at four in the morning. She doesn't say a word in the car. "
+				.. "Three weeks later the case against her comes apart, and by then Victor Lim is running "
+				.. "Rozario & Lim on his own.",
 		},
 	} :: { Types.AccusationDefinition },
 
 	-- Server-only (this module lives in ServerStorage). Revealed at the close.
 	solution = {
 		culpritSuspectId = "SUS-002",
-		reveal = "Victor Lane never went home. His badge came back in at 11:04 PM, to stop Daniel signing "
+		reveal = "Victor Lim never went home. His badge came back in at 11:04 PM, to stop Daniel signing "
 			.. "the papers that would end their partnership. Daniel made two coffees and tried to talk him "
-			.. "down. At 11:47 he called Mara. She was awake, still angry, and let it ring. Minutes later "
+			.. "down. At 11:47 he called Meera. She was awake, still angry, and let it ring. Minutes later "
 			.. "Daniel was dead, and at 11:52 Victor's badge was the last to leave. He had known since "
 			.. "Tuesday that no camera would see him go.",
-		solvedEpilogue = "Victor Lane is charged before sunrise. The dissolution papers are still on "
+		solvedEpilogue = "Victor Lim is charged before sunrise. The dissolution papers are still on "
 			.. "Daniel's desk, unsigned, where he left them.",
 		-- P7: the case holds either way; an investigator who pushed Victor
 		-- until he broke gets an ending that says so.
 		solvedVariants = {
 			{
 				requiredFacts = { { kind = "Statement", id = "STMT-SUS-002-BREAK" } },
-				epilogue = "Victor Lane is charged before sunrise. What he said in that meeting room goes "
+				epilogue = "Victor Lim is charged before sunrise. What he said in that meeting room goes "
 					.. "into the file word for word, and his lawyer can't take it back. The dissolution "
 					.. "papers are still on Daniel's desk, unsigned, where he left them.",
 			},
 		},
-		unprovenEpilogue = "Victor Lane walks out at three in the morning with his lawyer. You know what "
+		unprovenEpilogue = "Victor Lim walks out at three in the morning with his lawyer. You know what "
 			.. "happened in that office. You couldn't make it hold.",
 	},
 }

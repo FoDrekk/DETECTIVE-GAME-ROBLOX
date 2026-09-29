@@ -50,6 +50,23 @@ export type EvidenceDefinition = {
 		-- Which PropKit model to build for it (e.g. "Printout",
 		-- "EspressoCup"); absent builds a plain panel.
 		style: string?,
+		-- Phase 5.1: the prop stays out of the world until every condition
+		-- holds for the investigator (same condition language as dialogue),
+		-- then appears and stays for the rest of the case (RevealService).
+		-- Only the prop is gated: the evidence itself can still be reached
+		-- another way (e.g. a line of dialogue that grants it). Absent means
+		-- the prop is there from the start, as before.
+		revealWhen: { DialogueCondition }?,
+	}?,
+	-- Phase 5.3: this evidence is a Studio-authored (or baked) interactable
+	-- that already exists in the office and is named `instanceName` -- a
+	-- flavour object promoted to a clue. At runtime OfficeRoom gives that
+	-- instance this evidence's id (and `label` as its prompt, if given),
+	-- exactly as observations are applied by instance name. Purely technical
+	-- staging, like propPlacement; mutually exclusive with it.
+	bindTo: {
+		instanceName: string,
+		label: string?,
 	}?,
 }
 
@@ -248,12 +265,19 @@ export type DialoguePresentDefinition = {
 -- let the conversation remember what happened (e.g. the investigator
 -- pressed too hard) for later entries, choices and lines. `isPlayer` marks
 -- a line spoken by the investigator.
+--
+-- `grantsEvidence` (Phase 5.1) lists evidence ids discovered, server-side
+-- through EvidenceService, the moment this node is reached -- evidence a
+-- character hands over or shows the investigator. Discovery is idempotent,
+-- so the same evidence can also be reachable by other routes (an object to
+-- examine, another conversation); whichever comes first discovers it.
 export type DialogueNodeDefinition = {
 	id: string,
 	speaker: string,
 	text: string,
 	next: string?,
 	statementId: string?,
+	grantsEvidence: { string }?,
 	choices: { DialogueChoiceDefinition }?,
 	choicesFrom: string?,
 	setFlags: { string }?,
@@ -407,8 +431,8 @@ export type CaseBriefing = {
 	id: string,
 	title: string,
 	description: string,
-	-- M8: the briefing's time/place line ("12:40 AM", "Reyes & Lane,
-	-- ninth floor"). Optional: absent means the line is not shown.
+	-- M8: the briefing's time/place line ("12:40 AM", "Rozario & Lim ·
+	-- Tingkat 9"). Optional: absent means the line is not shown.
 	time: string?,
 	place: string?,
 }
@@ -452,6 +476,55 @@ export type CaseDefinition = {
 	-- ServerStorage and this is only ever sent inside the closing summary,
 	-- after the player has committed to an accusation.
 	solution: CaseSolution?,
+	-- Phase 5.1: scripted scenes (shots, subtitles), played on the server's
+	-- word by CutsceneService. Optional: a case without any has none.
+	cutscenes: { CutsceneDefinition }?,
+}
+
+--[[
+	Phase 5.1: a scripted scene. The server decides when one plays
+	(CutsceneService.play) and when it is over; the client only presents
+	the shots it is sent and reports reaching the end (or a skip).
+	`skippable` defaults to true. `replayFrom` names the shot a replay
+	starts at once this scene has been seen in the current session (e.g.
+	after "Investigate again"); absent plays it from the top every time.
+]]
+export type CutsceneDefinition = {
+	id: string,
+	shots: { CutsceneShot },
+	skippable: boolean?,
+	replayFrom: string?,
+}
+
+-- One camera shot: a move from `from` to `to` over `duration` seconds (a
+-- still shot omits `to`), with optional dips from/to black and subtitle
+-- lines timed from the start of the shot.
+export type CutsceneShot = {
+	id: string,
+	duration: number,
+	camera: {
+		from: CutsceneCameraPoint,
+		to: CutsceneCameraPoint?,
+		-- Degrees; absent keeps the player's own field of view.
+		fieldOfView: number?,
+	},
+	fadeIn: number?,
+	fadeOut: number?,
+	lines: { CutsceneLine }?,
+}
+
+export type CutsceneCameraPoint = {
+	position: Vector3,
+	lookAt: Vector3,
+}
+
+-- A subtitle: `text` shown from `at` seconds into the shot for `duration`
+-- seconds, under `speaker` when given (none for captions and narration).
+export type CutsceneLine = {
+	at: number,
+	duration: number,
+	text: string,
+	speaker: string?,
 }
 
 export type CaseSolution = {
@@ -556,6 +629,15 @@ export type PlayerCaseState = {
 	-- (M5). Owned by TimelineService; never set directly by any other system.
 	-- Once true it stays true (a solved ordering is not un-solved).
 	timelineEstablished: boolean?,
+	-- Phase 5.1: evidence ids whose gated prop (propPlacement.revealWhen) has
+	-- been revealed this case. Owned by RevealService; a reveal is never
+	-- undone within a case (a replay starts a new case state).
+	revealedProps: { [string]: boolean },
+	-- Phase 5.1: the scene this player is watching, if any. Owned by
+	-- CutsceneService. `startedAt` is the server clock when it was sent,
+	-- `duration` the seconds it runs from the shot it started at, and `grace`
+	-- how long after that the server stops waiting for the client.
+	activeCutscene: { id: string, startedAt: number, duration: number, grace: number }?,
 }
 
 export type PlayerData = {
@@ -593,6 +675,11 @@ export type EvidencePayload = {
 	-- True when this is an already-discovered clue being looked at again
 	-- (not a new discovery).
 	revisited: boolean?,
+	-- Phase 5.1: true when the evidence was handed over in a conversation
+	-- (DialogueNodeDefinition.grantsEvidence) rather than found by examining
+	-- an object: there is nothing to frame, and the conversation announces
+	-- it (DialoguePayload.grantedEvidence).
+	granted: boolean?,
 }
 
 -- Authored, non-evidence description shown when the player examines a
@@ -636,6 +723,9 @@ export type DialoguePayload = {
 	completed: boolean,
 	-- Present only on the turn a statement is newly unlocked.
 	unlockedStatement: StatementPayload?,
+	-- Phase 5.1: display names of evidence this line just handed over,
+	-- present only on the turn it was newly discovered.
+	grantedEvidence: { string }?,
 	-- The questions the investigator may ask now (ids + words only; never
 	-- where they lead). Present only while the line is waiting for a choice.
 	choices: { DialogueChoicePayload }?,
@@ -648,6 +738,16 @@ export type DialoguePayload = {
 	-- M9: present while the investigator is choosing what to show: the
 	-- picker's heading and the evidence they have (ids and names only).
 	present: DialoguePresentPayload?,
+}
+
+-- Phase 5.1: a scene for the client to play, or (active = false) the
+-- server saying the current one is over. `shots` are only those from the
+-- shot the scene starts at (a replay may start part-way through).
+export type CutscenePayload = {
+	active: boolean,
+	id: string?,
+	shots: { CutsceneShot }?,
+	skippable: boolean?,
 }
 
 export type DialoguePresentPayload = {
