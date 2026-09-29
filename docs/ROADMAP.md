@@ -370,7 +370,7 @@ a proposal the owner reviews before implementation (OD-12).
 | 5.1 | Engine capabilities: `revealWhen`, `grantsEvidence` and the cutscene player; no story content (`ARCHITECTURE.md`, "Story engine capabilities") | **Approved (built and tested)** |
 | 5.2 | Localisation and continuity fixes, same case structure (`CASE_001_V2_LOCALISATION_SHEET.md`) | **Done and synced (362 unit, 179 playthrough, 76 engine checks; Studio Play Mode verified).** Timing decision C applied (badge-out 10:28, lift 10:29). Briefing shot left for 5.5 (D4B) |
 | 5.3 | v2 content that doesn't need the phone: EV-008 to EV-010, three new statements, CONTRA-005, DEDUCT-005/006, the badge log printed on request, the accusation's new motive and proof (`CASE_001_V2_CONTENT_SHEET_5_3.md`) | **Built and tested, awaiting review (385 unit, 204 playthrough, 76 engine checks; Studio Play Mode verified).** Sheet and five decisions approved as recommended (1A to 5A). Place synced after the owner saves |
-| 5.4 | The payoff: the phone (per revised D-10) with EV-011/012, the 11:48 and 11:49 events, CONTRA-006 and the drawer-photo clue; the ending variants; the dawn outro | Not started |
+| 5.4 | The payoff: the phone (per revised D-10) with EV-011/012, the 11:48 and 11:49 events, CONTRA-006 and the drawer-photo clue; the ending variants; the dawn outro (`CASE_001_V2_CONTENT_SHEET_5_4.md`) | **Plan approved (decisions 1A, 2, 3A, 4A, 5A, 6); content sheet written, awaiting approval; nothing applied** |
 | 5.5 | Intro: an animatic in a throwaway place first, then the sets | Not started |
 | 5.6 | v2 release QA | Not started |
 
