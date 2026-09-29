@@ -144,8 +144,19 @@ local function validateInteractables()
 		return
 	end
 
+	-- Phase 5.1: evidence a conversation hands over needs no object in the
+	-- world (DialogueNodeDefinition.grantsEvidence).
+	local grantedByDialogue: { [string]: boolean } = {}
+	for _, conversation in ipairs(caseDef.conversations) do
+		for _, node in pairs(conversation.nodes) do
+			for _, evidenceId in ipairs(node.grantsEvidence or {}) do
+				grantedByDialogue[evidenceId] = true
+			end
+		end
+	end
+
 	for _, evidence in ipairs(caseDef.evidence) do
-		if not presentEvidence[evidence.id] then
+		if not presentEvidence[evidence.id] and not grantedByDialogue[evidence.id] then
 			log:warn("missing authored interactable for case evidence", {
 				evidenceId = evidence.id,
 				name = evidence.name,

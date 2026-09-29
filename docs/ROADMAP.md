@@ -349,6 +349,27 @@ a proposal the owner reviews before implementation (OD-12).
 | **Risks** | Intro scope creep; set art; a localisation review |
 | **Not yet** | Hub, districts, new tools |
 
+**Owner decisions (2026-09-29):**
+- D-05, D-07/08 and D-27 are approved.
+- D-10 is revised: the phone's evidence must stay reachable by investigation.
+  A two-route proposal awaits approval (`DESIGN_DECISIONS.md` D-10).
+- v2 replaces v1 as the playable CASE-001. v1 lives on in git history only.
+- The new proofs and motives join the accusation choices. The verdict
+  thresholds stay unless the new story logic concretely contradicts them.
+- No new scoring, XP, meters or RPG mechanics.
+
+**Steps.** Each one is reviewed before the next starts.
+
+| Step | What | Status |
+|---|---|---|
+| 5.0 | Owner sign-off on the story items | Done (above) |
+| 5.1 | Engine capabilities: `revealWhen`, `grantsEvidence` and the cutscene player; no story content (`ARCHITECTURE.md`, "Story engine capabilities") | **Built and tested; awaiting owner review** |
+| 5.2 | Localisation and continuity fixes, same case structure | Not started |
+| 5.3 | v2 content: EV-008 to EV-012, the new statements, CONTRA-005/006, DEDUCT-005/006, the seven-event timeline, the printed badge log | Not started |
+| 5.4 | The payoff: the phone (per revised D-10), the ending variants, the dawn outro | Not started |
+| 5.5 | Intro: an animatic in a throwaway place first, then the sets | Not started |
+| 5.6 | v2 release QA | Not started |
+
 ### Phase 6 — Connected-world proof of concept (Pelangi Square slice)
 
 | | |
@@ -458,3 +479,14 @@ a proposal the owner reviews before implementation (OD-12).
 - Note: running the unit suite inside a live play session drives the
   server-wide phase singleton (`GameStateService_Test`) and broadcasts it to the
   real client. Restart Play before judging the live experience.
+- **Run the Studio suite through `ServerScriptService.UnitTestRunner`**
+  (enable it, then Play), not by `require`-ing `RunUnitTest` from the command
+  bar or an MCP call:
+  - Those contexts get their own, never-started copies of the server modules.
+  - Tests that depend on listeners registered at boot (for example, a
+    contradiction claimed by showing evidence) then fail for the wrong reason.
+- **Unit tests never wait in real time.** A full run in Studio floods the
+  Output with the expected mock-player errors, which stalls the engine. Time
+  goes through a seam instead (`CutsceneService.useClock`).
+- **Phase 5.1 adds `tools/headless/entry_engine.luau`:** the new engine
+  capabilities, end to end through the real client, on a fixture case.

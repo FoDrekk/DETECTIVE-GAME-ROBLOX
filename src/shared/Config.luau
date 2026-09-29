@@ -183,6 +183,22 @@ Config.Reasoning = {
 	MissCooldown = 2,
 }
 
+-- Phase 5.1: scripted scenes (CutsceneService / CutsceneView).
+Config.Cutscene = {
+	-- The server ends a scene itself this many seconds after its last shot
+	-- if the client never reports reaching the end, so the story can never
+	-- wait forever on a client that went quiet.
+	EndGrace = 5,
+	-- A client reporting the end is believed up to this many seconds early
+	-- (clock granularity), never more: an unskippable scene can't be cut
+	-- short by claiming it finished.
+	EndTolerance = 0.5,
+	-- Skipping takes two presses of the primary input within this many
+	-- seconds, so a press meant for something else never throws a scene
+	-- away.
+	SkipConfirmWindow = 2.5,
+}
+
 Config.Presentation = {
 	Title = {
 		Kicker = "A MYSTERY CASE",
@@ -239,6 +255,21 @@ Config.UI.Briefing = {
 	FadeIn = 1.4,
 	-- Delay between each line arriving.
 	Stagger = 0.18,
+}
+
+-- Phase 5.1: scripted scene presentation (CutsceneView).
+Config.UI.Cutscene = {
+	-- Fraction of the screen height each letterbox bar covers.
+	Letterbox = 0.1,
+	-- Seconds for the bars to slide in and out.
+	BarTime = 0.6,
+	-- Subtitles sit this far above the bottom bar; text size follows the
+	-- screen height within these bounds.
+	SubtitleGap = 18,
+	SubtitleMaxWidth = 900,
+	SubtitleSizeMin = 15,
+	SubtitleSizeMax = 22,
+	SubtitleFade = 0.2,
 }
 
 -- Conversation presentation (DialogueView).

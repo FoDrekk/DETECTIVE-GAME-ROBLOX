@@ -35,6 +35,7 @@ local InputHints = require(Modules:WaitForChild("InputHints"))
 local SoundController = require(Modules:WaitForChild("SoundController"))
 local TouchControls = require(Modules:WaitForChild("TouchControls"))
 local TitleScreenView = require(Modules:WaitForChild("TitleScreenView"))
+local CutsceneView = require(Modules:WaitForChild("CutsceneView"))
 
 local player = Players.LocalPlayer
 
@@ -64,6 +65,8 @@ local requestClaim = Signals.wait(Signals.Names.ClaimContradiction)
 local requestAnswer = Signals.wait(Signals.Names.AnswerDeduction)
 local submitAccusation = Signals.wait(Signals.Names.SubmitAccusation)
 local submitTimelineOrder = Signals.wait(Signals.Names.SubmitTimelineOrder)
+local cutsceneUpdated = Signals.wait(Signals.Names.CutsceneUpdated)
+local cutsceneFinished = Signals.wait(Signals.Names.CutsceneFinished)
 
 local currentPhase: Types.GamePhase = "MainMenu"
 local lastBriefing: Types.CaseBriefing? = nil
@@ -89,7 +92,30 @@ local function closeOverlays()
 	CaseFileView.close()
 	AccusationView.close()
 	CameraController.stopExamining()
-	if currentPhase == "Investigation" then
+	if currentPhase == "Investigation" and not CutsceneView.isPlaying() then
+		InteractionController.resumeScan()
+	end
+end
+
+-- Phase 5.1: a scene takes the whole screen. Everything else steps aside
+-- while it plays, and comes back the way the phase has it afterwards.
+local function beforeCutscene()
+	EvidencePanel.close()
+	ObservationPanel.close()
+	TimelineView.close()
+	CaseFileView.close()
+	AccusationView.close()
+	InteractionController.pauseScan()
+	InteractionPromptView.setPrompt(nil)
+	ObjectiveView.setActive(false)
+	SoundController.setDucked(true)
+end
+
+local function afterCutscene()
+	local talking = DialogueView.isOpen()
+	ObjectiveView.setActive(currentPhase == "Investigation" and not talking)
+	SoundController.setDucked(talking or currentPhase == "CaseClosed")
+	if currentPhase == "Investigation" and not talking then
 		InteractionController.resumeScan()
 	end
 end
@@ -124,10 +150,10 @@ local function applyPhase(phase: Types.GamePhase)
 		timelineEstablished = false
 	end
 
-	SoundController.setDucked(phase == "CaseClosed")
+	SoundController.setDucked(phase == "CaseClosed" or CutsceneView.isPlaying())
 	InputController.setInteractEnabled(interactEnabled)
-	ObjectiveView.setActive(phase == "Investigation")
-	if phase == "Investigation" then
+	ObjectiveView.setActive(phase == "Investigation" and not CutsceneView.isPlaying())
+	if phase == "Investigation" and not CutsceneView.isPlaying() then
 		InteractionController.resumeScan()
 	else
 		InteractionController.pauseScan()
@@ -191,12 +217,15 @@ local function bootstrap()
 	CaseClosedView.start()
 	CameraController.start()
 	TitleScreenView.start()
+	CutsceneView.start()
 
 	-- Touch: the primary button performs whatever [E] would do right now,
 	-- labelled accordingly; the side buttons mirror T / C / Q.
 	TouchControls.start({
 		primaryLabel = function(): string?
-			if TitleScreenView.isOpen() then
+			if CutsceneView.isPlaying() then
+				return CutsceneView.primaryLabel()
+			elseif TitleScreenView.isOpen() then
 				return "Play"
 			elseif DialogueView.isOpen() then
 				return DialogueView.primaryLabel()
@@ -213,17 +242,20 @@ local function bootstrap()
 			return nil
 		end,
 		showInvestigationButtons = function(): boolean
-			return currentPhase == "Investigation" and not DialogueView.isOpen()
+			return currentPhase == "Investigation" and not DialogueView.isOpen() and not CutsceneView.isPlaying()
 		end,
 		showAccuse = function(): boolean
-			return currentPhase == "Investigation" and accusationOpen and not DialogueView.isOpen()
+			return currentPhase == "Investigation"
+				and accusationOpen
+				and not DialogueView.isOpen()
+				and not CutsceneView.isPlaying()
 		end,
 	})
 
 	-- Interaction scanning.
 	InteractionController.start()
 	InteractionController.onPromptChanged().Event:Connect(function(prompt)
-		if currentPhase ~= "Investigation" then
+		if currentPhase ~= "Investigation" or CutsceneView.isPlaying() then
 			InteractionPromptView.setPrompt(nil)
 			return
 		end
@@ -238,7 +270,11 @@ local function bootstrap()
 	-- Primary interact key (E) is routed by phase: continue an open dialogue,
 	-- begin briefing, or interact.
 	InputController.onInteract(function()
-		if TitleScreenView.isOpen() then
+		if CutsceneView.isPlaying() then
+			-- Phase 5.1: a scene on screen owns the primary input (skip,
+			-- with a confirming second press).
+			CutsceneView.handlePrimary()
+		elseif TitleScreenView.isOpen() then
 			SoundController.play("Tick")
 			TitleScreenView.dismiss()
 		elseif DialogueView.isOpen() then
@@ -270,6 +306,9 @@ local function bootstrap()
 		if currentPhase ~= "Investigation" or DialogueView.isOpen() or CaseFileView.isOpen() or AccusationView.isOpen() then
 			return
 		end
+		if CutsceneView.isPlaying() then
+			return
+		end
 		dismissEvidence()
 		TimelineView.toggle()
 		SoundController.play("Tick")
@@ -277,6 +316,9 @@ local function bootstrap()
 
 	InputController.onToggleCaseFile(function()
 		if currentPhase ~= "Investigation" or DialogueView.isOpen() or TimelineView.isOpen() or AccusationView.isOpen() then
+			return
+		end
+		if CutsceneView.isPlaying() then
 			return
 		end
 		dismissEvidence()
@@ -290,7 +332,7 @@ local function bootstrap()
 	-- re-validates both eligibility and the case made regardless of what
 	-- this client believes.
 	InputController.onConcludeInvestigation(function()
-		if currentPhase ~= "Investigation" or not accusationOpen then
+		if currentPhase ~= "Investigation" or not accusationOpen or CutsceneView.isPlaying() then
 			return
 		end
 		if DialogueView.isOpen() or TimelineView.isOpen() or CaseFileView.isOpen() then
@@ -370,6 +412,13 @@ local function bootstrap()
 	end)
 
 	evidenceDiscovered.OnClientEvent:Connect(function(payload: Types.EvidencePayload)
+		-- Phase 5.1: evidence handed over in a conversation. There is no
+		-- object to frame and the conversation announces it (its own
+		-- notice); the readout stays in the case file.
+		if payload.granted then
+			SoundController.play("EvidenceDiscovered")
+			return
+		end
 		-- Frame the examined object, then present the evidence panel.
 		local target = InteractionController.getCurrent()
 		if target then
@@ -469,6 +518,23 @@ local function bootstrap()
 	-- M9: what the server made of a pairing or an answer in the case file.
 	reasoningFeedback.OnClientEvent:Connect(function(payload: Types.ReasoningFeedbackPayload)
 		CaseFileView.showFeedback(payload)
+	end)
+
+	-- Phase 5.1: a scene to play, or the server ending the current one.
+	cutsceneUpdated.OnClientEvent:Connect(function(payload: Types.CutscenePayload)
+		if payload.active then
+			beforeCutscene()
+			CutsceneView.play(payload)
+		elseif CutsceneView.stop(payload.id) then
+			afterCutscene()
+		end
+	end)
+
+	-- The scene reached its end, or the investigator skipped it. Only the id
+	-- and whether it was a skip travel; the server checks both.
+	CutsceneView.onFinished().Event:Connect(function(cutsceneId: string, skipped: boolean)
+		cutsceneFinished:FireServer(cutsceneId, skipped)
+		afterCutscene()
 	end)
 
 	caseClosedSummary.OnClientEvent:Connect(function(summary: Types.CaseClosedSummary)

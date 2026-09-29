@@ -26,6 +26,9 @@ local focusPart: BasePart? = nil
 local savedMaxZoom: number? = nil
 local savedMinZoom: number? = nil
 local savedCameraType: Enum.CameraType? = nil
+-- Phase 5.1: a scripted shot may set its own field of view; the player's is
+-- put back when the cinematic ends.
+local savedFieldOfView: number? = nil
 
 -- The close-up framing sits near the player, so their own avatar would fill
 -- the shot. Re-applied every frame after the camera step, because the default
@@ -226,6 +229,10 @@ function CameraController.playCinematic(from: CFrame, to: CFrame, duration: numb
 	cinematicToken += 1
 	local token = cinematicToken
 	local cam = getCamera()
+	if savedFieldOfView then
+		-- Following a scripted shot that set its own: back to the player's.
+		cam.FieldOfView = savedFieldOfView
+	end
 	cam.CameraType = Enum.CameraType.Scriptable
 	cam.CFrame = from
 	setMovementEnabled(false)
@@ -242,14 +249,58 @@ function CameraController.playCinematic(from: CFrame, to: CFrame, duration: numb
 	end)
 end
 
+--[[
+	Phase 5.1: one scripted shot -- the camera moves once from `from` to
+	`to` over `duration` seconds (eased in and out) and holds there, rather
+	than drifting back and forth like playCinematic. `to == from` is a still
+	shot. Consecutive shots chain: each call replaces the last, and
+	stopCinematic hands the camera (and its field of view) back.
+]]
+function CameraController.playShot(from: CFrame, to: CFrame, duration: number, fieldOfView: number?)
+	setExplore()
+	if mode ~= "Cinematic" then
+		savedCameraType = getCamera().CameraType
+	end
+	mode = "Cinematic"
+	cinematicToken += 1
+	local token = cinematicToken
+	local cam = getCamera()
+	if savedFieldOfView == nil then
+		savedFieldOfView = cam.FieldOfView
+	end
+	cam.FieldOfView = fieldOfView or savedFieldOfView :: number
+	cam.CameraType = Enum.CameraType.Scriptable
+	cam.CFrame = from
+	setMovementEnabled(false)
+	local length = math.max(duration, 1e-3)
+	local startClock = os.clock()
+	task.spawn(function()
+		while token == cinematicToken do
+			local alpha = math.min((os.clock() - startClock) / length, 1)
+			local eased = (1 - math.cos(alpha * math.pi)) / 2
+			cam.CameraType = Enum.CameraType.Scriptable
+			cam.CFrame = from:Lerp(to, eased)
+			if alpha >= 1 then
+				return
+			end
+			RunService.RenderStepped:Wait()
+		end
+	end)
+end
+
 function CameraController.stopCinematic()
 	if mode ~= "Cinematic" then
 		return
 	end
 	cinematicToken += 1
 	mode = "Explore"
-	getCamera().CameraType = savedCameraType or Enum.CameraType.Custom
+	local cam = getCamera()
+	cam.CameraType = savedCameraType or Enum.CameraType.Custom
 	savedCameraType = nil
+	if savedFieldOfView then
+		cam.FieldOfView = savedFieldOfView
+		savedFieldOfView = nil
+	end
 	setMovementEnabled(true)
 end
 

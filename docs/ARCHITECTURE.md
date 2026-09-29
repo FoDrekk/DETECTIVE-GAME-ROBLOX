@@ -1149,12 +1149,125 @@ player, without changing who owns what.
     `setOpen` go through it, so they never compute two different
     answers for where the panel sits.
 
+## Story engine capabilities (Phase 5.1)
+
+Three generic capabilities that CASE-001 v2 (and later cases) author as data.
+CASE-001 v1 uses none of them, so it plays exactly as before.
+
+### Evidence revealed by a condition (`propPlacement.revealWhen`)
+
+- **Data.** `EvidenceDefinition.propPlacement.revealWhen: { DialogueCondition }`.
+  It uses the dialogue's own condition language: every condition must hold,
+  checked by `ConversationService.conditionsHold`.
+- **RevealService** holds the prop out of the world from boot:
+  - the part named after the evidence id, plus its `<id>_Look` model;
+  - built by OfficeRoom or adopted from a baked place;
+  - held in `ServerStorage.MysteryCase_HeldProps`.
+  It puts the prop back exactly where it was once the conditions hold.
+- **Server-authoritative by construction.** ServerStorage doesn't replicate,
+  and InteractionService already refuses anything outside Workspace.
+- **When it re-evaluates:**
+  - on `EvidenceDiscovered`, `StatementUnlocked`, `ContradictionUnlocked` and
+    `DeductionUnlocked`;
+  - on every conversation step, which is where dialogue flags change.
+- **Latched per case** in `caseState.revealedProps`, so a cleared flag never
+  hides a prop again. A replay starts a new case state, and `refresh` (called
+  on join and from the replay bridge) holds the prop back again.
+- **Only the prop is gated.** The evidence can still be reached another way,
+  such as a line of dialogue that grants it.
+- **Limits:**
+  - Only code-spawned props (`propPlacement`) can be gated.
+  - The world is shared: one investigator per server (SessionGuard).
+    Per-player visibility belongs with per-player sessions
+    (`WORLD_SCALABILITY.md` A1).
+
+### Evidence handed over in a conversation (`grantsEvidence`)
+
+- **Data.** `DialogueNodeDefinition.grantsEvidence: { string }`.
+- **When it runs.** When a node is reached, `ConversationService` calls
+  `EvidenceService.grant` for each id:
+  - after the node's statement is unlocked;
+  - before its line is sent, so questions that need the evidence are offered
+    on that same line.
+- **What `grant` does.** It is `discover` (timeline, StoryEvent, reasoning)
+  plus `ObjectiveService.recordEvidence`: the objective credit an examine gets
+  from InteractionService. An `interaction` gate on a requirement is implied
+  by the evidence being known.
+- **Idempotent.** Evidence already found is skipped, so one clue can have
+  several routes.
+- **On the client:**
+  - `EvidencePayload.granted` means no camera framing and no readout over the
+    conversation, only the discovery sound.
+  - `DialoguePayload.grantedEvidence` shows an "EVIDENCE ADDED" notice under
+    the top bar. It is a second label, so the statement notice is unchanged.
+  - The full readout lives in the Case File.
+- **Validation:**
+  - `ConversationService.validate` reports unknown granted ids.
+  - `OfficeRoom.validateInteractables` doesn't expect a world object for
+    granted evidence.
+
+### Scripted scenes (`cutscenes`: CutsceneService and CutsceneView)
+
+**Data.** `CaseDefinition.cutscenes: { CutsceneDefinition }`.
+- Shots: a camera `from`, an optional `to`, `fieldOfView`, `duration`,
+  `fadeIn` and `fadeOut`, and timed subtitle `lines` (with or without a
+  speaker).
+- `skippable` (default true).
+- `replayFrom`: the shot a second showing in the same session starts at.
+
+**The server decides (`CutsceneService`):**
+- **What plays and when.** Only `play(player, id)` starts a scene; there is
+  no client request for one. It is refused during a conversation or another
+  scene.
+- **That a scene is on.** InteractionService ignores requests, and
+  `ConversationService.begin` refuses.
+- **When it's over.**
+  - The client reports the end or a skip (the `CutsceneFinished` remote: the
+    id and a skip flag).
+  - A skip is accepted only if the scene allows it.
+  - The end is accepted no sooner than the scene's length, minus
+    `Config.Cutscene.EndTolerance`.
+  - If the client never reports, a timer calls `expire` after the length plus
+    `Config.Cutscene.EndGrace`. The grace is fixed per showing, and `expire`
+    ends only a scene that is actually overdue.
+  - Every end publishes the `CutsceneFinished` StoryEvent: `{ cutsceneId,
+    skipped, timedOut }`.
+- **Replay-aware.** Scenes seen this session are remembered outside the case
+  state, which a replay wipes.
+- **Checked at boot.** `validate` checks each scene's structure.
+- **Time** comes from one source (`useClock`), so the tests never wait in real
+  time.
+
+**The client presents it (`CutsceneView`):**
+- Letterbox bars, dips to black and subtitles.
+- `CameraController.playShot`: a one-way eased move. `stopCinematic` puts the
+  field of view back.
+- Timing is scheduled against the scene's start clock, so it never drifts.
+- **Skipping takes two presses** of the primary input ([E] / (X) / the touch
+  button reading "Skip"): the first shows the hint, a second within
+  `SkipConfirmWindow` skips. An unskippable scene ignores it.
+- **The HUD steps aside** while a scene plays (`beforeCutscene` /
+  `afterCutscene` in the bootstrap).
+- A stale "over" naming another scene is ignored.
+
+**Remotes:** `CutsceneUpdated` (server to client) and `CutsceneFinished`
+(client to server).
+
+### Tests
+
+- **Unit** (fixture cases, no real-time waits): `GrantsEvidence_Test`,
+  `RevealService_Test` and `CutsceneService_Test`.
+- **End to end:** `tools/headless/entry_engine.luau` drives the real server
+  and client scripts through player inputs, on a fixture case made active for
+  that run only.
+
 ## Headless verification
 
 `tools/headless` runs the game's Luau without Studio on a small engine
 stand-in (see its README): the unit suite (with the server bootstrap first,
 as in Play), a scripted end-to-end playthrough driving the real client
-scripts through player inputs, a scene dump for layout previews, and a
+scripts through player inputs, an end-to-end check of the Phase 5.1 engine
+capabilities on a fixture case, a scene dump for layout previews, and a
 Rojo-compatible sourcemap for `luau-lsp analyze`. It complements, and does
 not replace, a Studio playtest.
 
@@ -1178,9 +1291,9 @@ voices, linked related evidence, restated the case at the close, and
 surfaced each objective's own description as a hint; M2 gave the case an
 authored answer and a verdict on the player's own accusation.
 
-Explicitly still out of scope: NPC AI/movement, voice acting, cinematic
-cutscenes, additional locations, persistence, and multiplayer/per-session
-state. (M6 added only an idle animation, a turn to face the speaker, and a
+Explicitly still out of scope: NPC AI/movement, voice acting, cutscene
+content (Phase 5.1 added the scene player; no case authors a scene yet),
+additional locations, persistence, and multiplayer/per-session state. (M6 added only an idle animation, a turn to face the speaker, and a
 title-screen camera drift; M7 added branching interrogation and a third
 character, the night guard, who is not a suspect.)
 
@@ -1204,4 +1317,8 @@ accusable suspect by authoring an `AccusationDefinition` (optionally with a
 `AccusationService` evaluates it generically and hardcodes no case or
 accusation id. Add flavour text to a non-evidence interactable by authoring
 an `ObservationDefinition` in case data — `OfficeRoom` applies it by instance
-name at runtime and no service code changes are needed.
+name at runtime and no service code changes are needed. Phase 5.1, all in
+case data: hold an evidence prop back until the story reveals it
+(`propPlacement.revealWhen`), hand evidence over in a line of dialogue
+(`grantsEvidence`), and author scripted scenes (`cutscenes`) that a story
+trigger plays with `CutsceneService.play`.

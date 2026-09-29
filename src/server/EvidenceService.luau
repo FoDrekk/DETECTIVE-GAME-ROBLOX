@@ -15,6 +15,7 @@ local CaseService = require(script.Parent:WaitForChild("CaseService"))
 local StoryEvents = require(script.Parent:WaitForChild("StoryEvents"))
 
 local TimelineService = require(script.Parent:WaitForChild("TimelineService"))
+local ObjectiveService = require(script.Parent:WaitForChild("ObjectiveService"))
 
 local log = Logger.scoped("EvidenceService")
 
@@ -35,8 +36,10 @@ function EvidenceService.isDiscovered(player: Player, evidenceId: string): boole
 	return data.caseState.discovered[evidenceId] ~= nil
 end
 
--- Attempt to discover evidence by id. Returns (success, reason).
-function EvidenceService.discover(player: Player, evidenceId: string): (boolean, string?)
+-- Discovery itself, shared by an examine (discover) and a conversation
+-- handing evidence over (grant). `granted` only changes how the client is
+-- told (EvidencePayload.granted).
+local function discoverEvidence(player: Player, evidenceId: string, granted: boolean): (boolean, string?)
 	local data = PlayerDataService.get(player)
 	if not data then
 		return false, "no-player-data"
@@ -110,6 +113,7 @@ function EvidenceService.discover(player: Player, evidenceId: string): (boolean,
 		totalEvidence = #caseDef.evidence,
 		revealedEvent = revealedEvent,
 		related = if #related > 0 then related else nil,
+		granted = if granted then true else nil,
 	}
 
 	evidenceDiscoveredEvent:Fire(player, payload)
@@ -117,9 +121,34 @@ function EvidenceService.discover(player: Player, evidenceId: string): (boolean,
 		player = player.Name,
 		evidenceId = evidenceId,
 		total = payload.totalDiscovered,
+		granted = if granted then true else nil,
 	})
 	StoryEvents.publish("EvidenceDiscovered", player, { evidenceId = evidenceId })
 	return true, nil
+end
+
+-- Attempt to discover evidence by id. Returns (success, reason).
+function EvidenceService.discover(player: Player, evidenceId: string): (boolean, string?)
+	return discoverEvidence(player, evidenceId, false)
+end
+
+--[[
+	Phase 5.1: evidence handed over in a conversation (a dialogue node's
+	`grantsEvidence`), rather than found by examining an object. The same
+	discovery -- timeline reveal, StoryEvent, reasoning -- plus the objective
+	evaluation an examine gets from InteractionService afterwards, since no
+	interaction is involved here.
+
+	Idempotent like discover: already-discovered evidence is left alone
+	("already-discovered", and no readout is re-sent), which is what lets a
+	case offer more than one route to the same clue.
+]]
+function EvidenceService.grant(player: Player, evidenceId: string): (boolean, string?)
+	local ok, reason = discoverEvidence(player, evidenceId, true)
+	if ok then
+		ObjectiveService.recordEvidence(player, evidenceId)
+	end
+	return ok, reason
 end
 
 --[[

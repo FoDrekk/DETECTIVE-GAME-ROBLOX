@@ -26,6 +26,10 @@
 	    becomes the evidence they have found (marked EVIDENCE) plus "Never
 	    mind."; the reaction line echoes what was shown.
 
+	  * Phase 5.1: a line that hands evidence over says so in a notice under
+	    the top bar ("EVIDENCE ADDED"), beside the statement notice; the
+	    conversation isn't interrupted by the evidence readout.
+
 	The view reports the investigator's pick through onChoiceSelected (an id
 	only), or what they show through onPresentSelected (an evidence id, or
 	"" to back out); the server validates both.
@@ -75,6 +79,11 @@ local promptLabel: TextLabel? = nil
 local bodyLabel: TextLabel? = nil
 local hintLabel: TextLabel? = nil
 local toast: TextLabel? = nil
+-- Phase 5.1: evidence a line hands over gets its own notice, so the
+-- statement notice behaves exactly as before; it drops to a second row
+-- while a statement notice is still up.
+local evidenceToast: TextLabel? = nil
+local statementToastUntil = 0
 local choiceList: Frame? = nil
 local choicesFrame: Frame? = nil
 local panelScale: UIScale? = nil
@@ -530,18 +539,20 @@ refreshAfterTyping = function()
 	setHint()
 end
 
-local function showToast(text: string)
-	local label = toast
+local TOAST_ROW = 22
+
+local function showToastOn(label: TextLabel?, text: string, row: number)
 	if not label then
 		return
 	end
+	local y = row * TOAST_ROW
 	label.Text = text
 	label.Visible = true
 	label.TextTransparency = 1
-	label.Position = UDim2.new(0.5, 0, Style.LetterboxHeight, 6)
+	label.Position = UDim2.new(0.5, 0, Style.LetterboxHeight, 6 + y)
 	TweenService:Create(label, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
 		TextTransparency = 0,
-		Position = UDim2.new(0.5, 0, Style.LetterboxHeight, 18),
+		Position = UDim2.new(0.5, 0, Style.LetterboxHeight, 18 + y),
 	}):Play()
 	local stamp = text
 	task.delay(3.2, function()
@@ -549,6 +560,11 @@ local function showToast(text: string)
 			TweenService:Create(label, TweenInfo.new(0.5), { TextTransparency = 1 }):Play()
 		end
 	end)
+end
+
+local function showToast(text: string)
+	showToastOn(toast, text, 0)
+	statementToastUntil = os.clock() + 3.7
 end
 
 -- A shallow depth of field while talking: the speaker sharp, the room
@@ -704,6 +720,11 @@ function DialogueView.update(payload: Types.DialoguePayload)
 	if payload.unlockedStatement then
 		local statement = payload.unlockedStatement
 		showToast(`STATEMENT RECORDED  ·  {string.upper(statement.suspectName)}  ·  {string.upper(statement.label)}`)
+	end
+	local granted = payload.grantedEvidence
+	if granted and #granted > 0 then
+		local row = if os.clock() < statementToastUntil then 1 else 0
+		showToastOn(evidenceToast, `EVIDENCE ADDED  ·  {string.upper(table.concat(granted, "  ·  "))}`, row)
 	end
 
 	typeOut(payload.text or "")
@@ -943,6 +964,21 @@ function DialogueView.start()
 	})
 	toastLabel.Visible = false
 	toast = toastLabel
+
+	local evidenceLabel = Components.text({
+		name = "EvidenceToast",
+		text = "",
+		size = UDim2.fromOffset(640, 20),
+		position = UDim2.new(0.5, 0, Style.LetterboxHeight, 18),
+		anchor = Vector2.new(0.5, 0),
+		font = Theme.FontBold,
+		textSize = 12,
+		color = Theme.Accent,
+		xAlign = Enum.TextXAlignment.Center,
+		parent = screen,
+	})
+	evidenceLabel.Visible = false
+	evidenceToast = evidenceLabel
 
 	InputHints.changed().Event:Connect(setHint)
 	if workspace.CurrentCamera then

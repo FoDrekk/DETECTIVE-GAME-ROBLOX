@@ -358,6 +358,13 @@ Seven events once everything is found:
 
 This is the heart of v2.
 
+> **Owner revision (2026-09-29).** The harsh-path outcome below ("that player
+> misses the payoff") is superseded. The phone's evidence must stay reachable
+> by investigation whatever the approach, and the approach changes only how
+> it's reached. A two-route design ("two ways into the phone") awaits the
+> owner's approval in `DESIGN_DECISIONS.md` D-10. This section will be
+> rewritten to match in step 5.4. The trust route below stands as Route A.
+
 - **When it's available:** after Meera's admission
   (STMT-SUS-001-ADMISSION), and only while she isn't upset (the gentle path, or
   thawed by apologising).
