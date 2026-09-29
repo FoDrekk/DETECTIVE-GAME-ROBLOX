@@ -261,8 +261,8 @@ Format: **Decision**, **Why**, **Alternatives**, **Why not**, **Impact**.
   - the player's approach changes *how* it is obtained (the route, the
     dialogue, the difficulty);
   - never a simple "be kind, get the evidence; be harsh, lose it for good".
-- **Proposed implementation: "two ways into the phone"** (awaiting the owner's
-  approval; built in step 5.4):
+- **Approved implementation (owner, 2026-09-29): "two ways into the phone"**
+  (built in step 5.4; nothing built yet):
   - **Route A, trust** (the gentle path, or thawed by apologising). As written
     in story bible §11:
     - Meera types the date and reads the message aloud.
@@ -288,11 +288,19 @@ Format: **Decision**, **Why**, **Alternatives**, **Why not**, **Impact**.
     5.4: evidence that hands over further evidence when discovered, reusing
     `EvidenceService.grant`. Recommended: the addition (one object, one
     action).
-  - **For the owner to decide:**
-    - the new clue (the drawer photo's date, promoted to evidence);
-    - the question's wording and options;
-    - Meera's line when shown the message on Route B;
-    - which engine option to use.
+  - **Decisions taken by the owner (2026-09-29):**
+    - **The clue:** the back of the drawer photo carries "07.12.09". It
+      becomes a new optional evidence item.
+    - **The Case File question:** "Daniel's phone is locked. What would he
+      choose as the code?" Options: their wedding date (correct); Meera's
+      birthday; the day the firm opened; the day Daniel was born.
+    - **Meera's line when shown the message (Route B):** she reads it twice,
+      then says "...He was coming home."
+    - **Engine:** a small addition in 5.4, so discovering one item also hands
+      over another (one examine gives the message and the watch data), reusing
+      `EvidenceService.grant`.
+  - **Not yet decided:** the passcode question's difficulty tuning, and the
+    exact text on the back of the photo. Both are for step 5.4's review.
 
 **D-11 — *Nobody Told Him*: Victor's own misdirection becomes his slip**
 - **Why:**
@@ -589,10 +597,9 @@ Format: **Decision**, **Why**, **Alternatives**, **Why not**, **Impact**.
 
 ## 3. Decisions that most need the owner's eye
 
-Owner review of 2026-09-29: items 1, 2 and 6 approved; item 3 revised (see
-D-10: the evidence must stay reachable by investigation, with a proposal
-awaiting approval); items 4 and 5 not yet reviewed (they don't block
-CASE-001 v2).
+Owner review of 2026-09-29: items 1, 2 and 6 approved; item 3 revised and
+then approved as the two-route design (see D-10); items 4 and 5 not yet
+reviewed (they don't block CASE-001 v2).
 
 1. **The cast's communities and names** (D-05). Especially the Chinese Malaysian
    culprit in the first case, and the Nepali guard. Both are written with care

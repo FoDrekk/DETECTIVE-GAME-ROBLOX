@@ -352,7 +352,11 @@ a proposal the owner reviews before implementation (OD-12).
 **Owner decisions (2026-09-29):**
 - D-05, D-07/08 and D-27 are approved.
 - D-10 is revised: the phone's evidence must stay reachable by investigation.
-  A two-route proposal awaits approval (`DESIGN_DECISIONS.md` D-10).
+  The two-route design ("two ways into the phone") is approved, with its clue,
+  question, Meera line and engine option (`DESIGN_DECISIONS.md` D-10).
+- Step 5.1 is approved as built, including its defaults: only code-built props
+  can be gated; handed-over evidence gets an in-conversation notice; a scene is
+  skipped with two presses.
 - v2 replaces v1 as the playable CASE-001. v1 lives on in git history only.
 - The new proofs and motives join the accusation choices. The verdict
   thresholds stay unless the new story logic concretely contradicts them.
@@ -363,7 +367,7 @@ a proposal the owner reviews before implementation (OD-12).
 | Step | What | Status |
 |---|---|---|
 | 5.0 | Owner sign-off on the story items | Done (above) |
-| 5.1 | Engine capabilities: `revealWhen`, `grantsEvidence` and the cutscene player; no story content (`ARCHITECTURE.md`, "Story engine capabilities") | **Built and tested; awaiting owner review** |
+| 5.1 | Engine capabilities: `revealWhen`, `grantsEvidence` and the cutscene player; no story content (`ARCHITECTURE.md`, "Story engine capabilities") | **Approved (built and tested)** |
 | 5.2 | Localisation and continuity fixes, same case structure | Not started |
 | 5.3 | v2 content: EV-008 to EV-012, the new statements, CONTRA-005/006, DEDUCT-005/006, the seven-event timeline, the printed badge log | Not started |
 | 5.4 | The payoff: the phone (per revised D-10), the ending variants, the dawn outro | Not started |
