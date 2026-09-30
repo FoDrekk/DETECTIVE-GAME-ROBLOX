@@ -74,6 +74,47 @@ local function show(
 	return { id = id, text = text, next = nothing, present = { prompt = prompt, outcomes = outcomes } }
 end
 
+-- The dawn outro (Phase 5.4): Daniel's office at first light, Meera at the window
+-- at the end of the corridor, and a held frame on it. The scenes differ only by
+-- the caption on the window shot.
+local function dawnScene(id: string, windowCaption: string): Types.CutsceneDefinition
+	return {
+		id = id,
+		shots = {
+			{
+				id = "OFFICE",
+				duration = 6,
+				fadeIn = 1.5,
+				camera = {
+					from = { position = Vector3.new(-19.4, 6.2, -9.9), lookAt = Vector3.new(-26.0, 2.6, -20.0) },
+					to = { position = Vector3.new(-21.0, 5.4, -12.0), lookAt = Vector3.new(-25.0, 2.5, -20.2) },
+					fieldOfView = 55,
+				},
+				lines = { { at = 0.8, duration = 4.4, text = "First light over Kota Arwana." } },
+			},
+			{
+				id = "WINDOW",
+				duration = 7,
+				camera = {
+					from = { position = Vector3.new(-4.0, 5.0, -10.5), lookAt = Vector3.new(0, 4.6, -25.0) },
+					to = { position = Vector3.new(-2.2, 5.0, -13.5), lookAt = Vector3.new(0, 4.6, -25.0) },
+					fieldOfView = 55,
+				},
+				lines = { { at = 1.0, duration = 5.0, text = windowCaption } },
+			},
+			{
+				id = "HOLD",
+				duration = 5,
+				fadeOut = 2,
+				camera = {
+					from = { position = Vector3.new(0, 6.0, -9.0), lookAt = Vector3.new(0, 5.0, -26.5) },
+					fieldOfView = 60,
+				},
+			},
+		},
+	}
+end
+
 local Case001: Types.CaseDefinition = {
 	id = "CASE-001",
 	title = "THE LAST CALL",
@@ -87,11 +128,11 @@ local Case001: Types.CaseDefinition = {
 			name = "Meera Rozario",
 			role = "Daniel's Wife",
 			alibi = '"Home. Asleep since ten. I never heard his call."',
-			-- At the corridor's north window, looking out at the city, her back
-			-- to the office.
+			-- At the north window at the end of the corridor, looking out at the
+			-- city, her back to the office.
 			npcPlacement = {
-				position = Vector3.new(-4, 3, -20.2),
-				lookAt = Vector3.new(-4, 3, -30),
+				position = Vector3.new(0, 3, -24.4),
+				lookAt = Vector3.new(0, 3, -34),
 			},
 			-- ROBLOX Girl ponytail (Roblox catalog), dark brown; a burgundy
 			-- cardigan over dark trousers -- dressed in a hurry, woken at night.
@@ -115,8 +156,8 @@ local Case001: Types.CaseDefinition = {
 			-- In the meeting room, at the end of the table where the papers
 			-- were to be signed.
 			npcPlacement = {
-				position = Vector3.new(26.8, 3, -16.6),
-				lookAt = Vector3.new(20, 3, -14),
+				position = Vector3.new(31.6, 3, -16.6),
+				lookAt = Vector3.new(22, 3, -18.5),
 			},
 			-- Classic Male v2 hair (Roblox catalog), near black; still in the
 			-- charcoal suit he wore to the office.
@@ -139,11 +180,12 @@ local Case001: Types.CaseDefinition = {
 			name = "Sam Gurung",
 			role = "Night Security",
 			alibi = '"Ten past twelve, on my rounds. His light was on. It\'s always on."',
-			-- Just past the lobby partition, where the investigator arrives,
-			-- waiting to be asked something.
+			-- Beside the reception desk, a few steps from the lift where the
+			-- investigator arrives, turned toward its doors, waiting to be
+			-- asked something.
 			npcPlacement = {
-				position = Vector3.new(19.4, 3, 4.4),
-				lookAt = Vector3.new(18, 3, 10),
+				position = Vector3.new(22.6, 3, 17.4),
+				lookAt = Vector3.new(27.5, 3, 23.75),
 			},
 			-- Close-shaved head (no hair accessory); navy guard's uniform.
 			appearance = {
@@ -164,12 +206,12 @@ local Case001: Types.CaseDefinition = {
 			id = "LOC-001",
 			name = "Office",
 			description = "Daniel's private office. Where the body was discovered.",
-			-- A nameplate beside the office door, on the corridor side.
-			-- Part_Daniel_South_B spans Z -2.5..-1.5 (1-stud wall centred at
-			-- -2); -1.45 sits the plaque just proud of its corridor face.
+			-- A nameplate on the glass beside the office door, on the open-plan
+			-- side. The glass front is at Z = -8; -7.85 sits the plaque just
+			-- proud of it (mounted on standoffs, as glass signs are).
 			signPlacement = {
-				position = Vector3.new(-16.3, 5.5, -1.45),
-				lookAt = Vector3.new(-16.3, 5.5, 6),
+				position = Vector3.new(-26.4, 5.5, -7.85),
+				lookAt = Vector3.new(-26.4, 5.5, 6),
 				text = "Daniel Rozario",
 			},
 		},
@@ -231,6 +273,8 @@ local Case001: Types.CaseDefinition = {
 			timelineEventId = "TIMELINE-002",
 			-- Both record Daniel at his desk minutes apart (11:42 / 11:47 PM).
 			relatedEvidenceIds = { "EV-002" },
+			-- The phone on his desk (Daniel's office builds it, by this name).
+			bindTo = { instanceName = "Phone" },
 		},
 		{
 			id = "EV-002",
@@ -245,6 +289,8 @@ local Case001: Types.CaseDefinition = {
 			timestamp = "11:42 PM",
 			timelineEventId = "TIMELINE-001",
 			relatedEvidenceIds = { "EV-001" },
+			-- The laptop's base is the object on his desk.
+			bindTo = { instanceName = "LaptopBase" },
 		},
 		{
 			id = "EV-003",
@@ -256,6 +302,8 @@ local Case001: Types.CaseDefinition = {
 			category = "Document",
 			timestamp = "12:00 AM",
 			timelineEventId = "TIMELINE-003",
+			-- The agenda on his desk.
+			bindTo = { instanceName = "Document" },
 		},
 		{
 			id = "EV-004",
@@ -270,8 +318,8 @@ local Case001: Types.CaseDefinition = {
 			timelineEventId = "TIMELINE-004",
 			-- On the reception counter, where Sam left it.
 			propPlacement = {
-				position = Vector3.new(23.2, 3.27, 17.4),
-				lookAt = Vector3.new(23.2, 3.27, 10),
+				position = Vector3.new(16.2, 3.27, 14.4),
+				lookAt = Vector3.new(16.2, 3.27, 8),
 				style = "Printout",
 				-- Phase 5.3: the printout only exists once Sam has offered to print it.
 				revealWhen = { knows("Statement", "STMT-SUS-003-BADGE") },
@@ -289,8 +337,8 @@ local Case001: Types.CaseDefinition = {
 			timelineEventId = "TIMELINE-005",
 			relatedEvidenceIds = { "EV-006" },
 			propPlacement = {
-				position = Vector3.new(-12.6, 3.0, -21.8),
-				lookAt = Vector3.new(-5, 3.0, -21.8),
+				position = Vector3.new(-14.5, 3.0, -14.4),
+				lookAt = Vector3.new(-5, 3.0, -14.4),
 				style = "EspressoMachine",
 			},
 		},
@@ -304,8 +352,8 @@ local Case001: Types.CaseDefinition = {
 			category = "Environment",
 			relatedEvidenceIds = { "EV-005" },
 			propPlacement = {
-				position = Vector3.new(-26.3, 2.62, -9.72),
-				lookAt = Vector3.new(-26.3, 2.62, -14),
+				position = Vector3.new(-29.8, 2.62, -20.72),
+				lookAt = Vector3.new(-29.8, 2.62, -25),
 				style = "EspressoCup",
 			},
 		},
@@ -319,8 +367,8 @@ local Case001: Types.CaseDefinition = {
 			importance = "Medium",
 			category = "Security",
 			propPlacement = {
-				position = Vector3.new(25.8, 3.26, 18.4),
-				lookAt = Vector3.new(25.8, 3.26, 10),
+				position = Vector3.new(18.8, 3.26, 15.4),
+				lookAt = Vector3.new(18.8, 3.26, 8),
 				style = "CameraMonitor",
 			},
 		},
@@ -334,9 +382,9 @@ local Case001: Types.CaseDefinition = {
 			importance = "Medium",
 			category = "Environment",
 			-- The paramedics' tag on the floor by the numbered marker (OfficeDetailing),
-			-- beside the credenza on the north wall (OfficeInterior).
+			-- beside the credenza under the window (Daniel's office).
 			propPlacement = {
-				position = Vector3.new(-15.3, 0.03, -7.7),
+				position = Vector3.new(-19.1, 0.03, -21.7),
 				style = "AmbulanceTag",
 			},
 		},
@@ -379,7 +427,7 @@ local Case001: Types.CaseDefinition = {
 			grantsEvidence = { "EV-012" },
 			-- The desk phone's own screen, woken once the code is worked out.
 			propPlacement = {
-				position = Vector3.new(-20.5, 2.84, -9.2),
+				position = Vector3.new(-24.0, 2.79, -20.2),
 				style = "PhoneScreen",
 				label = "Read Unlocked Phone",
 				revealWhen = { knows("Deduction", "DEDUCT-007") },
@@ -1939,79 +1987,10 @@ local Case001: Types.CaseDefinition = {
 	-- Phase 5.4: the dawn outro, played after a Solved verdict and before the
 	-- Case Closed screen. Two scenes that differ by one caption: the second is
 	-- for an investigator who has read Daniel's message with Meera
-	-- (STMT-SUS-001-HOME), see solution.solvedCutscenes. Camera, fades and
-	-- captions only; the dawn light itself waits for the intro's sets (5.5).
+	-- (STMT-SUS-001-HOME), see solution.solvedCutscenes.
 	cutscenes = {
-		{
-			id = "CUT-DAWN",
-			shots = {
-				{
-					id = "OFFICE",
-					duration = 6,
-					fadeIn = 1.5,
-					camera = {
-						from = { position = Vector3.new(-18.0, 6.2, -3.6), lookAt = Vector3.new(-22.0, 2.4, -9.4) },
-						to = { position = Vector3.new(-19.5, 5.0, -5.5), lookAt = Vector3.new(-21.5, 2.0, -9.0) },
-						fieldOfView = 55,
-					},
-					lines = { { at = 0.8, duration = 4.4, text = "First light over Kota Arwana." } },
-				},
-				{
-					id = "WINDOW",
-					duration = 7,
-					camera = {
-						from = { position = Vector3.new(-7.5, 5.0, -13.0), lookAt = Vector3.new(-4.0, 4.6, -23.0) },
-						to = { position = Vector3.new(-5.6, 5.0, -15.5), lookAt = Vector3.new(-4.0, 4.6, -23.0) },
-						fieldOfView = 55,
-					},
-					lines = { { at = 1.0, duration = 5.0, text = "She stays at the window." } },
-				},
-				{
-					id = "HOLD",
-					duration = 5,
-					fadeOut = 2,
-					camera = {
-						from = { position = Vector3.new(-4.0, 6.0, -11.0), lookAt = Vector3.new(-4.0, 5.0, -23.5) },
-						fieldOfView = 60,
-					},
-				},
-			},
-		},
-		{
-			id = "CUT-DAWN-HOME",
-			shots = {
-				{
-					id = "OFFICE",
-					duration = 6,
-					fadeIn = 1.5,
-					camera = {
-						from = { position = Vector3.new(-18.0, 6.2, -3.6), lookAt = Vector3.new(-22.0, 2.4, -9.4) },
-						to = { position = Vector3.new(-19.5, 5.0, -5.5), lookAt = Vector3.new(-21.5, 2.0, -9.0) },
-						fieldOfView = 55,
-					},
-					lines = { { at = 0.8, duration = 4.4, text = "First light over Kota Arwana." } },
-				},
-				{
-					id = "WINDOW",
-					duration = 7,
-					camera = {
-						from = { position = Vector3.new(-7.5, 5.0, -13.0), lookAt = Vector3.new(-4.0, 4.6, -23.0) },
-						to = { position = Vector3.new(-5.6, 5.0, -15.5), lookAt = Vector3.new(-4.0, 4.6, -23.0) },
-						fieldOfView = 55,
-					},
-					lines = { { at = 1.0, duration = 5.0, text = "She turns it face up." } },
-				},
-				{
-					id = "HOLD",
-					duration = 5,
-					fadeOut = 2,
-					camera = {
-						from = { position = Vector3.new(-4.0, 6.0, -11.0), lookAt = Vector3.new(-4.0, 5.0, -23.5) },
-						fieldOfView = 60,
-					},
-				},
-			},
-		},
+		dawnScene("CUT-DAWN", "She stays at the window."),
+		dawnScene("CUT-DAWN-HOME", "She turns it face up."),
 	},
 
 	-- Server-only (this module lives in ServerStorage). Revealed at the close.

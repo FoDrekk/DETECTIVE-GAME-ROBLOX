@@ -29,11 +29,7 @@ local CutsceneService = require(Services:WaitForChild("CutsceneService"))
 local RevealService = require(Services:WaitForChild("RevealService"))
 local InteractionService = require(Services:WaitForChild("InteractionService"))
 local GameStateService = require(Services:WaitForChild("GameStateService"))
-local OfficeRoom = require(Services:WaitForChild("OfficeRoom"))
-local OfficeDetailing = require(Services:WaitForChild("OfficeDetailing"))
-local OfficeInterior = require(Services:WaitForChild("OfficeInterior"))
-local CitySkyline = require(Services:WaitForChild("CitySkyline"))
-local SuspectSpawner = require(Services:WaitForChild("SuspectSpawner"))
+local EnvironmentBake = require(Services:WaitForChild("EnvironmentBake"))
 local SessionGuard = require(Services:WaitForChild("SessionGuard"))
 
 --[[
@@ -53,13 +49,10 @@ local function bootstrap()
 	Logger.setMinSeverity(Config.Logging.MinSeverity :: Logger.Severity)
 	assertConfiguration()
 
-	-- 0. Environment integration (lighting, ground, authored-content validation).
-	OfficeRoom.start()
-	OfficeDetailing.start()
-	OfficeInterior.start()
-	OfficeRoom.finalize()
-	CitySkyline.start()
-	SuspectSpawner.start()
+	-- 0. The world: the office (shell, evidence props, furnishing, skyline) and
+	-- its suspects. A place saved after an Edit-mode bake has it already and
+	-- adopts it; an older or missing bake is built here (EnvironmentBake).
+	EnvironmentBake.buildAll()
 
 	-- 1. Create remote objects.
 	local signals = Signals.getFolder()

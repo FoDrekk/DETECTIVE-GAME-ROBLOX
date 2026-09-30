@@ -2,9 +2,10 @@
 --[[
 	CitySkyline (M6)
 	The night city outside the office's north windows, built at runtime like
-	the rest of the environment staging (see OfficeDetailing for why nothing
-	is edited in the authored asset). The authored backdrop -- a flat night
-	sky and four dark towers -- read as a black void from inside; this adds:
+	the rest of the environment staging. It is placed from the plan's north
+	wall (OfficePlan), so it follows the windows wherever the plan puts them.
+	A flat night sky and four dark towers alone read as a black void from
+	inside; on top of them this adds:
 
 	  * a band of city-light haze along the horizon, so silhouettes read;
 	  * two layers of towers between the authored ones and the sky;
@@ -24,6 +25,7 @@ local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Logger = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Logger"))
+local OfficePlan = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("OfficePlan"))
 
 local log = Logger.scoped("CitySkyline")
 
@@ -38,11 +40,19 @@ local COOL = Color3.fromRGB(176, 204, 255)
 local UNLIT = Color3.fromRGB(30, 36, 52)
 local AVIATION_RED = Color3.fromRGB(255, 50, 40)
 
--- Towers stand between the authored backdrop towers (z -38..-46) and the
--- authored night-sky plane (z = -60).
+-- Where things stand, measured outward from the north wall (studs beyond it).
+-- The near towers are the backdrop's own; two layers of towers fill in behind
+-- them, and the night-sky plane closes the view.
+local NEAR_TOWERS = {
+	{ x = -30, width = 14, height = 34, depth = 10, beyond = 11, color = Color3.fromRGB(26, 28, 38) },
+	{ x = -12, width = 16, height = 46, depth = 10, beyond = 17, color = Color3.fromRGB(22, 24, 34) },
+	{ x = 8, width = 12, height = 28, depth = 10, beyond = 9, color = Color3.fromRGB(28, 30, 40) },
+	{ x = 28, width = 18, height = 40, depth = 10, beyond = 15, color = Color3.fromRGB(20, 22, 32) },
+}
+local SKY_BEYOND = 36
 local LAYERS = {
-	{ z = -50, minWidth = 8, maxWidth = 14, minHeight = 24, maxHeight = 58, color = Color3.fromRGB(20, 22, 30), windowScale = 1, facade = true },
-	{ z = -56, minWidth = 10, maxWidth = 18, minHeight = 16, maxHeight = 44, color = Color3.fromRGB(26, 29, 40), windowScale = 0.8, facade = false },
+	{ beyond = 26, minWidth = 8, maxWidth = 14, minHeight = 24, maxHeight = 58, color = Color3.fromRGB(20, 22, 30), windowScale = 1, facade = true },
+	{ beyond = 32, minWidth = 10, maxWidth = 18, minHeight = 16, maxHeight = 44, color = Color3.fromRGB(26, 29, 40), windowScale = 0.8, facade = false },
 }
 local SKYLINE_MIN_X, SKYLINE_MAX_X = -80, 80
 local LIT_CHANCE = 0.2
@@ -115,13 +125,33 @@ local function armAviationBlink(lamp: BasePart)
 	):Play()
 end
 
+-- The near towers and the sky plane (the "backdrop"), placed from the north wall.
+local function buildBackdrop(office: Instance, northZ: number): Folder
+	local backdrop = Instance.new("Folder")
+	backdrop.Name = "Backdrop"
+	backdrop.Parent = office
+	block("NightSky", Vector3.new(160, 80, 1), Vector3.new(0, 30, northZ - SKY_BEYOND), Color3.fromRGB(18, 20, 30), Enum.Material.SmoothPlastic, backdrop)
+	for _, t in ipairs(NEAR_TOWERS) do
+		local tower = block(
+			"Bldg",
+			Vector3.new(t.width, t.height, t.depth),
+			Vector3.new(t.x, t.height / 2, northZ - t.beyond - t.depth / 2),
+			t.color,
+			Enum.Material.Concrete,
+			backdrop
+		)
+		tower.CanCollide = false
+	end
+	return backdrop
+end
+
 function CitySkyline.start()
 	local office = workspace:FindFirstChild(Config.Environment.OfficeModelName)
-	local backdrop = office and office:FindFirstChild("Backdrop")
-	if not office or not backdrop then
-		log:warn("no authored backdrop; skipping skyline")
+	if not office then
+		log:warn("no office; skipping skyline")
 		return
 	end
+	local northZ = OfficePlan.getWall("North").at
 
 	local existing = office:FindFirstChild(FOLDER_NAME)
 	if existing then
@@ -140,6 +170,8 @@ function CitySkyline.start()
 		return
 	end
 
+	local backdrop = office:FindFirstChild("Backdrop") or buildBackdrop(office, northZ)
+
 	local folder = Instance.new("Folder")
 	folder.Name = FOLDER_NAME
 	folder.Parent = office
@@ -149,7 +181,7 @@ function CitySkyline.start()
 	-- City-light haze: stacked bands, brightest at the horizon, in front of
 	-- the authored sky plane. Neon so they hold their colour at night.
 	local sky = backdrop:FindFirstChild("NightSky")
-	local skyZ = if sky and sky:IsA("BasePart") then sky.Position.Z + 0.6 else -59.4
+	local skyZ = if sky and sky:IsA("BasePart") then sky.Position.Z + 0.6 else northZ - SKY_BEYOND + 0.6
 	local bands = {
 		{ height = 10, color = Color3.fromRGB(150, 100, 78) },
 		{ height = 22, color = Color3.fromRGB(88, 70, 86) },
@@ -178,7 +210,7 @@ function CitySkyline.start()
 			local tower = block(
 				`Tower_{layerIndex}`,
 				Vector3.new(width, height, depth),
-				Vector3.new(x + width / 2, height / 2 - 1, layer.z - depth / 2),
+				Vector3.new(x + width / 2, height / 2 - 1, northZ - layer.beyond - depth / 2),
 				layer.color,
 				Enum.Material.Concrete,
 				folder

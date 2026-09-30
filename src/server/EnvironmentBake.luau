@@ -1,36 +1,37 @@
 --!strict
 --[[
 	EnvironmentBake
-	Edit-mode bake of the runtime world builders into the place file.
+	Builds the world (Workspace.Office) and, in Edit mode, bakes it into the
+	place file.
 
-	The environment staging modules (OfficeRoom, OfficeDetailing,
-	OfficeInterior, CitySkyline, SuspectSpawner) normally build their
-	geometry when the server bootstraps, which means Workspace.Office looks
-	like an empty authored shell while designing in Edit mode. Running the
-	same builders once from this module in Edit mode generates that geometry
-	into the place, so what you see while editing is what Play will show.
+	The environment is generated: OfficeShell makes the architecture from
+	OfficePlan, and OfficeRoom, OfficeDetailing, OfficeInterior, CitySkyline
+	and SuspectSpawner dress and populate it. `buildAll` runs them in the one
+	order that works; the server bootstrap and the bake both call it, so they
+	can never disagree.
 
 	Baked content is adopted, not rebuilt: every builder skips geometry when
-	its generated folder already exists (and guards one-shot edits like the
-	floor sink and the labels on authored parts), so re-running the bake --
-	with or without `force` -- never duplicates anything and author edits to
-	baked props survive. Runtime-only wiring (the records-room flicker, the
-	aviation-light blink, suspect idle animations and the conversation
-	listener) is gated on RunService:IsRunning() in the builders, so a bake
-	never leaves loops or tweens running in Edit mode.
+	its generated folder already exists, so a place saved after a bake loads
+	fast and author edits to baked props survive. That only holds while the
+	bake is CURRENT -- stamped with the same `Config.Environment.BuilderVersion`
+	as the code. A bake from an older plan (or the Studio-authored office the
+	game started as) is discarded and rebuilt (`ensureCurrent`), with a
+	warning that the place should be re-baked and saved: the game is right
+	either way, only Edit mode shows the old map until it is.
+
+	Runtime-only wiring (the records-room flicker, the aviation-light blink,
+	suspect idle animations, the conversation listener) is gated on
+	RunService:IsRunning() in the builders, so a bake never leaves loops or
+	tweens running in Edit mode.
 
 	Usage (Edit mode only), e.g. from the command bar or via MCP:
 
-		require(game.ServerScriptService.Server.EnvironmentBake).bake()
-		require(game.ServerScriptService.Server.EnvironmentBake).bake(true) -- force
+		require(game.ServerScriptService.Server.EnvironmentBake).bake()      -- incremental
+		require(game.ServerScriptService.Server.EnvironmentBake).bake(true)  -- force: rebuild
 
-	`force` first destroys the generated folders (Interior, Detailing,
-	Skyline, Suspects, EvidenceProps, LocationSigns) and clears the markers
-	that make one-shot edits idempotent, then rebuilds everything from
-	scratch. Without force, the bake is an incremental fill: anything that
-	exists is adopted, anything missing is (re)built.
-
-	The result persists only when the place is saved (Ctrl+S).
+	Without `force`, the bake is an incremental fill: anything current that
+	exists is adopted, anything missing is built. `force` discards everything
+	first. The result persists only when the place is saved (Ctrl+S).
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -43,8 +44,90 @@ local log = Logger.scoped("EnvironmentBake")
 
 local EnvironmentBake = {}
 
--- Everything the builders generate under Workspace.Office.
-local GENERATED_FOLDERS = { "Interior", "Detailing", "Skyline", "Suspects", "EvidenceProps", "LocationSigns" }
+-- Children of Workspace.Office that survive a reset: the builders adopt them
+-- and place them again (the backdrop is shifted to the plan's north wall, the
+-- spawn pad is moved into the lift). Everything else under the office is
+-- either generated or the legacy Studio-authored asset, and is discarded.
+local KEPT = { Backdrop = true, InvestigatorSpawn = true }
+
+local function office(): Instance?
+	return workspace:FindFirstChild(Config.Environment.OfficeModelName)
+end
+
+-- Is this office a bake of the current plan?
+function EnvironmentBake.isCurrent(target: Instance): boolean
+	return target:GetAttribute("Baked") == true and target:GetAttribute("BuilderVersion") == Config.Environment.BuilderVersion
+end
+
+-- Discard everything the builders (or the legacy asset) put under the office,
+-- and the stamps that said it was baked. The builders start from clean.
+function EnvironmentBake.reset(target: Instance)
+	for _, child in ipairs(target:GetChildren()) do
+		if not KEPT[child.Name] then
+			child:Destroy()
+		end
+	end
+	target:SetAttribute("Baked", nil)
+	target:SetAttribute("BuilderVersion", nil)
+end
+
+--[[
+	If Workspace.Office holds anything that is not a current bake -- a bake of
+	an older plan, or the legacy authored asset -- discard it so the builders
+	make the current one. A place with no office, or an empty one, has nothing
+	to discard. Returns true if it discarded something.
+]]
+function EnvironmentBake.ensureCurrent(): boolean
+	local target = office()
+	if not target or EnvironmentBake.isCurrent(target) then
+		return false
+	end
+	local stale = target:GetAttribute("Baked") == true
+	local legacy = false
+	for _, child in ipairs(target:GetChildren()) do
+		if not KEPT[child.Name] then
+			legacy = true
+			break
+		end
+	end
+	if not stale and not legacy then
+		return false
+	end
+	log:warn("Workspace.Office is not a bake of the current plan; rebuilding it (re-bake and save the place in Edit mode)", {
+		stampedVersion = target:GetAttribute("BuilderVersion"),
+		currentVersion = Config.Environment.BuilderVersion,
+		legacy = legacy,
+	})
+	EnvironmentBake.reset(target)
+	return true
+end
+
+--[[
+	Build the whole environment, in dependency order: the shell first (walls
+	and floors), then the world's evidence props and signs, the crime scene,
+	the furnishing, the observations and validation (which need the furniture's
+	interactables), the skyline and the suspects (which stand on the floor).
+
+	Required here rather than at the top so merely requiring this module never
+	pulls in the whole builder chain.
+]]
+function EnvironmentBake.buildAll()
+	local OfficeShell = require(script.Parent:WaitForChild("OfficeShell"))
+	local OfficeRoom = require(script.Parent:WaitForChild("OfficeRoom"))
+	local OfficeDetailing = require(script.Parent:WaitForChild("OfficeDetailing"))
+	local OfficeInterior = require(script.Parent:WaitForChild("OfficeInterior"))
+	local CitySkyline = require(script.Parent:WaitForChild("CitySkyline"))
+	local SuspectSpawner = require(script.Parent:WaitForChild("SuspectSpawner"))
+
+	EnvironmentBake.ensureCurrent()
+	OfficeShell.start()
+	OfficeRoom.start()
+	OfficeDetailing.start()
+	OfficeInterior.start()
+	OfficeRoom.finalize()
+	CitySkyline.start()
+	SuspectSpawner.start()
+end
 
 function EnvironmentBake.bake(force: boolean?): boolean
 	if RunService:IsRunning() then
@@ -52,52 +135,24 @@ function EnvironmentBake.bake(force: boolean?): boolean
 		return false
 	end
 
-	local office = workspace:FindFirstChild(Config.Environment.OfficeModelName)
-	if not office then
-		log:warn(`Workspace.{Config.Environment.OfficeModelName} not found; nothing to bake`)
+	local target = office()
+	if target and force then
+		EnvironmentBake.reset(target)
+	end
+
+	EnvironmentBake.buildAll()
+
+	target = office()
+	if not target then
+		log:warn(`Workspace.{Config.Environment.OfficeModelName} was not built; nothing to bake`)
 		return false
 	end
-
-	if force then
-		for _, name in ipairs(GENERATED_FOLDERS) do
-			local child = office:FindFirstChild(name)
-			if child then
-				child:Destroy()
-			end
-		end
-		-- Clear the one-shot markers so a forced rebuild starts from the
-		-- authored state (the floor sink is a relative move; it must not
-		-- compound across bakes).
-		local shell = office:FindFirstChild("Shell")
-		local floor = shell and shell:FindFirstChild("Floor")
-		if floor then
-			floor:SetAttribute("FloorSunk", nil)
-		end
-		office:SetAttribute("Baked", nil)
-	end
-
-	-- Required here rather than at the top so merely requiring this module
-	-- never pulls in the whole builder chain.
-	local OfficeRoom = require(script.Parent:WaitForChild("OfficeRoom"))
-	local OfficeDetailing = require(script.Parent:WaitForChild("OfficeDetailing"))
-	local OfficeInterior = require(script.Parent:WaitForChild("OfficeInterior"))
-	local CitySkyline = require(script.Parent:WaitForChild("CitySkyline"))
-	local SuspectSpawner = require(script.Parent:WaitForChild("SuspectSpawner"))
-
-	-- Same order as ServerBootstrap.bootstrap().
-	OfficeRoom.start()
-	OfficeDetailing.start()
-	OfficeInterior.start()
-	OfficeRoom.finalize()
-	CitySkyline.start()
-	SuspectSpawner.start()
-
-	office:SetAttribute("Baked", true)
-	-- Phase 2P: stamp the builder version this bake was produced by, so a
-	-- later boot (this bake's `.rbxl`, opened fresh) can tell whether the
-	-- generated folders it's adopting still match the current builder code.
-	office:SetAttribute("BuilderVersion", Config.Environment.BuilderVersion)
-	log:info("environment baked", { office = office.Name, force = force == true, builderVersion = Config.Environment.BuilderVersion })
+	target:SetAttribute("Baked", true)
+	-- Stamp the builder version this bake was produced by, so a later boot (this
+	-- bake's `.rbxl`, opened fresh) can tell whether the generated folders it is
+	-- adopting still match the current builder code.
+	target:SetAttribute("BuilderVersion", Config.Environment.BuilderVersion)
+	log:info("environment baked", { office = target.Name, force = force == true, builderVersion = Config.Environment.BuilderVersion })
 	return true
 end
 

@@ -26,6 +26,7 @@ return function(t)
 	local PlayerDataService = require(Server:WaitForChild("PlayerDataService"))
 	local CaseRegistry = require(ServerStorage:WaitForChild("Config"):WaitForChild("CaseRegistry"))
 	local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
+	local OfficePlan = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("OfficePlan"))
 	local expect = t.expect
 
 	local caseDef = CaseRegistry.get("CASE-001") :: any
@@ -525,8 +526,11 @@ return function(t)
 		local centre, size = credenza:GetBoundingBox()
 		local minX, maxX = centre.Position.X - size.X / 2, centre.Position.X + size.X / 2
 		local frontZ = centre.Position.Z + size.Z / 2
-		-- East of the records-room door gap (x -22..-18), inside the east wall (-14.5).
-		expect.truthy(minX > -18 and maxX < -14.5)
+		-- Against the window wall of Daniel's office (its back on the wall, its
+		-- front facing south), inside the room's walls.
+		local rect = OfficePlan.rect("DanielOffice")
+		expect.truthy(minX > rect.x0 and maxX < rect.x1)
+		expect.truthy(frontZ < rect.z0 + 2)
 		-- No tape stroke, and not the tag, passes through it.
 		local detailing = (office :: Instance):FindFirstChild("Detailing") :: Instance
 		for _, strip in ipairs((detailing:FindFirstChild("TapeOutline") :: Instance):GetChildren()) do

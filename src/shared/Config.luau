@@ -22,18 +22,19 @@ Config.Environment = {
 	-- Root objects removed at runtime so the authored environment is the only
 	-- ground. Names, not references, so this stays data-driven.
 	DefaultGroundNames = { "Baseplate", "SpawnLocation" },
-	-- Phase 2P: stale-bake detection. EnvironmentBake.bake() stamps this onto
-	-- Workspace.Office once it finishes (Edit mode only); OfficeRoom.start()
-	-- compares it against a baked place's own stamp on every boot, live or
-	-- Edit. Bump this by hand whenever a change to OfficeRoom/OfficeDetailing/
-	-- OfficeInterior/CitySkyline/SuspectSpawner would change what they
-	-- generate -- the builders themselves still adopt existing generated
-	-- folders unchanged (Baked content is adopted, not rebuilt); this only
-	-- warns when that adoption is silently keeping geometry a later bump
-	-- never reached. See `815064d` for the incident this exists to catch:
-	-- a floor/grounding fix landed in the builders, but the already-baked
-	-- `.rbxl` was never re-baked, so the fix never reached the saved place.
-	BuilderVersion = 5,
+	-- Stale-bake detection (Phase 2P), made self-healing in the office
+	-- redesign. EnvironmentBake.bake() stamps this onto Workspace.Office once
+	-- it finishes (Edit mode only); every boot compares it against a baked
+	-- place's own stamp. Bump this by hand whenever a change to OfficePlan or
+	-- to the builders (OfficeShell/OfficeRoom/OfficeDetailing/OfficeInterior/
+	-- the rooms/CitySkyline/SuspectSpawner) would change what they generate.
+	-- The builders adopt a current bake unchanged (author edits to baked props
+	-- survive); a stale one is discarded and rebuilt (EnvironmentBake.
+	-- ensureCurrent), with a warning that the place should be re-baked and
+	-- saved. See `815064d` for the incident this exists to catch: a floor fix
+	-- landed in the builders, but the already-baked `.rbxl` was never
+	-- re-baked, so the fix never reached the saved place.
+	BuilderVersion = 6,
 	-- 12:40 AM, after hours (OfficeRoom). Readability first: the local lights
 	-- carry the mood, ambient and exposure keep every room playable.
 	Night = {
@@ -58,16 +59,17 @@ Config.Environment = {
 	-- `shadows` only where a shadow tells you something.
 	Interior = {
 		Lights = {
-			DanielOffice = { brightness = 1.3, range = 18, color = Color3.fromRGB(255, 232, 204), shadows = true },
-			MeetingRoom = { brightness = 0.5, range = 16, color = Color3.fromRGB(255, 240, 222) },
+			DanielOffice = { brightness = 1.4, range = 22, color = Color3.fromRGB(255, 232, 204), shadows = true },
+			MeetingRoom = { brightness = 0.5, range = 18, color = Color3.fromRGB(255, 240, 222) },
 			MeetingPendant = { brightness = 2.0, range = 16 },
-			Reception = { brightness = 1.1, range = 16, color = Color3.fromRGB(255, 226, 190), shadows = true },
+			Reception = { brightness = 1.1, range = 18, color = Color3.fromRGB(255, 226, 190), shadows = true },
 			Lobby = { brightness = 0.7, range = 16, color = Color3.fromRGB(255, 226, 190) },
-			OpenPlan = { brightness = 0.7, range = 18, color = Color3.fromRGB(255, 240, 222), shadows = true },
-			EastDesks = { brightness = 0.55, range = 16, color = Color3.fromRGB(255, 240, 222) },
-			Corridor = { brightness = 0.45, range = 14, color = Color3.fromRGB(230, 232, 255) },
+			OpenPlan = { brightness = 0.7, range = 20, color = Color3.fromRGB(255, 240, 222), shadows = true },
+			Studio = { brightness = 0.6, range = 18, color = Color3.fromRGB(226, 236, 255) },
+			Corridor = { brightness = 0.45, range = 15, color = Color3.fromRGB(230, 232, 255) },
 			WestHall = { brightness = 0.5, range = 14, color = Color3.fromRGB(255, 236, 214) },
-			Records = { brightness = 0.9, range = 16, color = Color3.fromRGB(206, 222, 255), shadows = true },
+			Pantry = { brightness = 0.55, range = 12, color = Color3.fromRGB(255, 238, 210) },
+			Records = { brightness = 0.9, range = 14, color = Color3.fromRGB(206, 222, 255), shadows = true },
 		},
 		-- The city's light through the north windows.
 		CityGlow = { Brightness = 0.55, Range = 16, Color = Color3.fromRGB(150, 172, 226) },
@@ -207,19 +209,20 @@ Config.Presentation = {
 		Footer = "Best played with headphones.",
 	},
 	IntroShot = {
-		-- Down the dark corridor toward the north window, where Mara stands
-		-- with her back to the room and the city beyond the glass (window
-		-- centre (-4, 7, -23.8)).
-		From = { Position = Vector3.new(-1.5, 6.2, -6), LookAt = Vector3.new(-4.5, 5.4, -24) },
-		To = { Position = Vector3.new(-3, 5.6, -12.5), LookAt = Vector3.new(-4.2, 5.2, -24) },
+		-- The title screen's drift: up the corridor from the entrance toward the
+		-- north window, where Meera stands with her back to the room and the city
+		-- beyond the glass (window centre (0, 7, -28)).
+		From = { Position = Vector3.new(1.5, 6.2, 14), LookAt = Vector3.new(-0.5, 5.4, -26) },
+		To = { Position = Vector3.new(0.5, 5.6, -8), LookAt = Vector3.new(0, 5.2, -26) },
 		Duration = 26,
 	},
-	-- M8: the case briefing opens on the scene: from the far corner of
-	-- Daniel's office across the tape outline to his desk (lamp still on,
-	-- the second cup, the visitor's chair pushed back) and the taped door.
+	-- M8: a case briefing that opens on the scene (the briefing screen, kept for
+	-- cases without an intro): from the door corner of Daniel's office across the
+	-- tape outline to his desk (lamp still on, the second cup, the visitor's
+	-- chair pushed back) and the taped door.
 	BriefingShot = {
-		From = { Position = Vector3.new(-15.6, 6.2, -12.6), LookAt = Vector3.new(-24.5, 2.2, -6.5) },
-		To = { Position = Vector3.new(-16.9, 5.4, -11.4), LookAt = Vector3.new(-24.4, 2.3, -6.6) },
+		From = { Position = Vector3.new(-18.4, 6.2, -10.2), LookAt = Vector3.new(-26.0, 2.4, -19.6) },
+		To = { Position = Vector3.new(-19.6, 5.4, -11.6), LookAt = Vector3.new(-25.8, 2.5, -19.4) },
 		Duration = 30,
 	},
 }

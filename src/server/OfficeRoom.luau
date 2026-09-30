@@ -1,20 +1,23 @@
 --!strict
 --[[
 	OfficeRoom
-	Runtime concerns for the authored investigation environment.
+	Runtime concerns for the investigation environment.
 
-	The office *geometry* is Studio-authored and ships as `assets/Office.rbxm`,
-	mapped by Rojo to `Workspace.Office`. This module owns the generic runtime
-	integration and contains no case-specific data:
+	The office itself is generated (OfficeShell builds the architecture from
+	OfficePlan; OfficeInterior and its rooms furnish it). This module owns the
+	generic runtime integration and contains no case-specific data:
 
-	  1. removes the configured default ground so the authored environment is
-	     the only floor,
-	  2. applies the evening investigation lighting/atmosphere,
-	  3. validates that the authored interactables satisfy the active case's
-	     evidence requirements (read from Config, never hardcoded here).
+	  1. removes the configured default ground so the office is the only floor,
+	  2. applies the after-hours investigation lighting/atmosphere,
+	  3. builds the evidence props and location signs the active case places
+	     (propPlacement / signPlacement), and binds the evidence the case names
+	     to existing objects (bindTo),
+	  4. applies the case's flavour text to the objects that carry no evidence,
+	  5. validates that the world satisfies the active case's evidence
+	     requirements (read from Config, never hardcoded here).
 
-	World building stays in Studio; gameplay logic stays in services; case facts
-	stay in Config.
+	World building stays in the builders; gameplay logic stays in services;
+	case facts stay in Config.
 ]]
 
 local CollectionService = game:GetService("CollectionService")
@@ -134,7 +137,7 @@ local function validateInteractables()
 	end
 
 	if interactableCount == 0 then
-		log:warn(`no "{Interactable.TAG}"-tagged instances found; is Workspace.{Config.Environment.OfficeModelName} synced?`)
+		log:warn(`no "{Interactable.TAG}"-tagged instances found; was Workspace.{Config.Environment.OfficeModelName} built?`)
 		return
 	end
 
@@ -410,31 +413,6 @@ local function applyObservations()
 end
 
 --[[
-	Phase 2P: stale-bake detection. `office` here is whatever the currently
-	open/loaded `.rbxl` already carries (before this boot's builders run),
-	so this reads the stamp left by the *last* `EnvironmentBake.bake()`, not
-	anything this session has touched yet. A place that was never baked
-	(fresh from `assets/Office.rbxm` via Rojo, no generated folders yet)
-	carries no `Baked` attribute at all -- nothing to warn about, since this
-	boot's builders will generate current-version geometry from scratch.
-	Only warns; never rebuilds or blocks boot, and never touches the
-	builders' own reuse-existing-folders adoption.
-]]
-local function warnIfBakeStale(office: Instance?)
-	if not office or not office:GetAttribute("Baked") then
-		return
-	end
-	local stamped = office:GetAttribute("BuilderVersion")
-	local current = Config.Environment.BuilderVersion
-	if stamped ~= current then
-		log:warn("baked office geometry predates the current builder code; re-bake and save in Edit mode", {
-			stampedVersion = stamped,
-			currentVersion = current,
-		})
-	end
-end
-
---[[
 	Phase 5.3: bring a baked place's evidence props in line with case data
 	without a re-bake (Edit mode). Builds any prop the case authors that the
 	place lacks; ids in `rebuild` are destroyed and built again first (for a
@@ -481,9 +459,8 @@ function OfficeRoom.start()
 
 	local office = workspace:FindFirstChild(Config.Environment.OfficeModelName)
 	if not office then
-		log:warn(`Workspace.{Config.Environment.OfficeModelName} not found; run Rojo sync to load the authored environment`)
+		log:warn(`Workspace.{Config.Environment.OfficeModelName} not found; the shell should have created it`)
 	end
-	warnIfBakeStale(office)
 
 	applyNightLighting()
 	spawnEvidenceProps()
