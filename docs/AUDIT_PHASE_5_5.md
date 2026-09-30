@@ -56,8 +56,8 @@ the local `origin` refs, the Roblox Studio worktree place, and Phase 5.5.
 ## Repository and sync notes
 
 - Work is isolated in the `claude/audit-phase-5-5-979a2e` branch. The office
-  redesign and Phase 5.5/audit are committed locally in two commits based on
-  `origin/main`; the worktree is clean. Nothing has been pushed.
+  redesign and Phase 5.5/audit are committed locally on top of `origin/main`;
+  the worktree is clean. Nothing has been pushed.
 - The worktree source was synchronized to the specifically identified worktree
   Studio session. The main checkout and its Studio session were left untouched.
 - The cached `origin/main` ref is `8a0043b` (2026-09-29), identical to the
