@@ -6,7 +6,7 @@
 	glazed or low), the lintels over the doors, the suspended ceiling, and the
 	lift core with its car.
 
-	This replaces the Studio-authored shell (assets/Office.rbxm) the office
+	This builds the office shell from OfficePlan instead of a binary model.
 	started from: the office is now generated, so a layout change is a change
 	to OfficePlan and this file, never to a binary asset that can't be edited
 	from code. Like the rest of the environment it is baked into the place in

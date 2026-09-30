@@ -131,6 +131,7 @@ return function(t)
 				break
 			end
 			ConversationService.advance(player)
+			task.wait()
 		end
 		return ids
 	end

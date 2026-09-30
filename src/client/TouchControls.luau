@@ -33,6 +33,9 @@ export type Providers = {
 	primaryLabel: () -> string?,
 	showInvestigationButtons: () -> boolean,
 	showAccuse: () -> boolean,
+	-- Phase 5.5: true while the primary button should act on press and release
+	-- (the intro's hold to skip) rather than on a tap. Optional.
+	primaryHold: (() -> boolean)?,
 }
 
 local POLL_INTERVAL = 0.1
@@ -82,8 +85,34 @@ function TouchControls.start(providers: Providers)
 		true
 	)
 	primary.Parent = gui
+	local function holding(): boolean
+		local provider = providers.primaryHold
+		return provider ~= nil and provider()
+	end
 	primary.Activated:Connect(function()
+		-- A held button already acted when it was pressed.
+		if holding() then
+			return
+		end
 		InputController.invoke("Interact")
+	end)
+	primary.InputBegan:Connect(function(input: InputObject)
+		if not holding() then
+			return
+		end
+		if input.UserInputType ~= Enum.UserInputType.Touch and input.UserInputType ~= Enum.UserInputType.MouseButton1 then
+			return
+		end
+		InputController.invoke("Interact")
+		local connection: RBXScriptConnection? = nil
+		connection = input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End or input.UserInputState == Enum.UserInputState.Cancel then
+				if connection then
+					connection:Disconnect()
+				end
+				InputController.release("Interact")
+			end
+		end)
 	end)
 
 	-- Secondary column on the right edge, above the jump button.

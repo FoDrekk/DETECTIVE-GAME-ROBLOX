@@ -3,14 +3,16 @@
 Single-player detective investigation game (working title).
 
 This repository contains the **local Luau source code** for the game. Roblox
-Studio is used for 3D world building, visual editing and play-testing; all code
-lives on disk and is synchronised into Studio with **Rojo**.
+Studio is used for visual editing and play-testing; mapped code lives on disk
+and is synchronised into Studio with **Rojo**. The office itself is generated
+by the Luau plan and builders, then baked into the base place for Edit-mode
+fidelity.
 
 ## Base place
 
 `MysteryCaseRoblox.rbxl` is the **original base place**. It is committed to
 the repository intentionally, and is never a Rojo build target -- Rojo only
-syncs `src/`/`assets/` *into* it. Since M10 it also carries the Edit-mode
+syncs mapped Luau sources *into* it. Since M10 it also carries the Edit-mode
 environment bake (below): the generated office decoration, saved with
 **Ctrl+S** from Studio, so Edit and Play show the same map. Generated places
 from `rojo build` go to `/build/` (git-ignored) instead.
@@ -80,8 +82,8 @@ Edit mode.
 Notes:
 
 - The bake is Edit-mode only; it refuses to run while a game is running.
-- Re-running `rojo serve` and syncing replaces `Workspace.Office` from
-  `assets/Office.rbxm`, which strips the baked folders — re-bake afterwards.
+- Rebuilding the environment removes generated folders under
+  `Workspace.Office` — re-bake afterwards.
 - `bake(true)` also clears the one-shot markers (the `FloorSunk` attribute on
   `Shell.Floor`, the `Baked` attribute on `Workspace.Office`) so a forced
   rebuild starts from the authored state.
@@ -113,8 +115,6 @@ MysteryCaseRoblox/
 ├─ rokit.toml               # pinned toolchain
 ├─ .gitignore
 ├─ README.md
-├─ assets/
-│  └─ Office.rbxm           # Studio-authored office environment -> Workspace.Office
 ├─ docs/                    # design docs, case bible, localisation notes
 ├─ tests/                   # unit tests -> ServerStorage.UnitTest (cases + fixtures)
 ├─ tools/headless/          # run the tests / a playthrough without Studio
@@ -506,13 +506,14 @@ Phase 2E complete: the foundation is hardened and covered by automated tests.
 - **Headless test harness** (68 tests) covering the state machine, case
   registry, interactable contract, evidence, timeline, objectives, the full
   discovery pipeline, and failure handling.
-- `assets/Office.rbxm` is tracked and protected from the build-output ignore rule.
+- The office is generated from `OfficePlan` and the server-side shell/room builders; it is no longer a binary model mapped by Rojo.
 
 Phase 2C added clue detail and the case timeline.
 
-- **World / logic split**: the office environment is Studio-authored and
-  versioned as `assets/Office.rbxm` (mapped to `Workspace.Office`); all gameplay
-  logic stays in Luau services.
+- **World / logic split**: the office plan and environment builders are
+  versioned Luau under `src/shared` and `src/server`; gameplay logic stays in
+  Luau services, and `EnvironmentBake` keeps Edit-mode geometry in step with
+  `Config.Environment.BuilderVersion`.
 - Server-authoritative **objective system** (`ObjectiveService`), fully
   data-driven from case data.
 - Server-authoritative **timeline system** (`TimelineService`): events stay

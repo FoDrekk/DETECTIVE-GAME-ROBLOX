@@ -22,7 +22,7 @@ ReplicatedStorage.Shared      <- src/shared
 ReplicatedStorage.UI          <- src/ui      (requireable UI factories)
 ServerScriptService.Server    <- src/server  (Script, children = services)
 StarterPlayer...Client        <- src/client  (LocalScript, children = modules)
-Workspace.Office              <- assets/Office.rbxm  (Studio-authored world)
+Workspace.Office              <- OfficePlan + server environment builders
 ServerStorage.Config          <- src/config  (case data; server-only, M2)
 ServerStorage.UnitTest        <- tests/      (RunUnitTest + Cases + Fixtures)
 ServerScriptService.UnitTestRunner <- tests/UnitTestRunner.server.luau (Disabled)
@@ -79,14 +79,14 @@ non-colliding. No test file keeps its own local UserId counter.
 
 ## World vs. logic split
 
-The office *environment* is Studio-authored and versioned as a binary model
-(`assets/Office.rbxm`), mapped by Rojo to `Workspace.Office`. It owns geometry,
-furniture, props, lighting fixtures and the spawn. Gameplay *logic* (evidence,
+The office is generated from the shared, pure-data `OfficePlan` and server
+builders (`OfficeShell`, `OfficeRoom`, room modules, `OfficeDetailing`,
+`OfficeInterior`, and `CitySkyline`). `EnvironmentBake` builds it in Edit mode;
+runtime startup adopts a matching bake or rebuilds a stale one according to
+`Config.Environment.BuilderVersion`. Rojo syncs the source modules; it does
+not replace `Workspace.Office`. Geometry, circulation, furniture, props,
+lighting fixtures and spawn are plan-driven, while gameplay logic (evidence,
 objectives, interaction, state, camera, UI) stays in Luau services.
-
-`OfficeRoom.luau` no longer builds geometry. It only removes the default
-Baseplate/SpawnLocation, applies the runtime evening lighting/atmosphere, and
-validates that the authored interactables satisfy the gameplay contract.
 
 ## Server services
 
@@ -538,10 +538,9 @@ changed. `deductions` stays empty; Phase 2I adds no deduction.
 
 #### Evidence without a Studio-authored prop
 
-`EV-001`/`EV-002`/`EV-003` are all hand-placed in the Studio-authored
-`assets/Office.rbxm`. `EV-004` has no such counterpart: there was no reliable
-way from this development environment to persist a live Studio-side edit of
-that binary asset back into the tracked file. Instead, `Types.EvidenceDefinition`
+`EV-001`/`EV-002`/`EV-003` bind to interactables built by the office room
+modules. `EV-004` has no counterpart in its room: instead,
+`Types.EvidenceDefinition`
 gained an optional `propPlacement` field (`{ position, lookAt? }`, mirroring
 `SuspectDefinition.npcPlacement` exactly), and `OfficeRoom` — already the
 module responsible for runtime office setup, not a new service — spawns a
@@ -784,7 +783,7 @@ and content pass — no new systems, no new case entities.
 same module that already owns runtime office setup) sets each target
 interactable's `ObservationText` attribute **at runtime**, by instance name —
 mirroring the existing `npcPlacement`/`propPlacement` runtime-application
-precedent, and leaving `assets/Office.rbxm` untouched. An entry whose instance
+precedent. An entry whose instance
 is absent is skipped; an interactable that carries `EvidenceId` is never
 given observation text.
 
@@ -1015,8 +1014,8 @@ payload `revisited = true`), with no new discovery.
 
 ## Environment (M7)
 
-Built at runtime, like every earlier environment change (the binary office
-asset is never edited from code). Boot order: `OfficeRoom.start` (lighting,
+Built at runtime, like every earlier environment change (the office is
+generated from code). Boot order: `OfficeRoom.start` (lighting,
 evidence props, signs) → `OfficeDetailing.start` → `OfficeInterior.start` →
 `OfficeRoom.finalize` (observations + validation, so flavour props built by
 the interior receive their text) → `CitySkyline` → `SuspectSpawner`.
@@ -1046,10 +1045,9 @@ three builders expose a targeted patch, run once in Edit mode:
   name tag and skin tone from case data to the baked NPCs, leaving their
   position, pose, hair and clothes alone.
 
-Text baked into other props (the fascia, the printout, exit signs, the pantry
-note) was migrated with an explicit old-to-new table, then the place's
-`BuilderVersion` stamp was set to `Config.Environment.BuilderVersion`
-(bumped to 3, to 4 in Phase 5.3 and to 5 in Phase 5.4). Bump the version whenever what a builder generates changes.
+Text baked into props was migrated with an explicit old-to-new table. The
+current plan-driven environment uses `BuilderVersion = 6`; bump it whenever
+a builder change alters generated geometry or content.
 In Edit mode, `require` caches a module for the whole session; require a
 `Clone()` of the ModuleScript to run its current source.
 
@@ -1375,10 +1373,12 @@ voices, linked related evidence, restated the case at the close, and
 surfaced each objective's own description as a hint; M2 gave the case an
 authored answer and a verdict on the player's own accusation.
 
-Explicitly still out of scope: NPC AI/movement, voice acting, cutscene
-content (Phase 5.1 added the scene player; no case authors a scene yet),
-additional locations, persistence, and multiplayer/per-session state. (M6 added only an idle animation, a turn to face the speaker, and a
-title-screen camera drift; M7 added branching interrogation and a third
+Explicitly still out of scope: NPC AI/movement, voice acting, additional
+locations, persistence, and multiplayer/per-session state. Phase 5.5 now
+authors CASE-001's client-presented cinematic intro and dawn scenes, using
+remote sets, camera motion, lighting presets, audio cues, subtitles and
+hold-to-skip. (M6 added only an idle animation, a turn to face the speaker,
+and a title-screen camera drift; M7 added branching interrogation and a third
 character, the night guard, who is not a suspect.)
 
 ## Extension points (future phases)

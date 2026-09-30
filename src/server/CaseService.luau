@@ -85,6 +85,9 @@ function CaseService.buildClientPayload(player: Player)
 			time = if caseDef.setting then caseDef.setting.time else nil,
 			place = if caseDef.setting then caseDef.setting.place else nil,
 		},
+		-- Phase 5.5: only the fact that the intro stands in for the briefing;
+		-- the scene itself travels when the server starts it.
+		introReplacesBriefing = if caseDef.intro and caseDef.intro.replacesBriefing then true else nil,
 	}
 	return payload
 end

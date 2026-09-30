@@ -243,6 +243,21 @@ function GameStateService.requestReplay(player: Player): boolean
 	return true
 end
 
+--[[
+	Phase 5.5: the investigation has begun for this player. A case that names an
+	opening scene (CaseDefinition.intro) starts it here, after the phase has been
+	broadcast, so the client already knows it is in the investigation when the
+	scene arrives. A case without one opens straight onto the investigation, as it
+	always did. Only the player's own request to begin ever reaches this (the
+	RequestPhaseChange handler below): nothing that sets the phase directly, a
+	test or server logic, starts a scene as a side effect.
+	Returns true if a scene was started.
+]]
+function GameStateService.beginInvestigation(player: Player): boolean
+	local started = CutsceneService.playIntro(player)
+	return started
+end
+
 local function grantCase(player: Player)
 	local payload = CaseService.buildClientPayload(player)
 	if payload then
@@ -299,6 +314,11 @@ function GameStateService.start()
 				PlayerDataService.setPhase(p, phase)
 			end
 			broadcast(phase)
+			if phase == "Investigation" then
+				for _, p in ipairs(game:GetService("Players"):GetPlayers()) do
+					GameStateService.beginInvestigation(p)
+				end
+			end
 		end
 	end)
 

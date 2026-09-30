@@ -32,6 +32,13 @@ local caseLabel: TextLabel? = nil
 local titleLabel: TextLabel? = nil
 local open = false
 local dismissing = false
+-- Phase 5.5: a case that opens on a scene takes over from the title screen. The
+-- title's black is then held after it closes until the scene has taken the
+-- screen (`release`), so the world is never glimpsed between the two.
+local handoff = false
+local holding = false
+-- Seconds the black is held for a scene that never comes.
+local HANDOFF_TIMEOUT = 5
 
 local dismissed: BindableEvent = Instance.new("BindableEvent")
 
@@ -43,6 +50,11 @@ end
 
 function TitleScreenView.isOpen(): boolean
 	return open
+end
+
+-- Phase 5.5: whether the title hands over to a scene (true) or to the briefing.
+function TitleScreenView.setHandoff(enabled: boolean)
+	handoff = enabled
 end
 
 -- The case the title is presenting (from the briefing payload).
@@ -109,15 +121,32 @@ function TitleScreenView.dismiss()
 		end
 		open = false
 		dismissed:Fire()
-		local fadeOut = TweenService:Create(fade, TweenInfo.new(0.9, Enum.EasingStyle.Sine), { BackgroundTransparency = 1 })
-		fadeOut.Completed:Once(function()
-			if gui then
-				gui.Enabled = false
-			end
-		end)
-		fadeOut:Play()
+		if handoff then
+			-- Stay black until the scene has the screen.
+			holding = true
+			task.delay(HANDOFF_TIMEOUT, TitleScreenView.release)
+		else
+			TitleScreenView.release()
+		end
 	end)
 	fadeIn:Play()
+end
+
+-- Lift the title's black: whatever is underneath (the briefing's scene, or a
+-- scene that has just started) is revealed. Safe to call any number of times.
+function TitleScreenView.release()
+	if not gui or not fade then
+		return
+	end
+	holding = false
+	local black = fade
+	local fadeOut = TweenService:Create(black, TweenInfo.new(0.9, Enum.EasingStyle.Sine), { BackgroundTransparency = 1 })
+	fadeOut.Completed:Once(function()
+		if gui and not open and not holding then
+			gui.Enabled = false
+		end
+	end)
+	fadeOut:Play()
 end
 
 function TitleScreenView.start()

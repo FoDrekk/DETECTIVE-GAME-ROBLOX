@@ -179,10 +179,10 @@ local function buildLights(folder: Instance)
 	panel("EntranceHall", 0, 21, CEILING_Y, true, Style.Lights.Lobby)
 	-- One bank left on over the desks; the rest of the floor is dark.
 	panel("OpenPlanOn", -21, 3.5, CEILING_Y, true, Style.Lights.OpenPlan)
-	panel("OpenPlanOff1", -12.5, 14, CEILING_Y, false)
-	panel("OpenPlanOff2", -21, 22, CEILING_Y, false)
+	panel("OpenPlanNight", -12.5, 14, CEILING_Y, true, Style.Lights.NightLight)
+	panel("OpenPlanOff", -21, 22, CEILING_Y, false)
 	panel("Studio", 20, 0, CEILING_Y, true, Style.Lights.Studio)
-	panel("StudioOff", 31, 0, CEILING_Y, false)
+	panel("StudioNight", 31, 0, CEILING_Y, true, Style.Lights.NightLight)
 	-- Corridor night lights.
 	panel("CorridorNorth", 0, -21, CEILING_Y, true, Style.Lights.Corridor)
 	panel("CorridorMid", 0, -9, CEILING_Y, false)

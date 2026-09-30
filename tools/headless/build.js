@@ -11,7 +11,7 @@
     init.client.luau -> LocalScript named after the folder
     init.luau        -> ModuleScript named after the folder
     X.server.luau    -> Script X, X.client.luau -> LocalScript X, X.luau -> ModuleScript X
-    *.rbxm           -> instances converted from the binary model (needs rbxm-parser)
+    source trees and scripts from default.project.json -> shim instances
 */
 const fs = require("fs");
 const path = require("path");
@@ -66,9 +66,6 @@ function emitPath(fsPath, name, parentVar, props) {
     lines.push(`${v}.Parent = ${parentVar}`);
     return v;
   }
-  if (fsPath.endsWith(".rbxm")) {
-    return emitRbxm(abs, name, parentVar);
-  }
   let cls = "ModuleScript";
   if (fsPath.endsWith(".server.luau")) cls = "Script";
   else if (fsPath.endsWith(".client.luau")) cls = "LocalScript";
@@ -83,7 +80,7 @@ function emitPath(fsPath, name, parentVar, props) {
 
 function childBaseName(file, abs) {
   if (fs.statSync(abs).isDirectory()) return file;
-  for (const ext of [".server.luau", ".client.luau", ".luau", ".rbxm"]) {
+  for (const ext of [".server.luau", ".client.luau", ".luau"]) {
     if (file.endsWith(ext)) return file.slice(0, -ext.length);
   }
   return null;
@@ -146,106 +143,6 @@ function luaTypedProperty(val) {
   if ("Bool" in val) return String(val.Bool);
   if ("String" in val) return JSON.stringify(val.String);
   throw new Error("unsupported typed property " + JSON.stringify(val));
-}
-
-// ---- rbxm conversion ------------------------------------------------------
-function emitRbxm(abs, name, parentVar) {
-  let RobloxFile;
-  try {
-    ({ RobloxFile } = require(process.env.RBXM_PARSER || "rbxm-parser"));
-  } catch (e) {
-    console.error("rbxm-parser is required to convert .rbxm files (npm install rbxm-parser; or set RBXM_PARSER)");
-    process.exit(2);
-  }
-  const file = RobloxFile.ReadFromBuffer(fs.readFileSync(abs));
-  const shared = file.SharedStrings;
-  const rootVar = emitRbxInstance(file.Roots[0], name, shared);
-  lines.push(`${rootVar}.Parent = ${parentVar}`);
-  return rootVar;
-}
-
-const PROP_MAP = { size: "Size", Color3uint8: "Color", shape: "Shape" };
-const SKIP = new Set(["Name", "Tags", "AttributesSerialize", "formFactorRaw", "SourceAssetId", "Capabilities", "DefinesCapabilities", "UniqueId", "HistoryId", "ScriptGuid", "PivotOffset", "RotVelocity", "Velocity", "CustomPhysicalProperties", "CollisionGroupId", "AttributesReplicate", "ModelMeshData", "ModelMeshCFrame", "ModelMeshSize", "NeedsPivotMigration", "WorldPivotData", "ModelStreamingMode", "LevelOfDetail", "ScaleFactor", "TeamColor", "CFrame"]);
-
-function sharedValue(shared, v) {
-  if (v && v.Index !== undefined) {
-    const s = shared[v.Index];
-    if (!s) return Buffer.alloc(0);
-    const raw = s.Value ?? s.value ?? s.Data ?? "";
-    return Buffer.isBuffer(raw) ? raw : Buffer.from(raw, typeof raw === "string" ? "latin1" : undefined);
-  }
-  if (typeof v === "string") return Buffer.from(v, "latin1");
-  return Buffer.alloc(0);
-}
-
-function decodeAttributes(buf) {
-  const out = {};
-  if (buf.length < 4) return out;
-  let o = 0;
-  const count = buf.readUInt32LE(o); o += 4;
-  const readStr = () => { const n = buf.readUInt32LE(o); o += 4; const s = buf.slice(o, o + n).toString("utf8"); o += n; return s; };
-  for (let i = 0; i < count; i++) {
-    const key = readStr();
-    const t = buf[o++];
-    if (t === 0x02) out[key] = JSON.stringify(readStr());
-    else if (t === 0x03) out[key] = buf[o++] ? "true" : "false";
-    else if (t === 0x06) { out[key] = String(buf.readDoubleLE(o)); o += 8; }
-    else if (t === 0x05) { out[key] = String(buf.readFloatLE(o)); o += 4; }
-    else throw new Error("unsupported attribute type " + t + " for " + key);
-  }
-  return out;
-}
-
-function luaRbxValue(rv) {
-  const v = rv.value;
-  if (v === null || v === undefined) return null;
-  if (typeof v === "boolean") return String(v);
-  if (typeof v === "number") return Number.isFinite(v) ? String(v) : null;
-  if (typeof v === "string") return JSON.stringify(v);
-  if (typeof v === "object") {
-    if (v._name !== undefined && v._value !== undefined) return { enum: v._name };
-    if ("R" in v && "G" in v && "B" in v) return `Color3.fromRGB(${Math.round(v.R * 255)},${Math.round(v.G * 255)},${Math.round(v.B * 255)})`;
-    if ("X" in v && "Y" in v && "Z" in v) return `Vector3.new(${v.X},${v.Y},${v.Z})`;
-    if (v.Position && v.Orientation) {
-      const p = v.Position, r = v.Orientation;
-      return `CFrame.new(${p.X},${p.Y},${p.Z},${r.join(",")})`;
-    }
-  }
-  return null;
-}
-
-const ENUM_TYPES = { Material: "Material", Shape: "PartType", Face: "NormalId", TopSurface: "SurfaceType", BottomSurface: "SurfaceType" };
-
-function emitRbxInstance(inst, nameOverride, shared) {
-  const v = newVar();
-  const name = nameOverride || inst.Name;
-  lines.push(`${v} = Shim.newInstance(${JSON.stringify(inst.ClassName)}, ${JSON.stringify(name)})`);
-  const cfr = inst.Props.get("CFrame");
-  if (cfr) {
-    const val = luaRbxValue(cfr);
-    if (val) lines.push(`${v}.CFrame = ${val}`);
-  }
-  for (const [k, rv] of inst.Props) {
-    if (SKIP.has(k) || /Param[AB]$|SurfaceInput$|Surface$/.test(k)) continue;
-    const key = PROP_MAP[k] || k;
-    let val = luaRbxValue(rv);
-    if (val === null) continue;
-    if (typeof val === "object" && val.enum) {
-      const enumType = ENUM_TYPES[key];
-      if (!enumType) continue;
-      val = `Enum.${enumType}.${val.enum}`;
-    }
-    lines.push(`Shim.internal(${v}).props[${JSON.stringify(key)}] = ${val}`);
-  }
-  const tags = sharedValue(shared, inst.Props.get("Tags") && inst.Props.get("Tags").value).toString("utf8").split("\0").filter(Boolean);
-  for (const tag of tags) lines.push(`${v}:AddTag(${JSON.stringify(tag)})`);
-  const attrs = decodeAttributes(sharedValue(shared, inst.Props.get("AttributesSerialize") && inst.Props.get("AttributesSerialize").value));
-  for (const [k, val] of Object.entries(attrs)) lines.push(`${v}:SetAttribute(${JSON.stringify(k)}, ${val})`);
-  for (const child of inst.Children) {
-    const cv = emitRbxInstance(child, null, shared);
-    lines.push(`${cv}.Parent = ${v}`);
-  }
-  return v;
 }
 
 // ---- assemble -------------------------------------------------------------

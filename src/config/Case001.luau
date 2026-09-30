@@ -38,6 +38,9 @@
 ]]
 
 local Types = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Types"))
+-- Phase 5.5: the opening scene lives in its own file (it is long, and it is a
+-- screenplay, not an investigation).
+local Case001Intro = require(script.Parent:WaitForChild("Case001Intro"))
 
 -- Condition helpers (data only; they build DialogueCondition tables).
 local function knows(kind: Types.DialogueConditionKind, id: string): Types.DialogueCondition
@@ -1984,11 +1987,17 @@ local Case001: Types.CaseDefinition = {
 		},
 	} :: { Types.AccusationDefinition },
 
-	-- Phase 5.4: the dawn outro, played after a Solved verdict and before the
-	-- Case Closed screen. Two scenes that differ by one caption: the second is
-	-- for an investigator who has read Daniel's message with Meera
-	-- (STMT-SUS-001-HOME), see solution.solvedCutscenes.
+	-- Phase 5.5: the case opens on a scene, not the briefing screen. The
+	-- briefing shot showed the second cup on the desk, which the intro
+	-- deliberately withholds (screenplay, "Hard rule").
+	intro = { cutsceneId = "CUT-INTRO", replacesBriefing = true },
+
+	-- The intro (Phase 5.5) and the dawn outro (Phase 5.4), played after a Solved
+	-- verdict and before the Case Closed screen: two scenes that differ by one
+	-- caption; the second is for an investigator who has read Daniel's message
+	-- with Meera (STMT-SUS-001-HOME), see solution.solvedCutscenes.
 	cutscenes = {
+		Case001Intro,
 		dawnScene("CUT-DAWN", "She stays at the window."),
 		dawnScene("CUT-DAWN-HOME", "She turns it face up."),
 	},

@@ -47,6 +47,10 @@ return function(t)
 	end
 
 	local function sync(player: any)
+		-- Studio's BindableEvent listeners land on the next scheduler turn;
+		-- settle them before asking the synchronous reasoning evaluator to read
+		-- the newly unlocked statement.
+		task.wait()
 		ReasoningService.evaluate(player)
 		ObjectiveService.recordFact(player, "Contradiction", "sync")
 	end

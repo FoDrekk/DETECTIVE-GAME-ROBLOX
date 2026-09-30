@@ -65,7 +65,9 @@ Config.Environment = {
 			Reception = { brightness = 1.1, range = 18, color = Color3.fromRGB(255, 226, 190), shadows = true },
 			Lobby = { brightness = 0.7, range = 16, color = Color3.fromRGB(255, 226, 190) },
 			OpenPlan = { brightness = 0.7, range = 20, color = Color3.fromRGB(255, 240, 222), shadows = true },
-			Studio = { brightness = 0.6, range = 18, color = Color3.fromRGB(226, 236, 255) },
+			Studio = { brightness = 0.85, range = 22, color = Color3.fromRGB(226, 236, 255) },
+			-- Night lights: a dim bank left on so a big floor isn't black.
+			NightLight = { brightness = 0.32, range = 16, color = Color3.fromRGB(236, 232, 226) },
 			Corridor = { brightness = 0.45, range = 15, color = Color3.fromRGB(230, 232, 255) },
 			WestHall = { brightness = 0.5, range = 14, color = Color3.fromRGB(255, 236, 214) },
 			Pantry = { brightness = 0.55, range = 12, color = Color3.fromRGB(255, 238, 210) },
@@ -136,6 +138,47 @@ Config.Audio = {
 	},
 	-- Ambience drops to this fraction behind dialogue and the closing screen.
 	DuckedAmbience = 0.35,
+	--[[
+		Phase 5.5: the sounds a scripted scene can ask for by name (Types.
+		CutsceneSoundCue). A scene names a cue and never an asset id, so a sound can
+		be swapped here without touching a shot. Every asset is from a Roblox
+		partner library (Pro Sound Effects, APM Music) or a free Creator Store
+		upload, and was checked to load.
+
+		`volume` is the cue's own level (a shot can override it). `loops` cues are
+		beds: they run until a shot stops asking for them. Levels are set against
+		each source's measured loudness, so the mix sits together: the quiet
+		sources (the lift, the dawn pad) are turned up, the loud ones down.
+	]]
+	Cutscene = {
+		-- Beds.
+		RainInterior = { id = "rbxassetid://9112858540", volume = 0.55, loops = true },
+		RainStreet = { id = "rbxassetid://9112856768", volume = 0.5, loops = true },
+		RoomTone = { id = "rbxassetid://9112777624", volume = 0.35, loops = true },
+		TrafficWet = { id = "rbxassetid://9112905322", volume = 0.5, loops = true },
+		Mamak = { id = "rbxassetid://9112875348", volume = 0.5, loops = true },
+		Wipers = { id = "rbxassetid://9112906346", volume = 0.35, loops = true },
+		-- The case's music: low keys, sparse. Enters over the city, gone in the lift.
+		Motif = { id = "rbxassetid://1836904259", volume = 0.5, loops = true },
+		-- The dawn pad under the outro.
+		DawnPad = { id = "rbxassetid://1838792473", volume = 1.2, loops = true },
+		-- One-shots.
+		PhoneBuzz = { id = "rbxassetid://121031853982816", volume = 1.0, loops = true },
+		Notification = { id = "rbxassetid://75568314388208", volume = 1.0 },
+		Thunder = { id = "rbxassetid://9120015808", volume = 0.5 },
+		Train = { id = "rbxassetid://9116330273", volume = 0.6 },
+		CarDoor = { id = "rbxassetid://9113022904", volume = 0.7 },
+		RadioStatic = { id = "rbxassetid://9119591638", volume = 0.5 },
+		BadgeBeep = { id = "rbxassetid://9113939212", volume = 0.8 },
+		-- The lift: one recording (about 11.5 s) of a car's doors closing (1 to 2 s in),
+		-- riding (2.5 to 8.5 s, a faint hum) and ringing at the floor and opening
+		-- (9 s on). A scene starts each part where it lies (`from`). The ride is far
+		-- longer than the hum, so it is laid end to end: two names for the same
+		-- recording, used in turn, so stopping one segment never cuts the next.
+		LiftHumA = { id = "rbxassetid://9114303418", volume = 6.0 },
+		LiftHumB = { id = "rbxassetid://9114303418", volume = 6.0 },
+		LiftBell = { id = "rbxassetid://9114303418", volume = 6.0 },
+	},
 }
 
 -- M6: suspect characters. Body packages are Roblox's free "Man" and "Woman"
@@ -199,6 +242,165 @@ Config.Cutscene = {
 	-- seconds, so a press meant for something else never throws a scene
 	-- away.
 	SkipConfirmWindow = 2.5,
+	--[[
+		Phase 5.5: the intro is skipped by HOLDING the primary input (E / X / the
+		touch button) or Space for this long, with a meter filling as it is held;
+		letting go cancels. A hold can't happen by accident. Escape is
+		Roblox-reserved and is deliberately not used.
+	]]
+	SkipHoldSeconds = 1,
+	-- Seconds the client waits, after asking to begin an investigation whose case
+	-- opens on a scene, for that scene to arrive before it treats the
+	-- investigation as begun without one (a server that refused to play it).
+	IntroWait = 4,
+	-- KeyCode enum names that skip an intro as well as the primary input. Space is
+	-- free during a scene: movement is locked while one plays.
+	SkipKeys = { "Space" },
+	--[[
+		Phase 5.5: where each set a scene can be framed in stands. The intro's sets
+		are built by the client (CutsceneSets) far from the office, only for as long
+		as the scene plays, so nothing is ever in shot during play. A shot's camera
+		points are relative to its set's origin; `world` sets are the office itself
+		(their points are world coordinates). `actions` lists what the set can be
+		told to do (Types.CutsceneAction.name): the server checks a scene against it
+		at boot, and CutsceneSets_Test checks each set really does them.
+	]]
+	Sets = {
+		Bedroom = { origin = Vector3.new(0, 0, 800), actions = { "PhoneRing", "PhoneStop", "HandComes", "PhoneFlip" } },
+		Street = { origin = Vector3.new(600, 0, 800), actions = { "TrainPasses", "TeaPulled", "SedanRolls", "SedanStops" } },
+		Car = { origin = Vector3.new(1200, 0, 800), actions = { "PhoneRing", "Answer", "WipersOn", "Notify" } },
+		Forecourt = { origin = Vector3.new(1800, 0, 800), actions = { "SedanArrives", "StepOut", "LightsOff" } },
+		Lobby = { origin = Vector3.new(2400, 0, 800), actions = { "ConstableNods", "TapCard", "ReaderAccepts" } },
+		City = { origin = Vector3.new(3000, 0, 800), actions = { "TrafficFlows" } },
+		LiftCar = { world = true, actions = { "DoorsClose", "Display", "DoorsOpen", "Shudder" } },
+		OfficeDawn = { world = true, actions = { "Brighten" } },
+	},
+	-- How a shot's `ease` moves the camera: the curve of progress over time.
+	Eases = { "InOut", "Out", "In", "Linear" },
+	--[[
+		Phase 5.5: named looks a shot can ask for (Types.CutsceneShot.lighting). A
+		preset lists only what it means to change; the rest keeps the world's value,
+		and the player's own lighting is put back when the scene ends, however it
+		ends. Presets, not per-shot numbers, so every shot in a place is lit the same
+		way. `Bloom`, `Grade` and `Vignette` belong to the camera, not the sky;
+		`Atmosphere` is the world's haze (and `Stars` its stars), which the office
+		keeps thick and blue and which a city in the rain wants thin and warm.
+	]]
+	LightingPresets = {
+		-- The cold open: a dark bedroom, the city orange through the rain.
+		Bedroom = {
+			ClockTime = 0.4,
+			Brightness = 0.1,
+			Ambient = Color3.fromRGB(14, 12, 14),
+			OutdoorAmbient = Color3.fromRGB(40, 30, 26),
+			ExposureCompensation = 0.28,
+			FogColor = Color3.fromRGB(96, 46, 30),
+			FogStart = 110,
+			FogEnd = 1000,
+			Atmosphere = { Density = 0.1, Offset = 0.1, Color = Color3.fromRGB(70, 46, 42), Decay = Color3.fromRGB(120, 70, 44), Glare = 0, Haze = 0.6 },
+			Stars = 0,
+			Bloom = { intensity = 0.36, size = 24, threshold = 1.05 },
+			Grade = { contrast = 0.11, saturation = -0.1, tint = Color3.fromRGB(246, 235, 224), brightness = 0 },
+			Vignette = 0.5,
+		},
+		-- Kota Arwana at night in the rain: sodium orange, wet, alive.
+		CityNight = {
+			ClockTime = 0.6,
+			Brightness = 0.35,
+			Ambient = Color3.fromRGB(26, 28, 40),
+			OutdoorAmbient = Color3.fromRGB(56, 48, 46),
+			ExposureCompensation = 0.4,
+			FogColor = Color3.fromRGB(46, 34, 34),
+			FogStart = 40,
+			FogEnd = 900,
+			Atmosphere = { Density = 0.2, Offset = 0.05, Color = Color3.fromRGB(80, 62, 60), Decay = Color3.fromRGB(150, 90, 60), Glare = 0, Haze = 1.0 },
+			Stars = 0,
+			Bloom = { intensity = 0.8, size = 28, threshold = 0.9 },
+			Grade = { contrast = 0.14, saturation = -0.06, tint = Color3.fromRGB(255, 236, 222), brightness = 0 },
+			Vignette = 0.35,
+		},
+		-- Inside the car, lit by the dashboard and the streetlights going past.
+		CarInterior = {
+			ClockTime = 0.6,
+			Brightness = 0.15,
+			Ambient = Color3.fromRGB(16, 20, 30),
+			OutdoorAmbient = Color3.fromRGB(46, 42, 44),
+			ExposureCompensation = 0.6,
+			FogColor = Color3.fromRGB(46, 34, 34),
+			FogStart = 40,
+			FogEnd = 900,
+			Atmosphere = { Density = 0.2, Offset = 0.05, Color = Color3.fromRGB(80, 62, 60), Decay = Color3.fromRGB(150, 90, 60), Glare = 0, Haze = 1.0 },
+			Stars = 0,
+			Bloom = { intensity = 0.7, size = 26, threshold = 0.9 },
+			Grade = { contrast = 0.14, saturation = -0.1, tint = Color3.fromRGB(230, 240, 255), brightness = 0 },
+			Vignette = 0.5,
+		},
+		-- The tower's forecourt, cold and wet.
+		Forecourt = {
+			ClockTime = 0.65,
+			Brightness = 0.3,
+			Ambient = Color3.fromRGB(28, 32, 46),
+			OutdoorAmbient = Color3.fromRGB(46, 52, 70),
+			ExposureCompensation = 0.4,
+			FogColor = Color3.fromRGB(30, 34, 46),
+			FogStart = 50,
+			FogEnd = 700,
+			Atmosphere = { Density = 0.22, Offset = 0.05, Color = Color3.fromRGB(60, 70, 96), Decay = Color3.fromRGB(70, 80, 120), Glare = 0, Haze = 1.0 },
+			Stars = 0,
+			Bloom = { intensity = 0.75, size = 26, threshold = 0.92 },
+			Grade = { contrast = 0.14, saturation = -0.12, tint = Color3.fromRGB(226, 236, 255), brightness = 0 },
+			Vignette = 0.4,
+		},
+		-- The tower lobby: marble and cold overhead light.
+		Lobby = {
+			ClockTime = 0.67,
+			Brightness = 0.25,
+			Ambient = Color3.fromRGB(44, 48, 58),
+			OutdoorAmbient = Color3.fromRGB(40, 44, 58),
+			ExposureCompensation = 0.35,
+			FogColor = Color3.fromRGB(30, 34, 46),
+			FogStart = 200,
+			FogEnd = 2000,
+			Atmosphere = { Density = 0, Haze = 0 },
+			Stars = 0,
+			Bloom = { intensity = 0.5, size = 24, threshold = 1.0 },
+			Grade = { contrast = 0.1, saturation = -0.16, tint = Color3.fromRGB(232, 240, 255), brightness = 0 },
+			Vignette = 0.3,
+		},
+		-- Dawn over Kota Arwana: the deadline the case is played against
+		-- ("forensics can't get there till six").
+		-- The city from the air: warm haze and a long view.
+		CityAerial = {
+			ClockTime = 0.5,
+			Brightness = 0.3,
+			Ambient = Color3.fromRGB(30, 30, 42),
+			OutdoorAmbient = Color3.fromRGB(64, 50, 48),
+			ExposureCompensation = 0.4,
+			FogColor = Color3.fromRGB(70, 44, 36),
+			FogStart = 260,
+			FogEnd = 2600,
+			Atmosphere = { Density = 0.26, Offset = 0.05, Color = Color3.fromRGB(96, 66, 58), Decay = Color3.fromRGB(190, 100, 60), Glare = 0, Haze = 1.4 },
+			Stars = 0,
+			Bloom = { intensity = 0.9, size = 30, threshold = 0.85 },
+			Grade = { contrast = 0.14, saturation = -0.04, tint = Color3.fromRGB(255, 236, 222), brightness = 0 },
+			Vignette = 0.35,
+		},
+		Dawn = {
+			ClockTime = 6.1,
+			Brightness = 0.9,
+			Ambient = Color3.fromRGB(58, 54, 58),
+			OutdoorAmbient = Color3.fromRGB(96, 86, 92),
+			ExposureCompensation = 0.25,
+			FogColor = Color3.fromRGB(120, 100, 100),
+			FogStart = 300,
+			FogEnd = 1400,
+			Atmosphere = { Density = 0.25, Offset = 0.05, Color = Color3.fromRGB(150, 120, 110), Decay = Color3.fromRGB(230, 140, 90), Glare = 0, Haze = 1.2 },
+			Stars = 0,
+			Bloom = { intensity = 0.7, size = 28, threshold = 1.05 },
+			Grade = { contrast = 0.06, saturation = -0.04, tint = Color3.fromRGB(255, 238, 226), brightness = 0 },
+			Vignette = 0.25,
+		},
+	},
 }
 
 Config.Presentation = {
@@ -273,6 +475,39 @@ Config.UI.Cutscene = {
 	SubtitleSizeMin = 15,
 	SubtitleSizeMax = 22,
 	SubtitleFade = 0.2,
+	-- Phase 5.5: seconds a bed the next shot doesn't ask for takes to fade out at a cut.
+	BedFade = 0.8,
+	-- Phase 5.5: how long the recordings a scene needs are waited for before it starts anyway.
+	PreloadWait = 2.5,
+	-- Phase 5.5: an intro's last frame eases into the player's own camera over this
+	-- many seconds, instead of cutting to it.
+	Handover = 0.9,
+	-- Phase 5.5: skipping an intro dips to black for this long first (its sets and
+	-- lighting are undone behind it).
+	SkipDip = 0.35,
+	-- Phase 5.5: the hold-to-skip hint appears this long after an intro starts, for
+	-- this many seconds.
+	IntroHintDelay = 1.5,
+	IntroHintSeconds = 6,
+	-- Phase 5.5: the title card over a shot (screen space, so it reads the same
+	-- on a phone and a monitor).
+	TitleCard = {
+		KickerSize = 14,
+		TitleSize = 46,
+		SubtitleSize = 16,
+		FadeIn = 0.9,
+		FadeOut = 0.9,
+		-- The card sits this far below centre (a fraction of the screen).
+		CentreOffset = 0.04,
+		MaxWidth = 760,
+	},
+	-- Phase 5.5: the hold-to-skip meter, in the bottom bar beside the hint.
+	SkipMeter = {
+		Width = 132,
+		Height = 3,
+		Margin = 24,
+		BottomGap = 34,
+	},
 }
 
 -- Conversation presentation (DialogueView).

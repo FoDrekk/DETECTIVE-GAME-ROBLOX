@@ -130,7 +130,7 @@ local nextMockUserId = 0
 
 return function(filter: string?, timeout: number?)
 	timeout = timeout or 5
-	local totals = { run = 0, passed = 0, failed = 0 }
+	local totals = { run = 0, passed = 0, failed = 0, failures = {} :: { string } }
 	local sessionStart = os.clock()
 
 	local cases = ServerStorage:FindFirstChild("UnitTest")
@@ -173,7 +173,9 @@ return function(filter: string?, timeout: number?)
 			if not okRequire or type(caseFn) ~= "function" then
 				totals.run += 1
 				totals.failed += 1
-				warn(string.format("[FAIL] %s | case did not return a function: %s", module.Name, tostring(caseFn)))
+				local message = string.format("[FAIL] %s | case did not return a function: %s", module.Name, tostring(caseFn))
+				table.insert(totals.failures, message)
+				warn(message)
 			else
 				local t: Context = { expect = expect, test = nil :: any, nextUserId = nextUserId }
 				t.test = function(name: string, fn: () -> ())
@@ -184,15 +186,19 @@ return function(filter: string?, timeout: number?)
 						print(string.format("[PASS] %s > %s (%.3fs)", module.Name, name, elapsed))
 					else
 						totals.failed += 1
-						warn(string.format("[%s] %s > %s (%.3fs) | %s",
-							string.upper(status), module.Name, name, elapsed, message))
+						local failure = string.format("[%s] %s > %s (%.3fs) | %s",
+							string.upper(status), module.Name, name, elapsed, message)
+						table.insert(totals.failures, failure)
+						warn(failure)
 					end
 				end
 				local okRun, runErr = pcall(caseFn, t)
 				if not okRun then
 					totals.run += 1
 					totals.failed += 1
-					warn(string.format("[FAIL] %s | error while building cases: %s", module.Name, tostring(runErr)))
+					local failure = string.format("[FAIL] %s | error while building cases: %s", module.Name, tostring(runErr))
+					table.insert(totals.failures, failure)
+					warn(failure)
 				end
 			end
 		end

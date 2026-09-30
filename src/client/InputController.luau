@@ -19,10 +19,17 @@ local InputController = {}
 type Action = InputGlyphs.Action
 
 local callbacks: { [Action]: (() -> ())? } = {}
+-- Phase 5.5: what happens when an action's input is let go (the intro's hold to skip).
+local releaseCallbacks: { [Action]: (() -> ())? } = {}
 local interactEnabled = false
 
 function InputController.onInteract(fn: () -> ())
 	callbacks.Interact = fn
+end
+
+-- The primary input going up again: a hold that was begun by `onInteract` ends.
+function InputController.onInteractReleased(fn: () -> ())
+	releaseCallbacks.Interact = fn
 end
 
 function InputController.onClose(fn: () -> ())
@@ -55,6 +62,15 @@ function InputController.invoke(action: Action)
 	end
 end
 
+-- Trigger an action's release as if its key were let go (used by a touch button
+-- that is held).
+function InputController.release(action: Action)
+	local fn = releaseCallbacks[action]
+	if fn then
+		fn()
+	end
+end
+
 local function bind(action: Action, sink: boolean)
 	ContextActionService:BindAction(`MysteryCase_{action}`, function(_, state)
 		if action == "Interact" and not interactEnabled then
@@ -62,6 +78,11 @@ local function bind(action: Action, sink: boolean)
 		end
 		if state == Enum.UserInputState.Begin then
 			local fn = callbacks[action]
+			if fn then
+				fn()
+			end
+		elseif state == Enum.UserInputState.End or state == Enum.UserInputState.Cancel then
+			local fn = releaseCallbacks[action]
 			if fn then
 				fn()
 			end

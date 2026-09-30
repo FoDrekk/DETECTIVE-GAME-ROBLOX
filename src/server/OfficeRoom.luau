@@ -172,8 +172,8 @@ end
 
 --[[
 	Builds a minimal, static, wall-panel-style prop for evidence that authors
-	`propPlacement` -- for evidence with no hand-placed counterpart in the
-	Studio-authored `assets/Office.rbxm`. Mirrors `SuspectSpawner.buildNpc`'s
+	`propPlacement` -- for evidence with no authored counterpart in the
+	plan-built office. Mirrors `SuspectSpawner.buildNpc`'s
 	npcPlacement-driven pattern exactly, kept here (not a new service) since
 	this is the module already responsible for runtime office setup. No
 	evidence id is hardcoded: any evidence with `propPlacement` gets a prop;
