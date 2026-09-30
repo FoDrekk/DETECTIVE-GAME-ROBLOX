@@ -40,6 +40,10 @@ the local `origin` refs, the Roblox Studio worktree place, and Phase 5.5.
   referenced sets, lighting presets, audio cues and named actions.
 - Studio Play verified the opening sequence and the hold-to-skip transition
   back into investigation. Client logs contained no intro errors.
+- A separate uninterrupted Play run completed the full 91.4-second intro
+  (`CUT-INTRO` ended with `reason=finished`). The client returned to its
+  `Custom` camera at the lift spawn, with the cutscene/title/briefing overlays
+  hidden and the investigation prompt/objective UI active.
 - Studio source sync reported **108 in sync, 0 different, 0 missing, 0 extra,
   0 failed** after the final source changes.
 - `node --check tools/headless/build.js` passed; the bundler emitted a 1.39 MB
@@ -70,7 +74,6 @@ the local `origin` refs, the Roblox Studio worktree place, and Phase 5.5.
 - Save `MysteryCaseRoblox.rbxl` from the worktree Studio session to persist the
   current Edit-mode bake. Runtime stale-bake recovery remains in place if the
   saved file is older.
-- Perform a final visual pass on target devices and verify the full intro
-  completion path as well as the already-tested skip path.
+- Perform a final visual pass on target devices.
 - Test gamepad input on physical hardware; current verification is by binding
   and in-Studio input simulation.
