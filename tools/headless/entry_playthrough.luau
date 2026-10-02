@@ -307,6 +307,24 @@ local function examine(target: Instance, label: string): boolean
 	pressInteract()
 	local answered = #Shim.remoteLog > before
 	check(answered, `examining {label} gets a response`)
+	-- The close-up looks at the object, not at the back of a wall.
+	Shim.advance(1)
+	if camera.CameraType == Enum.CameraType.Scriptable then
+		local part = partOf(target)
+		local params = RaycastParams.new()
+		params.FilterType = Enum.RaycastFilterType.Exclude
+		params.FilterDescendantsInstances = { character() }
+		params.RespectCanCollide = true
+		local from = camera.CFrame.Position
+		local hit = workspace:Raycast(from, part.Position - from, params)
+		local inside = hit and part.CFrame:PointToObjectSpace(hit.Position)
+		check(
+			not hit
+				or hit.Instance == part
+				or (math.abs(inside.X) <= part.Size.X / 2 + 0.6 and math.abs(inside.Y) <= part.Size.Y / 2 + 0.6 and math.abs(inside.Z) <= part.Size.Z / 2 + 0.6),
+			`{label}: nothing solid between the close-up and the object`
+		)
+	end
 	if EvidencePanel.isOpen() then
 		pressInteract() -- [E] Continue
 		check(not EvidencePanel.isOpen(), `{label}: the readout closes with E`)

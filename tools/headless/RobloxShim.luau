@@ -2882,12 +2882,24 @@ Methods.Debris = {
 	end,
 }
 
+-- As in Roblox: a nil hotkey (say, unpacking past the end of a key list) is an
+-- error, not a quietly shorter binding.
+local function checkHotkeys(...)
+	for i = 1, select("#", ...) do
+		if select(i, ...) == nil then
+			error("ContextActionService:BindAction called with an invalid hotkey (should be either Enum.KeyCode, Enum.UserInputType or string)", 3)
+		end
+	end
+end
+
 Methods.ContextActionService = {
 	BindAction = function(_, name, fn, createTouch, ...)
+		checkHotkeys(...)
 		Shim.boundActions = Shim.boundActions or {}
 		Shim.boundActions[name] = { fn = fn, keys = { ... } }
 	end,
 	BindActionAtPriority = function(_, name, fn, createTouch, priority, ...)
+		checkHotkeys(...)
 		Shim.boundActions = Shim.boundActions or {}
 		Shim.boundActions[name] = { fn = fn, keys = { ... } }
 	end,

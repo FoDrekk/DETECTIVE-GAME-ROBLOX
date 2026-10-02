@@ -187,6 +187,41 @@ function CameraController.examine(part: BasePart)
 	end
 
 	local eye = focus - toward * distance + side * (distance * 0.18) + Vector3.new(0, size.Y * 0.25, 0)
+
+	-- Keep the shot in the room: a big object (a shelving unit) frames from far
+	-- enough back to end up behind a wall, or behind the cabinet next to it.
+	-- Look out from where the ray leaves the object's own box (so its collider
+	-- and contents don't count) and come in to just short of the first solid
+	-- thing. With no room left for a shot, use the player's own eye line: they
+	-- are on the side of the object they could reach.
+	local offset = eye - focus
+	local dir = offset.Unit
+	local localFocus = part.CFrame:PointToObjectSpace(focus)
+	local localDir = part.CFrame:VectorToObjectSpace(dir)
+	local exit = math.huge
+	for _, axis in ipairs({ "X", "Y", "Z" }) do
+		local d = (localDir :: any)[axis]
+		if math.abs(d) > 1e-6 then
+			local half = (size :: any)[axis] / 2
+			exit = math.min(exit, ((if d > 0 then half else -half) - (localFocus :: any)[axis]) / d)
+		end
+	end
+	exit = math.max(exit, 0) + 0.05
+	if exit < offset.Magnitude then
+		local params = RaycastParams.new()
+		params.FilterType = Enum.RaycastFilterType.Exclude
+		params.FilterDescendantsInstances = if character then { part, character } else { part }
+		params.RespectCanCollide = true
+		local hit = workspace:Raycast(focus + dir * exit, dir * (offset.Magnitude - exit), params)
+		if hit then
+			local reach = (hit.Position - focus).Magnitude - 0.6
+			if reach >= exit + 1 then
+				eye = focus + dir * reach
+			elseif playerRoot and playerRoot:IsA("BasePart") then
+				eye = playerRoot.Position + Vector3.new(0, 2.2, 0)
+			end
+		end
+	end
 	frame(part, CFrame.lookAt(eye, focus))
 end
 
