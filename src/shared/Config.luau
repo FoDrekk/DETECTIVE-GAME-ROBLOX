@@ -9,7 +9,7 @@ local Config = {}
 
 Config.Game = {
 	AutoStartCase = "CASE-001",
-	-- Phase 3 (R2): the session is server-wide, so only one investigator per
+	-- The session is server-wide, so only one investigator per
 	-- server. Also set Max Players to 1 in Game Settings when publishing.
 	MaxInvestigators = 1,
 	FullServerMessage = "This case is a solo investigation, and someone is already on it. "
@@ -22,7 +22,7 @@ Config.Environment = {
 	-- Root objects removed at runtime so the authored environment is the only
 	-- ground. Names, not references, so this stays data-driven.
 	DefaultGroundNames = { "Baseplate", "SpawnLocation" },
-	-- Stale-bake detection (Phase 2P), made self-healing in the office
+	-- Stale-bake detection, made self-healing in the office
 	-- redesign. EnvironmentBake.bake() stamps this onto Workspace.Office once
 	-- it finishes (Edit mode only); every boot compares it against a baked
 	-- place's own stamp. Bump this by hand whenever a change to OfficePlan or
@@ -106,11 +106,10 @@ Config.Interaction = {
 	TimelineKey = "T",
 	-- Key to open/close the case file (unlocked statements/reasoning).
 	CaseFileKey = "C",
-	-- Key to open the accusation picker once every objective is complete
-	-- (Phase 2L introduced concluding; Phase 2N makes [Q] open the accusation
-	-- picker rather than conclude directly). Only does anything once the
-	-- server has told the client every objective is done; the server
-	-- re-validates eligibility and the chosen accusation regardless.
+	-- Key to open the accusation picker ([Q] opens it
+	-- rather than concluding directly). Only does anything once the server
+	-- has said accusing is open; the server re-validates eligibility and the
+	-- chosen accusation regardless.
 	ConcludeKey = "Q",
 	-- Gamepad equivalents (KeyCode enum names). A stays jump and confirms
 	-- the selected button in GUI navigation, so it is deliberately unused.
@@ -123,7 +122,7 @@ Config.Interaction = {
 	},
 }
 
--- M6: audio. Every asset is from a Roblox-licensed partner library
+-- Audio. Every asset is from a Roblox-licensed partner library
 -- (ProSoundEffects, APM Music) and was verified to load before being added.
 -- Volumes are per sound, before the ambience/effects group volumes.
 Config.Audio = {
@@ -149,7 +148,7 @@ Config.Audio = {
 	-- Ambience drops to this fraction behind dialogue and the closing screen.
 	DuckedAmbience = 0.35,
 	--[[
-		Phase 5.5: the sounds a scripted scene can ask for by name (Types.
+		The sounds a scripted scene can ask for by name (Types.
 		CutsceneSoundCue). A scene names a cue and never an asset id, so a sound can
 		be swapped here without touching a shot. Every asset is from a Roblox
 		partner library (Pro Sound Effects, APM Music) or a free Creator Store
@@ -192,7 +191,7 @@ Config.Audio = {
 	},
 }
 
--- M6: suspect characters. Body packages are Roblox's free "Man" and "Woman"
+-- Suspect characters. Body packages are Roblox's free "Man" and "Woman"
 -- bundles; every id was checked with MarketplaceService:GetProductInfo
 -- (creator Roblox, correct asset type) before being added.
 Config.Characters = {
@@ -222,7 +221,7 @@ Config.Characters = {
 
 Config.Camera = {
 	ExamineBlendTime = 0.6,
-	-- M6: conversation shot, relative to the suspect's face (studs).
+	-- Conversation shot, relative to the suspect's face (studs).
 	Conversation = {
 		Distance = 4.2,
 		SideOffset = 1.1,
@@ -231,13 +230,13 @@ Config.Camera = {
 	},
 }
 
--- M9: connections the investigator makes.
+-- Connections the investigator makes.
 Config.Reasoning = {
 	-- Seconds before another pairing or answer is taken after a miss.
 	MissCooldown = 2,
 }
 
--- Phase 5.1: scripted scenes (CutsceneService / CutsceneView).
+-- Scripted scenes (CutsceneService / CutsceneView).
 Config.Cutscene = {
 	-- The server ends a scene itself this many seconds after its last shot
 	-- if the client never reports reaching the end, so the story can never
@@ -252,7 +251,7 @@ Config.Cutscene = {
 	-- away.
 	SkipConfirmWindow = 2.5,
 	--[[
-		Phase 5.5: the intro is skipped by HOLDING the primary input (E / X / the
+		The intro is skipped by HOLDING the primary input (E / X / the
 		touch button) or Space for this long, with a meter filling as it is held;
 		letting go cancels. A hold can't happen by accident. Escape is
 		Roblox-reserved and is deliberately not used.
@@ -266,7 +265,7 @@ Config.Cutscene = {
 	-- free during a scene: movement is locked while one plays.
 	SkipKeys = { "Space" },
 	--[[
-		Phase 5.5: where each set a scene can be framed in stands. The intro's sets
+		Where each set a scene can be framed in stands. The intro's sets
 		are built by the client (CutsceneSets) far from the office, only for as long
 		as the scene plays, so nothing is ever in shot during play. A shot's camera
 		points are relative to its set's origin; `world` sets are the office itself
@@ -287,7 +286,7 @@ Config.Cutscene = {
 	-- How a shot's `ease` moves the camera: the curve of progress over time.
 	Eases = { "InOut", "Out", "In", "Linear" },
 	--[[
-		Phase 5.5: named looks a shot can ask for (Types.CutsceneShot.lighting). A
+		Named looks a shot can ask for (Types.CutsceneShot.lighting). A
 		preset lists only what it means to change; the rest keeps the world's value,
 		and the player's own lighting is put back when the scene ends, however it
 		ends. Presets, not per-shot numbers, so every shot in a place is lit the same
@@ -430,7 +429,7 @@ Config.Cutscene = {
 	},
 }
 
--- M6: the title screen, and the camera drift behind it (world coordinates of
+-- The title screen, and the camera drift behind it (world coordinates of
 -- the office; the shot ping-pongs between From and To).
 Config.Presentation = {
 	Title = {
@@ -447,7 +446,7 @@ Config.Presentation = {
 		To = { Position = Vector3.new(0.5, 5.6, -8), LookAt = Vector3.new(0, 5.2, -26) },
 		Duration = 26,
 	},
-	-- M8: a case briefing that opens on the scene (the briefing screen, kept for
+	-- A case briefing that opens on the scene (the briefing screen, kept for
 	-- cases without an intro): from the door corner of Daniel's office across the
 	-- tape outline to his desk (lamp still on, the second cup, the visitor's
 	-- chair pushed back) and the taped door.
@@ -472,7 +471,7 @@ Config.UI.Theme = {
 	FontBold = Enum.Font.GothamBold,
 }
 
--- M8: case briefing presentation (CaseBriefingView).
+-- Case briefing presentation (CaseBriefingView).
 Config.UI.Briefing = {
 	-- Fraction of the screen height each letterbox bar covers.
 	Letterbox = 0.07,
@@ -491,7 +490,7 @@ Config.UI.Briefing = {
 	Stagger = 0.18,
 }
 
--- Phase 5.1: scripted scene presentation (CutsceneView).
+-- Scripted scene presentation (CutsceneView).
 Config.UI.Cutscene = {
 	-- Fraction of the screen height each letterbox bar covers.
 	Letterbox = 0.1,
@@ -504,21 +503,21 @@ Config.UI.Cutscene = {
 	SubtitleSizeMin = 15,
 	SubtitleSizeMax = 22,
 	SubtitleFade = 0.2,
-	-- Phase 5.5: seconds a bed the next shot doesn't ask for takes to fade out at a cut.
+	-- Seconds a bed the next shot doesn't ask for takes to fade out at a cut.
 	BedFade = 0.8,
-	-- Phase 5.5: how long the recordings a scene needs are waited for before it starts anyway.
+	-- How long the recordings a scene needs are waited for before it starts anyway.
 	PreloadWait = 2.5,
-	-- Phase 5.5: an intro's last frame eases into the player's own camera over this
+	-- An intro's last frame eases into the player's own camera over this
 	-- many seconds, instead of cutting to it.
 	Handover = 0.9,
-	-- Phase 5.5: skipping an intro dips to black for this long first (its sets and
+	-- Skipping an intro dips to black for this long first (its sets and
 	-- lighting are undone behind it).
 	SkipDip = 0.35,
-	-- Phase 5.5: the hold-to-skip hint appears this long after an intro starts, for
+	-- The hold-to-skip hint appears this long after an intro starts, for
 	-- this many seconds.
 	IntroHintDelay = 1.5,
 	IntroHintSeconds = 6,
-	-- Phase 5.5: the title card over a shot (screen space, so it reads the same
+	-- The title card over a shot (screen space, so it reads the same
 	-- on a phone and a monitor).
 	TitleCard = {
 		KickerSize = 14,
@@ -530,7 +529,7 @@ Config.UI.Cutscene = {
 		CentreOffset = 0.04,
 		MaxWidth = 760,
 	},
-	-- Phase 5.5: the hold-to-skip meter, in the bottom bar beside the hint.
+	-- The hold-to-skip meter, in the bottom bar beside the hint.
 	SkipMeter = {
 		Width = 132,
 		Height = 3,

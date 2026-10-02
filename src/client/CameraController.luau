@@ -2,8 +2,8 @@
 --[[
 	CameraController
 	Third-person exploration camera with clean blends for future cinematic
-	investigation shots. Phase 1: normal exploration plus an examine framing
-	that smoothly returns to explore when dismissed.
+	investigation shots. Normal exploration, plus an examine framing that
+	smoothly returns to explore when dismissed.
 ]]
 
 local Players = game:GetService("Players")
@@ -28,16 +28,16 @@ local focusPart: BasePart? = nil
 local savedMaxZoom: number? = nil
 local savedMinZoom: number? = nil
 local savedCameraType: Enum.CameraType? = nil
--- Phase 5.1: a scripted shot may set its own field of view; the player's is
+-- A scripted shot may set its own field of view; the player's is
 -- put back when the cinematic ends.
 local savedFieldOfView: number? = nil
--- Phase 5.4: set while a scripted shot has hidden the investigator's avatar.
+-- Set while a scripted shot has hidden the investigator's avatar.
 local shotHidesAvatar = false
 
 local BLEND_OUT_STEP = "MysteryCase_CameraBlendOut"
 local blendOutToken = 0
 
--- Phase 5.5: a shot that hands the look to the player. Yaw and pitch (radians)
+-- A shot that hands the look to the player. Yaw and pitch (radians)
 -- are offsets from the shot's own framing; `lookStick` is a gamepad's right
 -- stick; `mouseLocked` remembers that this module took the mouse.
 local lookYaw = 0
@@ -49,7 +49,7 @@ local LOOK_SENSITIVITY = 0.0032
 local LOOK_STICK_SPEED = 2.2
 local LOOK_PITCH_LIMIT = math.rad(62)
 
--- Phase 5.5: a brief shake (a lift starting or stopping): amplitude in studs,
+-- A brief shake (a lift starting or stopping): amplitude in studs,
 -- decaying to nothing at `shakeUntil`.
 local shakeAmplitude = 0
 local shakeStart = 0
@@ -229,7 +229,7 @@ function CameraController.examine(part: BasePart)
 	frame(part, CFrame.lookAt(eye, focus))
 end
 
--- M6: frame a person's face for a conversation. The shot is taken from the
+-- Frame a person's face for a conversation. The shot is taken from the
 -- player's side of the subject (they turn to face the player), slightly off
 -- axis like an over-the-shoulder shot. `part` is the subject's full-height
 -- hitbox; the face sits near its top.
@@ -257,11 +257,11 @@ function CameraController.faceSubject(part: BasePart)
 	frame(part, CFrame.lookAt(eye, face - Vector3.new(0, conv.AimDrop, 0)))
 end
 
--- M6: a slow, looping camera drift between two framings (the title
+-- A slow, looping camera drift between two framings (the title
 -- screen's backdrop). Ping-pongs with sine easing until stopCinematic.
 local cinematicToken = 0
 
--- M8: while a cinematic holds the camera, the character stays put: moving
+-- While a cinematic holds the camera, the character stays put: moving
 -- with the camera elsewhere would walk the player somewhere they can't see.
 -- The default PlayerModule may be absent (a custom character setup), in
 -- which case movement is simply left alone.
@@ -313,7 +313,7 @@ function CameraController.playCinematic(from: CFrame, to: CFrame, duration: numb
 end
 
 --[[
-	Phase 5.5: what a scripted shot can ask of the camera beyond a move.
+	What a scripted shot can ask of the camera beyond a move.
 	  * fieldOfViewTo -- the field of view the move ends on (a push-in or pull-out);
 	  * ease -- the move's curve: "InOut" (the default), "Out", "In" or "Linear";
 	  * handheld -- 0 (locked off) to 1 (a running camera): a slow drift and a fine
@@ -395,12 +395,12 @@ local function startLooking()
 end
 
 --[[
-	Phase 5.1: one scripted shot -- the camera moves once from `from` to
+	One scripted shot -- the camera moves once from `from` to
 	`to` over `duration` seconds (eased in and out) and holds there, rather
 	than drifting back and forth like playCinematic. `to == from` is a still
 	shot. Consecutive shots chain: each call replaces the last, and
 	stopCinematic hands the camera (and its field of view) back.
-	`options` (Phase 5.5) adds a field-of-view move, another ease, a hand-held
+	`options` adds a field-of-view move, another ease, a hand-held
 	sway, and turning the camera over to the player.
 ]]
 function CameraController.playShot(from: CFrame, to: CFrame, duration: number, fieldOfView: number?, options: ShotOptions?)
@@ -423,7 +423,7 @@ function CameraController.playShot(from: CFrame, to: CFrame, duration: number, f
 	cam.FieldOfView = startFov
 	cam.CameraType = Enum.CameraType.Scriptable
 	cam.CFrame = from
-	-- Phase 5.4: the investigator is behind the camera, not in the shot: a
+	-- The investigator is behind the camera, not in the shot: a
 	-- scene's cameras are placed in the office wherever they happen to be
 	-- standing. Shown again when the scene hands the camera back.
 	shotHidesAvatar = true
@@ -491,18 +491,12 @@ function CameraController.playShot(from: CFrame, to: CFrame, duration: number, f
 	end)
 end
 
--- Phase 5.5: shake the current shot for `seconds` (a lift shuddering as it
+-- Shake the current shot for `seconds` (a lift shuddering as it
 -- starts). Amplitude is in studs and dies away over the shake.
 function CameraController.shake(amplitude: number, seconds: number)
 	shakeAmplitude = amplitude
 	shakeStart = os.clock()
 	shakeUntil = shakeStart + seconds
-end
-
--- Phase 5.5: the look the player has turned the camera to (yaw, pitch offsets in
--- radians), for a set that reacts to where they look (a mirror).
-function CameraController.getLook(): (number, number)
-	return lookYaw, lookPitch
 end
 
 --[[
@@ -586,10 +580,6 @@ end
 
 function CameraController.stopExamining()
 	setExplore()
-end
-
-function CameraController.getMode(): string
-	return mode
 end
 
 function CameraController.start()

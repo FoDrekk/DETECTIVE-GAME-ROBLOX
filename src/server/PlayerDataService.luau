@@ -1,7 +1,7 @@
 --!strict
 --[[
 	PlayerDataService
-	Authoritative, in-memory player data. No persistence/auth by design (Phase 1).
+	Authoritative, in-memory player data. No persistence/auth by design.
 
 	Provides a clean PlayerData structure and lifecycle events.
 ]]

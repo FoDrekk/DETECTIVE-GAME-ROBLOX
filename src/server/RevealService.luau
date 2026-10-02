@@ -1,6 +1,6 @@
 --!strict
 --[[
-	RevealService (Phase 5.1)
+	RevealService
 	Evidence props that appear when the story says so.
 
 	An evidence item whose `propPlacement` authors `revealWhen` has its prop

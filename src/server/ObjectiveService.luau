@@ -12,8 +12,8 @@
 	  * evidence discovered    (EvidenceService, via InteractionService)
 	  * interaction performed  (InteractionService)
 	  * a reasoning fact unlocked (ReasoningService, via StoryEvents
-	    "ContradictionUnlocked"/"DeductionUnlocked" -- Phase 2J)
-	  (Phase 5.1: evidence handed over in a conversation counts as evidence
+	    "ContradictionUnlocked"/"DeductionUnlocked")
+	  (evidence handed over in a conversation counts as evidence
 	  discovered, via recordEvidence.)
 
 	All three are server-authoritative. The client never supplies progress
@@ -72,7 +72,7 @@ end
 -- Does the observed interaction, together with the player's own current
 -- reasoning state, satisfy this requirement? `evidence`/`interaction`/
 -- `target` are matched against the single event that triggered this
--- evaluation (as before Phase 2J); `contradiction`/`deduction` are matched
+-- evaluation; `contradiction`/`deduction` are matched
 -- against the player's own persisted `unlockedContradictions`/
 -- `unlockedDeductions` state instead of the event itself. That distinction
 -- is deliberate: a contradiction/deduction can unlock before the objective
@@ -269,8 +269,8 @@ function evaluateObjectives(
 					StoryEvents.publish("ObjectiveCompleted", player, { objectiveId = objective.id })
 				end
 				-- Computed after completedObjectives is updated above, so a
-				-- just-completed final objective is correctly reflected here
-				-- (Phase 2K): true only once no objective remains active.
+				-- just-completed final objective is correctly reflected here:
+				-- true only once no objective remains active.
 				payload.allComplete = getActiveObjective(data) == nil
 				objectiveUpdatedEvent:Fire(player, payload, justCompleted)
 			end
@@ -316,7 +316,7 @@ function ObjectiveService.recordInteraction(
 end
 
 --[[
-	Phase 5.1: record evidence that was discovered without an interaction --
+	Record evidence that was discovered without an interaction --
 	handed over in a conversation (EvidenceService.grant). The counterpart of
 	the evaluation InteractionService triggers after an examine: requirements
 	keyed on this evidence advance, and an `interaction` gate is implied by
@@ -337,7 +337,7 @@ end
 export type FactKind = "Contradiction" | "Deduction" | "Timeline"
 
 --[[
-	Record a reasoning fact unlocking (Phase 2J) -- the ContradictionUnlocked/
+	Record a reasoning fact unlocking -- the ContradictionUnlocked/
 	DeductionUnlocked StoryEvents counterpart to recordInteraction. Narrowly
 	scoped to objective requirement evaluation: it validates the player and
 	fact kind, then re-runs the same generic evaluation `recordInteraction`
@@ -373,15 +373,6 @@ function ObjectiveService.getActiveObjectiveId(player: Player): string?
 	end
 	local objective = getActiveObjective(data)
 	return objective and objective.id
-end
-
--- Ordered objective definitions for a player's active case.
-function ObjectiveService.getObjectives(player: Player): { Types.ObjectiveDefinition }
-	local data = PlayerDataService.get(player)
-	if not data then
-		return {}
-	end
-	return caseObjectives(data.caseState.caseId)
 end
 
 function ObjectiveService.getProgress(player: Player, objectiveId: string): { [string]: boolean }

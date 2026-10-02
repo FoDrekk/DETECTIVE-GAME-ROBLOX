@@ -50,7 +50,6 @@ local function bindable(kind: string): BindableEvent
 	return event
 end
 
--- Subscribe to a story event kind.
 function StoryEvents.on(
 	kind: StoryEventKind,
 	callback: (player: Player, data: { [string]: any }) -> ()

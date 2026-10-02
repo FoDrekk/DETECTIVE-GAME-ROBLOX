@@ -1,6 +1,6 @@
 --!strict
 --[[
-	SetKit (Phase 5.5)
+	SetKit
 	What every scene set is built from: parts with Roblox's built-in materials
 	(no third-party models, no asset ids), self-lit signs, small lights, rain, and
 	the investigator's own avatar as a stand-in you can pose.
@@ -11,7 +11,6 @@
 	  * detail goes where the camera goes. A set is authored against its shots.
 ]]
 
-local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 
@@ -603,11 +602,6 @@ function SetKit.reflectFrame(planeX: number, cf: CFrame): CFrame
 	local my = Vector3.new(-y.X, y.Y, y.Z)
 	local mz = Vector3.new(z.X, -z.Y, -z.Z) -- the mirrored Z axis, negated
 	return CFrame.fromMatrix(Vector3.new(2 * planeX - p.X, p.Y, p.Z), mx, my, mz)
-end
-
--- Let go of a part after a while whatever else happens.
-function SetKit.discardAfter(instance: Instance, seconds: number)
-	Debris:AddItem(instance, seconds)
 end
 
 return SetKit

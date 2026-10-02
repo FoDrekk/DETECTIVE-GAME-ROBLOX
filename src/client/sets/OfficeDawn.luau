@@ -1,6 +1,6 @@
 --!strict
 --[[
-	OfficeDawn (Phase 5.5): a world set. The office at first light: the deadline
+	OfficeDawn: a world set. The office at first light: the deadline
 	the whole case is played against ("forensics can't get there till six")
 	arriving at the north windows.
 

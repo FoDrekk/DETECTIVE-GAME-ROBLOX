@@ -70,7 +70,7 @@ local cutsceneFinished = Signals.wait(Signals.Names.CutsceneFinished)
 
 local currentPhase: Types.GamePhase = "MainMenu"
 local lastBriefing: Types.CaseBriefing? = nil
--- Phase 5.5: the case opens on a scene in place of the briefing screen. Then
+-- The case opens on a scene in place of the briefing screen. Then
 -- Play (on the title screen) or Investigate again goes straight to the
 -- investigation, and the server starts the scene.
 local introReplacesBriefing = false
@@ -81,7 +81,7 @@ local beginRequested = false
 local introPending = false
 local applyPhase: (phase: Types.GamePhase) -> ()
 local lastCaseClosedSummary: Types.CaseClosedSummary? = nil
--- Whether the server says this player may accuse now (M9: that can be
+-- Whether the server says this player may accuse now (that can be
 -- before every objective is done). Purely a UX gate for offering the
 -- accusation -- the server re-validates the actual request regardless.
 local accusationOpen = false
@@ -107,7 +107,7 @@ local function closeOverlays()
 	end
 end
 
--- Phase 5.5: ask the server to begin the investigation. For a case whose intro
+-- Ask the server to begin the investigation. For a case whose intro
 -- replaces its briefing this is all Play does; the scene follows from the server.
 local function beginInvestigation()
 	if beginRequested then
@@ -142,7 +142,7 @@ local function showBriefingOrBegin()
 	end
 end
 
--- Phase 5.1: a scene takes the whole screen. Everything else steps aside
+-- A scene takes the whole screen. Everything else steps aside
 -- while it plays, and comes back the way the phase has it afterwards.
 local function beforeCutscene()
 	introPending = false
@@ -176,7 +176,7 @@ local function dismissEvidence()
 	end
 end
 
--- M6: remembered so a reasoning breakthrough (a new contradiction or
+-- Remembered so a reasoning breakthrough (a new contradiction or
 -- deduction, or the timeline being established) plays its cue exactly once.
 local reasoningFactCount = 0
 local timelineEstablished = false
@@ -184,7 +184,7 @@ local timelineEstablished = false
 function applyPhase(phase: Types.GamePhase)
 	currentPhase = phase
 	-- The E key is active during the briefing (to begin), the investigation,
-	-- and the closing screen (to investigate again, M4).
+	-- and the closing screen (to investigate again).
 	local interactEnabled = phase == "CaseBriefing" or phase == "Investigation" or phase == "CaseClosed"
 	local sceneUp = CutsceneView.isPlaying() or introPending
 
@@ -323,7 +323,7 @@ local function bootstrap()
 	-- begin briefing, or interact.
 	InputController.onInteract(function()
 		if CutsceneView.isPlaying() then
-			-- Phase 5.1: a scene on screen owns the primary input (skip,
+			-- A scene on screen owns the primary input (skip,
 			-- with a confirming second press).
 			CutsceneView.handlePrimary()
 		elseif TitleScreenView.isOpen() then
@@ -350,7 +350,7 @@ local function bootstrap()
 			InteractionController.requestInteract()
 		end
 	end)
-	-- Phase 5.5: letting go of the primary input ends a hold that hadn't finished.
+	-- Letting go of the primary input ends a hold that hadn't finished.
 	InputController.onInteractReleased(CutsceneView.handlePrimaryReleased)
 
 	-- Timeline and Case File are non-modal information overlays: they can be
@@ -382,8 +382,8 @@ local function bootstrap()
 		SoundController.play("Tick")
 	end)
 
-	-- Phase 2L/2N: player-initiated conclusion. [Q] only does anything once
-	-- the server has said accusing is open (M9: possibly before every
+	-- Player-initiated conclusion. [Q] only does anything once
+	-- the server has said accusing is open (possibly before every
 	-- objective is done); it opens the accusation, and the server
 	-- re-validates both eligibility and the case made regardless of what
 	-- this client believes.
@@ -411,14 +411,14 @@ local function bootstrap()
 		submitAccusation:FireServer(accusationId, motive, proof)
 	end)
 
-	-- M9: evidence shown in a conversation ("" backs out). Only the id is
+	-- Evidence shown in a conversation ("" backs out). Only the id is
 	-- sent; the server checks the player has found it.
 	DialogueView.onPresentSelected().Event:Connect(function(evidenceId: string)
 		SoundController.play("Tick")
 		requestDialoguePresent:FireServer(if evidenceId == "" then nil else evidenceId)
 	end)
 
-	-- M9: the case file. Two facts the player says conflict, or an answer
+	-- The case file. Two facts the player says conflict, or an answer
 	-- to an open question; the server judges both.
 	CaseFileView.onClaimRequested().Event:Connect(function(a, b)
 		SoundController.play("Tick")
@@ -436,7 +436,7 @@ local function bootstrap()
 		requestDialogueChoose:FireServer(choiceId)
 	end)
 
-	-- M5: the player's reconstructed timeline order. Only the ordered ids are
+	-- The player's reconstructed timeline order. Only the ordered ids are
 	-- sent; the server validates them and responds with a fresh TimelineUpdate
 	-- (established, and in canonical order if correct).
 	TimelineView.onOrderSubmitted().Event:Connect(function(orderedIds: { string })
@@ -468,7 +468,7 @@ local function bootstrap()
 	end)
 
 	evidenceDiscovered.OnClientEvent:Connect(function(payload: Types.EvidencePayload)
-		-- Phase 5.1: evidence handed over in a conversation. There is no
+		-- Evidence handed over in a conversation. There is no
 		-- object to frame and the conversation announces it (its own
 		-- notice); the readout stays in the case file.
 		if payload.granted then
@@ -494,7 +494,7 @@ local function bootstrap()
 	end)
 
 	timelineUpdated.OnClientEvent:Connect(function(payload: Types.TimelinePayload)
-		-- M5's reconstruction confirmed: the same "it clicks" cue as reasoning.
+		-- The timeline reconstruction was confirmed: the same "it clicks" cue as reasoning.
 		if payload.established and not timelineEstablished then
 			SoundController.play("Reasoning")
 		end
@@ -502,7 +502,7 @@ local function bootstrap()
 		TimelineView.update(payload)
 	end)
 
-	-- Phase 2O: flavour observation for a non-evidence object. Purely
+	-- Flavour observation for a non-evidence object. Purely
 	-- presentational -- no camera framing, no scan pause, no discovery.
 	observationShown.OnClientEvent:Connect(function(payload: Types.ObservationPayload)
 		if currentPhase ~= "Investigation" then
@@ -556,7 +556,7 @@ local function bootstrap()
 
 	accusationUpdated.OnClientEvent:Connect(function(payload: Types.AccusationPayload)
 		accusationOpen = payload.open and payload.selected == nil
-		-- M9: accusing can open with the case still unfolding. Say so once,
+		-- Accusing can open with the case still unfolding. Say so once,
 		-- quietly; it is the player's call when.
 		if accusationOpen and not accusationAnnounced and currentPhase == "Investigation" then
 			accusationAnnounced = true
@@ -571,12 +571,12 @@ local function bootstrap()
 		AccusationView.update(payload)
 	end)
 
-	-- M9: what the server made of a pairing or an answer in the case file.
+	-- What the server made of a pairing or an answer in the case file.
 	reasoningFeedback.OnClientEvent:Connect(function(payload: Types.ReasoningFeedbackPayload)
 		CaseFileView.showFeedback(payload)
 	end)
 
-	-- Phase 5.1: a scene to play, or the server ending the current one.
+	-- A scene to play, or the server ending the current one.
 	cutsceneUpdated.OnClientEvent:Connect(function(payload: Types.CutscenePayload)
 		if payload.active then
 			beforeCutscene()
@@ -598,7 +598,7 @@ local function bootstrap()
 	caseClosedSummary.OnClientEvent:Connect(function(summary: Types.CaseClosedSummary)
 		lastCaseClosedSummary = summary
 		if summary.verdict then
-			-- M9: only a case that held gets the resolved sting.
+			-- Only a case that held gets the resolved sting.
 			SoundController.play(if summary.verdict.grade == "Solved" then "VerdictCorrect" else "VerdictWrong")
 		end
 		if currentPhase == "CaseClosed" then
@@ -606,7 +606,7 @@ local function bootstrap()
 		end
 	end)
 
-	-- M6: the title screen, once per session. Closing it reveals whatever the
+	-- The title screen, once per session. Closing it reveals whatever the
 	-- phase shows -- the briefing, on a first join.
 	TitleScreenView.onDismissed().Event:Connect(function()
 		showBriefingOrBegin()

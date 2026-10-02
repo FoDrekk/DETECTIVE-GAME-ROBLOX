@@ -1,6 +1,6 @@
 --!strict
 --[[
-	CitySkyline (M6)
+	CitySkyline
 	The night city outside the office's north windows, built at runtime like
 	the rest of the environment staging. It is placed from the plan's north
 	wall (OfficePlan), so it follows the windows wherever the plan puts them.

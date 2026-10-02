@@ -154,7 +154,7 @@ local function chronological(player: Player): { Types.TimelineEventProgress }
 	return progressList
 end
 
--- The discovered events in the case's authored challenge order (M5): the
+-- The discovered events in the case's authored challenge order: the
 -- explicit `timelineChallengeOrder` when authored, falling back to the
 -- `timeline` array order. Both are fixed by the case, never shuffled at
 -- random, so the puzzle is deterministic and reproducible.
@@ -217,17 +217,17 @@ function TimelineService.getDiscovered(player: Player): { Types.TimelineEventPro
 end
 
 -- The discovered events in canonical chronological order, regardless of
--- whether the player has reconstructed the puzzle yet (Phase 2P). For the
+-- whether the player has reconstructed the puzzle yet. For the
 -- in-progress timeline view, use `getDiscovered` -- the puzzle order is the
 -- point while it's unsolved. This is for the case's own closing record (the
--- accusation may open, M9, well before OBJ-006), which restates what
+-- accusation may open well before OBJ-006), which restates what
 -- actually happened, in the order it happened, never the shuffled one.
 function TimelineService.getChronological(player: Player): { Types.TimelineEventProgress }
 	return chronological(player)
 end
 
 --[[
-	Validate and record the player's reconstruction of the timeline (M5).
+	Validate and record the player's reconstruction of the timeline.
 
 	The player submits an ordered list of discovered event ids. It is accepted
 	only when it contains exactly the player's discovered events (no missing,

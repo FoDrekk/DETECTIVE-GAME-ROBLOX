@@ -40,7 +40,7 @@ local function getRoot(): BasePart?
 	return character:FindFirstChild("HumanoidRootPart") :: BasePart?
 end
 
--- M6: among interactables in range, prefer the one the player is facing.
+-- Among interactables in range, prefer the one the player is facing.
 -- Distance is scaled by how far off the camera's heading the object lies
 -- (x1 dead ahead, x1.9 to the side, x2.8 directly behind), so on a crowded
 -- desk the item you are looking at wins over one that is merely closer.

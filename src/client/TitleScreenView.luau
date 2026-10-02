@@ -1,6 +1,6 @@
 --!strict
 --[[
-	TitleScreenView (M6)
+	TitleScreenView
 	The first thing a player sees: the case title over a slow cinematic drift
 	through the dark office, with letterbox bars. Shown once per session, on
 	join -- a replay goes straight back to the briefing.
@@ -32,7 +32,7 @@ local caseLabel: TextLabel? = nil
 local titleLabel: TextLabel? = nil
 local open = false
 local dismissing = false
--- Phase 5.5: a case that opens on a scene takes over from the title screen. The
+-- A case that opens on a scene takes over from the title screen. The
 -- title's black is then held after it closes until the scene has taken the
 -- screen (`release`), so the world is never glimpsed between the two.
 local handoff = false
@@ -52,7 +52,7 @@ function TitleScreenView.isOpen(): boolean
 	return open
 end
 
--- Phase 5.5: whether the title hands over to a scene (true) or to the briefing.
+-- Whether the title hands over to a scene (true) or to the briefing.
 function TitleScreenView.setHandoff(enabled: boolean)
 	handoff = enabled
 end

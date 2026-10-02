@@ -2,7 +2,7 @@
 --[[
 	ObservationPanel
 	Lightweight, transient flavour-text readout shown when the player examines
-	a non-evidence object with an authored observation (Phase 2O).
+	a non-evidence object with an authored observation.
 
 	Deliberately distinct from EvidencePanel: no dark full panel, no
 	importance/category/timestamp chrome, no counter -- just a short

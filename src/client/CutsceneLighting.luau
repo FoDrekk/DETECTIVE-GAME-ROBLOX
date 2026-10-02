@@ -1,6 +1,6 @@
 --!strict
 --[[
-	CutsceneLighting (Phase 5.5)
+	CutsceneLighting
 	The look of a scripted scene: the sky and ambient light, a colour grade, bloom,
 	a vignette and depth of field. Client-side only -- nothing here is ever seen by
 	another player or saved anywhere.

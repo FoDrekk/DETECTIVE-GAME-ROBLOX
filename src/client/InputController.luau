@@ -19,7 +19,7 @@ local InputController = {}
 type Action = InputGlyphs.Action
 
 local callbacks: { [Action]: (() -> ())? } = {}
--- Phase 5.5: what happens when an action's input is let go (the intro's hold to skip).
+-- What happens when an action's input is let go (the intro's hold to skip).
 local releaseCallbacks: { [Action]: (() -> ())? } = {}
 local interactEnabled = false
 

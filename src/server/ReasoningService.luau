@@ -3,7 +3,7 @@
 	ReasoningService
 	Authoritative evaluation of investigation reasoning: contradictions and
 	deductions derived from already-discovered evidence and already-unlocked
-	statements (Phase 2H).
+	statements.
 
 	This service does not discover evidence or unlock statements itself --
 	EvidenceService and ConversationService own those, and already publish
@@ -22,7 +22,7 @@
 	discovered or a statement unlocked) -- never on a timer, never per frame,
 	never a full-case scan on every tick.
 
-	M9 -- the investigator draws the conclusions. A contradiction authored
+	The investigator draws the conclusions. A contradiction authored
 	with `claim` never unlocks by itself: the player pairs the two facts in
 	the case file (claimContradiction), or shows the evidence to the person
 	who said the other thing (ConversationService.onPresented tells us which
@@ -58,13 +58,13 @@ function ReasoningService.onUpdated(): BindableEvent
 	return reasoningUpdatedEvent
 end
 
--- M9: fired (player, Types.ReasoningFeedbackPayload) after every claim or
+-- Fired (player, Types.ReasoningFeedbackPayload) after every claim or
 -- answer, so the case file can say how it went.
 function ReasoningService.onFeedback(): BindableEvent
 	return feedbackEvent
 end
 
--- M9: when each player may next try a connection after a miss (os.clock
+-- When each player may next try a connection after a miss (os.clock
 -- seconds). Not case state: a replay or a rejoin starts fresh.
 local lockedUntil: { [Player]: number } = {}
 
@@ -207,7 +207,7 @@ function ReasoningService.getPayload(player: Player): Types.ReasoningPayload
 		end
 	end
 
-	-- M9: the evidence this player can pair against a statement.
+	-- The evidence this player can pair against a statement.
 	for _, evidence in ipairs(caseDef.evidence) do
 		local discovered = data.caseState.discovered[evidence.id]
 		if discovered then
@@ -219,7 +219,7 @@ function ReasoningService.getPayload(player: Player): Types.ReasoningPayload
 		end
 	end
 
-	-- M9: questions whose facts are all known and that are still open.
+	-- Questions whose facts are all known and that are still open.
 	for _, deduction in ipairs(caseDef.deductions) do
 		local question = deduction.question
 		if question and not data.caseState.unlockedDeductions[deduction.id] then
@@ -248,7 +248,7 @@ function ReasoningService.getPayload(player: Player): Types.ReasoningPayload
 		end
 	end
 
-	-- Phase 2O: cross-reference section for discovered evidence that authors
+	-- Cross-reference section for discovered evidence that authors
 	-- relatedEvidenceIds, listing only already-discovered related names
 	-- (spoiler-safe: an undiscovered related item never appears).
 	for _, evidence in ipairs(caseDef.evidence) do
@@ -331,7 +331,7 @@ function ReasoningService.evaluate(player: Player)
 end
 
 --------------------------------------------------------------------------
--- M9: connections the investigator makes
+-- Connections the investigator makes
 --------------------------------------------------------------------------
 
 local function sameFact(a: Types.FactReference, b: Types.FactReference): boolean

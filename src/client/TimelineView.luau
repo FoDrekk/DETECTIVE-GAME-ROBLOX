@@ -3,7 +3,7 @@
 	TimelineView
 	Case timeline overlay. Shows only the events the player has discovered.
 
-	M5: the timeline is a mechanic, not decoration. Until the player has
+	The timeline is a mechanic, not decoration. Until the player has
 	reconstructed it, events arrive in the case's authored (non-chronological)
 	order and the view offers move-up/move-down controls plus a "Confirm
 	sequence" action. The client submits an ordered list of event ids and

@@ -3,7 +3,7 @@
 	Logger
 	Lightweight, severity-based runtime logging shared by server and client.
 
-	Design constraints (Phase 2E):
+	Design constraints:
 	  * No noisy per-frame logging.
 	  * No giant framework.
 	  * Fatal bootstrap/configuration failures must still fail loudly.

@@ -1,10 +1,10 @@
 --!strict
 --[[
 	AccusationView
-	The player's formal accusation (Phase 2N; M9: making a case).
+	The player's formal accusation.
 
-	The player names a suspect and, when the case asks for it (M9,
-	`requiresCase`), why they did it (one of the deductions the player has
+	The player names a suspect and, when the case asks for it
+	(`requiresCase`), why they did it (one of the deductions the player has
 	established) and what proves it (one of the contradictions the player has
 	established). ACCUSE only enables once every part is chosen, and nothing
 	on screen says which motive or proof fits which suspect.

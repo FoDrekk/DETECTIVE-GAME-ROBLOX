@@ -27,7 +27,6 @@ function EvidenceService.onDiscovered(): BindableEvent
 	return evidenceDiscoveredEvent
 end
 
--- Returns true if the player has already discovered this evidence id.
 function EvidenceService.isDiscovered(player: Player, evidenceId: string): boolean
 	local data = PlayerDataService.get(player)
 	if not data then
@@ -94,7 +93,7 @@ local function discoverEvidence(player: Player, evidenceId: string, granted: boo
 	-- InteractionService pipeline once this returns.
 	local revealedEvent = TimelineService.revealForEvidence(player, definition)
 
-	-- Phase 2O: display names of this evidence's authored related items that
+	-- Display names of this evidence's authored related items that
 	-- the player has ALREADY discovered. Undiscovered related evidence is
 	-- never included, so the cross-reference can't leak a hidden clue.
 	local related: { string } = {}
@@ -107,7 +106,7 @@ local function discoverEvidence(player: Player, evidenceId: string, granted: boo
 		end
 	end
 
-	-- Phase 5.4: the clues this one hands over with it. Named on the readout
+	-- The clues this one hands over with it. Named on the readout
 	-- (only the ones newly added), then granted once the readout is sent.
 	local handedOver: { string } = {}
 	local alsoAdded: { string } = {}
@@ -158,7 +157,7 @@ function EvidenceService.discover(player: Player, evidenceId: string): (boolean,
 end
 
 --[[
-	Phase 5.1: evidence handed over in a conversation (a dialogue node's
+	Evidence handed over in a conversation (a dialogue node's
 	`grantsEvidence`), rather than found by examining an object. The same
 	discovery -- timeline reveal, StoryEvent, reasoning -- plus the objective
 	evaluation an examine gets from InteractionService afterwards, since no

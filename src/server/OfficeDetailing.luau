@@ -1,6 +1,6 @@
 --!strict
 --[[
-	OfficeDetailing (Phase 2L-A, rebuilt for the redesigned floor)
+	OfficeDetailing
 	The crime scene, and the investigator's arrival: crossed tape across the
 	door of Daniel's office, the tape outline on the floor beside his desk with
 	its numbered marker, the three numbered evidence cards on the desk, and the
@@ -93,7 +93,7 @@ end
 -- The tape outline and its marker
 --------------------------------------------------------------------------
 
--- Phase 5.2: a tape outline on the floor of Daniel's office (patrol tape,
+-- A tape outline on the floor of Daniel's office (patrol tape,
 -- not chalk: tape is what a Kota Arwana patrol carries), on the open floor
 -- beside the desk, its head toward the credenza under the window where it
 -- struck. Thin strips tracing a silhouette (one arm flung up, one down, as
@@ -223,8 +223,8 @@ function OfficeDetailing.patchTapeOutline(): boolean
 	return true
 end
 
--- Small numbered evidence cards on the desk, in front of the things they mark
--- (M3): tent cards standing on the desk, facing the doorway. The number
+-- Small numbered evidence cards on the desk, in front of the things they mark:
+-- tent cards standing on the desk, facing the doorway. The number
 -- carries no meaning of its own, and the item behind each is already the real,
 -- independently-tagged Interactable.
 local function buildEvidenceMarkers(folder: Instance)

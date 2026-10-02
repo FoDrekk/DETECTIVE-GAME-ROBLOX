@@ -1,6 +1,6 @@
 --!strict
 --[[
-	SoundController (M6, Phase 5.5)
+	SoundController
 	Client-side audio: two looping ambience layers (rain, a low drone) and
 	named one-shot cues, all data-driven from Config.Audio. Presentation only
 	-- it reacts to what the bootstrap tells it and decides nothing about the
@@ -9,7 +9,7 @@
 	Ambience ducks (fades down) behind dialogue and the closing screen so
 	voices and the verdict sit on top of it.
 
-	Phase 5.5: the sound of a scripted scene. A scene asks for cues by name
+	The sound of a scripted scene. A scene asks for cues by name
 	(Config.Audio.Cutscene) at moments of its own shots, and never carries an
 	asset id. There are two kinds:
 	  * a BED (the cue's config says `loops`): rain, traffic, the music. It plays
@@ -51,7 +51,7 @@ local ambienceGroup: SoundGroup? = nil
 local sceneGroup: SoundGroup? = nil
 local cues: { [string]: Sound } = {}
 local ducked = false
--- Phase 5.5: the ambience is silenced under an intro, not merely ducked.
+-- The ambience is silenced under an intro, not merely ducked.
 local ambienceSilenced = false
 
 -- The scene's own sounds. Templates hold each recording loaded (and are what a
@@ -104,7 +104,7 @@ function SoundController.setDucked(shouldDuck: boolean)
 end
 
 --[[
-	Phase 5.5: a scene begins. `silenceAmbience` takes the game's own rain and
+	A scene begins. `silenceAmbience` takes the game's own rain and
 	drone down to nothing for its length (an intro brings its own).
 ]]
 function SoundController.beginScene(silenceAmbience: boolean)
@@ -137,7 +137,7 @@ local function templateFor(name: string): Sound?
 end
 
 --[[
-	Phase 5.5: load the recordings a scene will use before it starts, so no cue
+	Load the recordings a scene will use before it starts, so no cue
 	arrives late. Yields until they are loaded (or the platform gives up on them).
 ]]
 function SoundController.preload(names: { string })
@@ -193,7 +193,7 @@ local function startAt(sound: Sound, from: number?, token: number)
 end
 
 --[[
-	Phase 5.5: play a scene's cue. A bed already going only has its level moved;
+	Play a scene's cue. A bed already going only has its level moved;
 	otherwise the cue starts (`fade` seconds in, for a bed). Unknown cues do
 	nothing (the server checks names at boot; a client never trusts one).
 ]]
@@ -264,7 +264,7 @@ function SoundController.stopCue(name: string, fade: number?)
 end
 
 --[[
-	Phase 5.5: at the start of a shot, keep the beds it asks for and fade out the
+	At the start of a shot, keep the beds it asks for and fade out the
 	rest. `keep` is the set of cue names the new shot lists.
 ]]
 function SoundController.keepBeds(keep: { [string]: boolean }, fade: number?)
@@ -275,18 +275,8 @@ function SoundController.keepBeds(keep: { [string]: boolean }, fade: number?)
 	end
 end
 
--- The names of the beds playing now (for tests).
-function SoundController.playingBeds(): { string }
-	local names = {}
-	for name in pairs(beds) do
-		table.insert(names, name)
-	end
-	table.sort(names)
-	return names
-end
-
 --[[
-	Phase 5.5: the scene is over, however it ended. Every bed fades, any cue still
+	The scene is over, however it ended. Every bed fades, any cue still
 	sounding is let go, and the game's own ambience comes back.
 ]]
 function SoundController.endScene(fade: number?)

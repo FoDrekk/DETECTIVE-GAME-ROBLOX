@@ -1,15 +1,15 @@
 --!strict
 --[[
 	CaseClosedView
-	Cinematic closing overlay shown during the CaseClosed phase (Phase 2L).
+	Cinematic closing overlay shown during the CaseClosed phase.
 	Mirrors CaseBriefingView's visual pattern.
 
 	Purely presentational: renders the Types.CaseClosedSummary the server sends
-	once it accepts the player's accusation. M2: leads with the verdict --
+	once it accepts the player's accusation. Leads with the verdict --
 	whether the player named the culprit -- and what actually happened, then
 	the sequence of events they uncovered and their stats. A case without an
 	authored solution falls back to reporting whether the evidence supports
-	the accusation (Phase 2N).
+	the accusation.
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -74,7 +74,7 @@ local function setVisible(visible: boolean)
 end
 
 -- The sequence of events the player actually revealed, always in canonical
--- chronological order (Phase 2P: `GameStateService.getClosingSummary` uses
+-- chronological order (`GameStateService.getClosingSummary` uses
 -- `TimelineService.getChronological`, not the puzzle order, even when the
 -- accusation opened before the timeline was reconstructed). Never includes
 -- an undiscovered event.
@@ -96,7 +96,7 @@ local function applyHeadline(summary: Types.CaseClosedSummary)
 	local accusation = summary.accusation
 	local verdict = summary.verdict
 	local accusedName = if accusation then accusation.suspectName else "no one"
-	-- M9: the motive and proof the player named, when the case asked.
+	-- The motive and proof the player named, when the case asked.
 	local case = if accusation and #accusation.basedOn == 2
 		then `Why: {accusation.basedOn[1]}.  Proof: {accusation.basedOn[2]}.`
 		else nil
@@ -119,7 +119,7 @@ local function applyHeadline(summary: Types.CaseClosedSummary)
 			titleLabel.TextColor3 = Theme.TextPrimary
 			verdictLabel.Text = `You accused {accusedName}. The killer was {verdict.culpritName}.`
 		end
-		-- Phase 2P: for Unproven/Wrong, lead with why the case named didn't
+		-- For Unproven/Wrong, lead with why the case named didn't
 		-- hold (derived only from what was already established -- never the
 		-- true motive/proof), then whatever the case authors for after.
 		local epilogueParts = {}
@@ -159,16 +159,16 @@ function CaseClosedView.show(summary: Types.CaseClosedSummary)
 	end
 	applyHeadline(summary)
 	timelineLabel.Text = buildTimelineText(summary)
-	-- Phase 3 (R6): objectives are leads, not a score. Accusing opens halfway
+	-- Objectives are leads, not a score. Accusing opens halfway
 	-- through the chain, so a solved case often ends with some unfollowed.
-	-- Phase 3 (R7): separators are two spaces a side, not three, so the
+	-- Separators are two spaces a side, not three, so the
 	-- timeline credit still clears the "Investigate again" hint sharing
 	-- this row.
 	statsLabel.Text = `Evidence {summary.evidenceExamined}/{summary.evidenceTotal}`
 		.. `  ·  Leads followed {summary.objectivesCompleted}/{summary.objectivesTotal}`
 		.. `  ·  Contradictions {summary.contradictionsIdentified}`
 		.. `  ·  Missteps {summary.mistakes}`
-		-- Phase 3 (R7): a small reward for reconstructing the timeline, which
+		-- A small reward for reconstructing the timeline, which
 		-- never affects the verdict and is easy to skip -- shown only when
 		-- earned, never as a missed-it callout.
 		.. if summary.timelineReconstructed then `  ·  Timeline reconstructed` else ``
@@ -242,8 +242,8 @@ function CaseClosedView.start()
 	verdict.TextYAlignment = Enum.TextYAlignment.Top
 	verdictLabel = verdict
 
-	-- M9: what happened next, for this ending. Phase 2P: taller, since
-	-- Unproven/Wrong now leads with a shortfall sentence before it.
+	-- What happened next, for this ending. Taller, since
+	-- Unproven/Wrong leads with a shortfall sentence before it.
 	epilogueLabel = Components.text({
 		name = "Epilogue",
 		text = "",
@@ -259,7 +259,7 @@ function CaseClosedView.start()
 	epilogue.TextYAlignment = Enum.TextYAlignment.Top
 	epilogue.TextTransparency = 0.1
 
-	-- Phase 2P: shifted down 24px from the taller epilogue block above.
+	-- Shifted down 24px from the taller epilogue block above.
 	revealHeader = Components.text({
 		name = "RevealHeader",
 		text = "WHAT HAPPENED",
@@ -320,7 +320,7 @@ function CaseClosedView.start()
 		parent = root,
 	})
 
-	-- M4: the ending has a next step. On touch the primary touch button reads
+	-- The ending has a next step. On touch the primary touch button reads
 	-- "Investigate again".
 	local replayHint = Components.text({
 		name = "ReplayHint",

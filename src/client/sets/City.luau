@@ -1,6 +1,6 @@
 --!strict
 --[[
-	City (Phase 5.5): Kota Arwana from the air, at night, in the rain. The
+	City: Kota Arwana from the air, at night, in the rain. The
 	towers of Dataran Arwana on the west bank, the dark curve of the Sungai
 	Arwana, the old town's low roofs lit orange on the east bank, the avenues
 	strung with lamps and moving light, an elevated LRT line, and a red aviation

@@ -430,7 +430,7 @@ function PropKit.monitor(parent: Instance, at: CFrame, state: ("off" | "lock" | 
 	return finish(b)
 end
 
--- Phase 5.3: a low walnut credenza against a wall, `at` on the wall side of its
+-- A low walnut credenza against a wall, `at` on the wall side of its
 -- back, facing into the room. One front corner (the one at local +x) is
 -- chipped: raw wood showing through the veneer, where Daniel's head struck it.
 function PropKit.credenza(parent: Instance, at: CFrame, width: number?): Model
@@ -548,20 +548,6 @@ function PropKit.coffeeTable(parent: Instance, at: CFrame, width: number, depth:
 		end
 	end
 	collider(b, Vector3.new(width, 1.26, depth), 0, 0.63, 0)
-	return finish(b)
-end
-
--- A standing-height breakout table.
-function PropKit.highTable(parent: Instance, at: CFrame, width: number, depth: number): Model
-	local b = begin(parent, "HighTable", at)
-	local topY = 3.5
-	box(b, "Top", Vector3.new(width, 0.12, depth), 0, topY - 0.06, 0, P.Oak, M.Wood)
-	for _, x in ipairs({ -width / 2 + 0.4, width / 2 - 0.4 }) do
-		box(b, "Leg", Vector3.new(0.16, topY - 0.12, 0.16), x, (topY - 0.12) / 2, 0, P.Charcoal, M.Metal)
-		box(b, "Foot", Vector3.new(0.16, 0.08, depth - 0.3), x, 0.04, 0, P.Charcoal, M.Metal)
-	end
-	box(b, "Rail", Vector3.new(width - 0.8, 0.1, 0.1), 0, 0.9, 0, P.Charcoal, M.Metal)
-	collider(b, Vector3.new(width, topY, depth), 0, topY / 2, 0)
 	return finish(b)
 end
 
@@ -1150,27 +1136,6 @@ function PropKit.rug(parent: Instance, at: CFrame, width: number, depth: number,
 end
 
 --------------------------------------------------------------------------
--- Doors & lifts
---------------------------------------------------------------------------
-
--- Lift doors with a call panel. `at` on the wall surface, facing the room.
-function PropKit.liftDoors(parent: Instance, at: CFrame): (Model, BasePart)
-	local b = begin(parent, "Lift", at)
-	box(b, "Surround", Vector3.new(4.6, 8.4, 0.2), 0, 4.2, -0.1, P.SteelDark, M.Metal)
-	for _, side in ipairs({ -1, 1 }) do
-		local leaf = box(b, "Door", Vector3.new(1.95, 7.6, 0.1), side * 1.0, 3.8, -0.24, P.Steel, M.Metal)
-		leaf.Reflectance = 0.12
-	end
-	box(b, "Seam", Vector3.new(0.03, 7.6, 0.12), 0, 3.8, -0.25, P.Charcoal, M.Metal)
-	local display = box(b, "Display", Vector3.new(1.2, 0.4, 0.04), 0, 8.0, -0.22, P.Screen, M.SmoothPlastic)
-	label(display, Enum.NormalId.Front, "9  ▼", { color = Color3.fromRGB(255, 170, 90), font = Enum.Font.Code, lightInfluence = 0 })
-	local panel = box(b, "CallPanel", Vector3.new(0.45, 0.9, 0.06), 2.8, 3.6, -0.03, P.Steel, M.Metal)
-	local button = post(b, "Button", 0.04, 0.18, 2.8, 3.6, -0.08, Color3.fromRGB(255, 196, 120), M.Neon)
-	button.CFrame = b.at * CFrame.new(2.8, 3.6, -0.08) * rotY(90)
-	return finish(b), panel
-end
-
---------------------------------------------------------------------------
 -- Evidence looks (OfficeRoom tags the returned body as the interactable)
 --------------------------------------------------------------------------
 
@@ -1191,7 +1156,7 @@ local EVIDENCE_BUILDERS: { [string]: (b: Builder) -> BasePart } = {
 		return sheet
 	end,
 
-	-- Phase 5.3: the paramedics' tag, left on the floor by the numbered marker.
+	-- The paramedics' tag, left on the floor by the numbered marker.
 	AmbulanceTag = function(b)
 		local tag = box(b, "Tag", Vector3.new(0.62, 0.03, 0.86), 0, 0.015, 0, P.Paper, M.SmoothPlastic, rotY(18))
 		tag.CastShadow = false
@@ -1208,7 +1173,7 @@ local EVIDENCE_BUILDERS: { [string]: (b: Builder) -> BasePart } = {
 		return tag
 	end,
 
-	-- Phase 5.4: the desk phone's screen, woken. It lies over the phone's own
+	-- The desk phone's screen, woken. It lies over the phone's own
 	-- face (placed at its top), so the same phone lights up once it is open.
 	PhoneScreen = function(b)
 		local screen = box(b, "Screen", Vector3.new(0.58, 0.02, 1.16), 0, 0.01, 0, Color3.fromRGB(150, 188, 226), M.Neon)
@@ -1284,7 +1249,7 @@ local EVIDENCE_BUILDERS: { [string]: (b: Builder) -> BasePart } = {
 			pixelsPerStud = 200,
 			padding = 6,
 		})
-		-- Phase 5.3: the contractor's service sticker, a long-term seed that
+		-- The contractor's service sticker, a long-term seed that
 		-- is never required by the case.
 		local sticker = newPart(model, "Sticker", Vector3.new(0.62, 0.34, 0.01), b.at * CFrame.new(-0.85, 1.52, -0.03), Color3.fromRGB(226, 228, 222), M.SmoothPlastic)
 		sticker.CastShadow = false

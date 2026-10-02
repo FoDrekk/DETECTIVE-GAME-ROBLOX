@@ -5,7 +5,7 @@
 	the spoiler-safe Types.ReasoningPayload the server sends and reports what
 	the player tries back to the server, which judges it.
 
-	M9: this is where the player does the thinking.
+	This is where the player does the thinking.
 	  * OPEN QUESTIONS: a conclusion waiting on the player. Each question
 	    appears once its facts are known, with its options; the server says
 	    whether the answer holds.
@@ -364,7 +364,7 @@ function CaseFileView.update(payload: Types.ReasoningPayload)
 		y += 8
 	end
 
-	-- Phase 2O: discovered evidence cross-references. Only pairs where both
+	-- Discovered evidence cross-references. Only pairs where both
 	-- items are already discovered ever arrive in this payload.
 	if #payload.relatedEvidence > 0 then
 		y = addHeader(y, "EVIDENCE LINKS")

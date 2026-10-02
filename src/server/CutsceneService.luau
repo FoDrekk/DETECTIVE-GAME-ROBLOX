@@ -1,6 +1,6 @@
 --!strict
 --[[
-	CutsceneService (Phase 5.1)
+	CutsceneService
 	Server-authoritative scripted scenes: camera shots, subtitles and dips to
 	black, authored as data in the case (CaseDefinition.cutscenes).
 
@@ -27,7 +27,7 @@
 	"CutsceneFinished" StoryEvent, which is how whatever follows a scene
 	(the outro handing over to the closing summary) picks up.
 
-	Phase 5.5: a case can name its opening scene (CaseDefinition.intro).
+	A case can name its opening scene (CaseDefinition.intro).
 	GameStateService plays it when the investigation begins; `play` marks it
 	(CutscenePayload.isIntro) so the client skips it by holding, not by tapping
 	twice. It is an ordinary scene in every other way: server-timed, skippable,
@@ -122,7 +122,7 @@ function CutsceneService.getActiveId(player: Player): string?
 	return active and active.id
 end
 
--- Phase 5.5: the id of the scene this player's case opens with, if it has one.
+-- The id of the scene this player's case opens with, if it has one.
 function CutsceneService.getIntroId(player: Player): string?
 	local data = PlayerDataService.get(player)
 	local caseDef = data and CaseService.getCase(data.caseState.caseId)
@@ -215,7 +215,7 @@ function CutsceneService.play(player: Player, cutsceneId: string): (boolean, str
 end
 
 --[[
-	Phase 5.5: play the scene this player's case opens with (a replay starts it
+	Play the scene this player's case opens with (a replay starts it
 	at its `replayFrom` shot). Called by GameStateService once the investigation
 	has begun. A case without an intro returns (false, "no-intro").
 ]]
@@ -287,7 +287,7 @@ local function isNumber(value: any): boolean
 end
 
 --[[
-	Phase 5.5: what a shot may ask of the client's presentation. Every name is
+	What a shot may ask of the client's presentation. Every name is
 	checked against the tables the client reads (Config.Cutscene.Sets and
 	LightingPresets, Config.Audio.Cutscene), so a typo is a boot warning here
 	rather than a silent nothing on screen.
@@ -428,7 +428,7 @@ function CutsceneService.validate(caseDef: Types.CaseDefinition): { string }
 			table.insert(problems, `{label}: replayFrom '{cutscene.replayFrom}' is not one of its shots`)
 		end
 	end
-	-- Phase 5.5: the opening scene must be a real one, and one a returning player
+	-- The opening scene must be a real one, and one a returning player
 	-- can leave (an intro is skipped by holding).
 	local intro = caseDef.intro
 	if intro then
@@ -441,7 +441,7 @@ function CutsceneService.validate(caseDef: Types.CaseDefinition): { string }
 			end
 		end
 	end
-	-- Phase 5.4: a Solved close's scenes must be real ones.
+	-- A Solved close's scenes must be real ones.
 	local solution = caseDef.solution
 	for index, entry in ipairs(solution and solution.solvedCutscenes or {}) do
 		if not ids[entry.cutsceneId] then
