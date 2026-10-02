@@ -185,7 +185,7 @@ function CaseClosedView.start()
 
 	root = Components.frame({
 		name = "CaseClosed",
-		size = UDim2.fromOffset(620, 580),
+		size = UDim2.fromOffset(620, 600),
 		position = UDim2.fromScale(0.5, 0.5),
 		anchor = Vector2.new(0.5, 0.5),
 		color = Theme.Background,
@@ -196,7 +196,7 @@ function CaseClosedView.start()
 	})
 	root.Visible = false
 	Components.padding(root, 28)
-	Components.fitToViewport(root, Vector2.new(620, 580))
+	Components.fitToViewport(root, Vector2.new(620, 600))
 
 	local accent = Components.frame({
 		name = "Accent",
@@ -271,10 +271,11 @@ function CaseClosedView.start()
 		parent = root,
 	})
 
+	-- Seven lines: CASE-001's solution runs to that at 14 px, line height 1.3.
 	revealLabel = Components.text({
 		name = "Reveal",
 		text = "",
-		size = UDim2.new(1, 0, 0, 120),
+		size = UDim2.new(1, 0, 0, 132),
 		position = UDim2.fromOffset(0, 222),
 		textSize = 14,
 		color = Theme.TextSecondary,
@@ -288,7 +289,7 @@ function CaseClosedView.start()
 		name = "TimelineHeader",
 		text = "THE SEQUENCE OF EVENTS",
 		size = UDim2.new(1, 0, 0, 14),
-		position = UDim2.fromOffset(0, 354),
+		position = UDim2.fromOffset(0, 364),
 		font = Theme.FontBold,
 		textSize = 11,
 		color = Theme.Accent,
@@ -300,7 +301,7 @@ function CaseClosedView.start()
 		name = "Timeline",
 		text = "",
 		size = UDim2.new(1, 0, 0, 124),
-		position = UDim2.fromOffset(0, 374),
+		position = UDim2.fromOffset(0, 384),
 		textSize = 13,
 		color = Theme.TextPrimary,
 		parent = root,
