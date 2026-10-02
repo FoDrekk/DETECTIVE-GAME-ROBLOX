@@ -371,10 +371,10 @@ a proposal the owner reviews before implementation (OD-12).
 | 5.2 | Localisation and continuity fixes, same case structure (`CASE_001_V2_LOCALISATION_SHEET.md`) | **Done and synced (362 unit, 179 playthrough, 76 engine checks; Studio Play Mode verified).** Timing decision C applied (badge-out 10:28, lift 10:29). Briefing shot left for 5.5 (D4B) |
 | 5.3 | v2 content that doesn't need the phone: EV-008 to EV-010, three new statements, CONTRA-005, DEDUCT-005/006, the badge log printed on request, the accusation's new motive and proof (`CASE_001_V2_CONTENT_SHEET_5_3.md`) | **Built and tested, awaiting review (385 unit, 204 playthrough, 76 engine checks; Studio Play Mode verified).** Sheet and five decisions approved as recommended (1A to 5A). Place synced after the owner saves |
 | 5.4 | The payoff: the phone (per revised D-10) with EV-011/012, the 11:48 and 11:49 events, CONTRA-006 and the drawer-photo clue; the ending variants; the dawn outro (`CASE_001_V2_CONTENT_SHEET_5_4.md`) | **Built and tested, awaiting review.** Plan and content sheet approved. Both phone routes, the cold-Meera route, CONTRA-006, DEDUCT-007, the 11:48 and 11:49 events, the four endings and the dawn outro. Place synced after the owner saves |
-| 5.5 | CASE-001 cinematic intro and dawn outro, staged sets, camera, audio, lighting, captions, hold-to-skip, and spacious plan-driven office | **Implemented; full audit 2026-10-02 (`AUDIT_PHASE_5_5.md`).** 471/471 unit tests in Studio's `UnitTestRunner` and headless, 351 playthrough and 76 engine checks headless. Intro played through in Studio to `reason=finished` (169 s, 21 shots) with the lift handoff. Office builders at v10, baked and saved into the place (5.6 step 1) |
-| 5.6 | v2 release QA and presentation polish (proposal below) | Started: step 1 done (v10 bake saved); step 2 in progress (two bugs fixed; builder now v11, re-bake needed) |
+| 5.5 | CASE-001 cinematic intro and dawn outro, staged sets, camera, audio, lighting, captions, hold-to-skip, and spacious plan-driven office | **Implemented; full audit 2026-10-02 (`AUDIT_PHASE_5_5.md`).** 471/471 unit tests in Studio's `UnitTestRunner` and headless, 351 playthrough and 76 engine checks headless. Intro played through in Studio to `reason=finished` (169 s, 21 shots) with the lift handoff. Office builders at v12 (v10 baked and saved in 5.6 step 1; re-bake for v12 pending) |
+| 5.6 | v2 release QA and presentation polish (proposal below) | In progress: steps 1 and 2 done (manual playthrough: five runs, both phone routes, all four endings; nine bugs fixed). Re-bake at builder v12 pending |
 
-#### 5.6 proposal: release QA and presentation polish (step 1 done)
+#### 5.6 proposal: release QA and presentation polish (steps 1 and 2 done)
 
 What the 5.5 audit left open. Each item is small, and none changes the
 story, the evidence or the reasoning.
@@ -383,14 +383,16 @@ story, the evidence or the reasoning.
 1. ~~**Bake and save the place at builder v10.**~~ **Done 2026-10-02**
    (commit "Bake and save the place at builder v10"): Play adopts the bake
    with no stale-bake warning. See `AUDIT_PHASE_5_5.md`, "The saved place".
-2. **One full manual playthrough in Studio**, title to Case Closed, on the
-   v10 bake: every objective, both phone routes, all four endings, the dawn
-   outro, then "Investigate again" (the intro replays from the lift doors).
-   Reconfirm the restored whiteboard and lift certificate on screen.
+2. ~~**One full manual playthrough in Studio.**~~ **Done 2026-10-02**: five
+   runs, both phone routes, all four endings, both dawn outros, the replay
+   from the lift doors. Nine bugs found and fixed; see
+   `AUDIT_PHASE_5_5.md`, "Manual playthrough". They moved the builder to
+   v12: **bake and save once more** (fresh Studio session, Rojo connected,
+   `EnvironmentBake.bake(true)`, save).
 3. **A physical gamepad pass**: hold-to-skip, mouse-look in the lift (stick
    look is now frame-rate independent), the pickers and the Case File.
-4. **Low-end performance on the new scenery.** The skyline is now 921 parts
-   (90 towers, 795 lit windows), and the street and city sets are bigger.
+4. **Low-end performance on the new scenery.** The skyline is now 405 parts
+   (89 towers, 278 lit windows), and the street and city sets are bigger.
    Repeat R5's Galaxy A06 measurement in the open office and in the City
    and Street shots. If the office is over budget, merge the window grids
    into fewer parts per tower before cutting towers.

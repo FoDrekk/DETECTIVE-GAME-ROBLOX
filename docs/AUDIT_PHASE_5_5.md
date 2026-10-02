@@ -61,11 +61,12 @@ changed is what the shots show (details in `CASE_001_INTRO_SCREENPLAY.md` §10):
   were tall enough to block the view, the window panes used the Glass
   material (which all but hides what's behind it), and the skyline could
   stream out. Fixed: the backdrop is no longer kept, the skyline is rebuilt
-  in layers (921 parts, 90 towers, 795 lit windows) inside persistent
+  in layers (now 405 parts, 89 towers, 278 lit windows) inside persistent
   models, and the panes are plain transparent plastic.
 - **The night atmosphere** now lives in `Config.Environment.Night.Atmosphere`
   (thin, sodium-tinted) instead of being hard-coded in `OfficeRoom`.
-- `Config.Environment.BuilderVersion` is **10**.
+- `Config.Environment.BuilderVersion` is **12** (10 in the first pass; 11 and
+  12 from the playthrough's fixes).
 
 ### Review of the carried-over work
 
@@ -144,32 +145,75 @@ near towers), and Play adopts the bake ("adopting baked geometry", skyline
 921 parts) with no stale-bake warning. The main checkout's place file now
 holds this branch's scripts and bake; it was left as saved.
 
-## Manual playthrough (5.6 step 2, in progress)
+## Manual playthrough (5.6 step 2, done)
 
-Run 1, in Studio on the v10 bake, by real input (keys, mouse clicks on the
-dialogue choices, walking):
-- Title, then the intro: a tap doesn't skip; holding E does
-  (`reason=skipped`).
-- **Bug found and fixed: a skipped intro handed the camera back looking down
-  from above the lift ceiling.** Roblox's camera keeps the direction it is
-  handed, and a skip ends on whatever shot was playing (here the bedroom).
-  `CutsceneView` now points the camera from behind the player before handing
-  back a scene that was cut short (`CameraController.lookFromBehindPlayer`).
-  Re-checked in Studio; the headless playthrough checks it (and fails
-  without the fix).
-- **Bug found and fixed: the lift's floor buttons read 3-2-1 left to right**
-  (the carried-over control panel counted along +X, which is the viewer's
-  left). Now 1-2-3 along the bottom row, 9 top right. Builder version 11,
-  so the saved v10 bake is flagged stale until it is baked and saved again.
-- The certificate and the restored whiteboard checked on screen.
-- Sam's whole conversation; the badge log appears on the counter once he
-  has printed it; Daniel's office: phone, laptop, agenda, second cup and the
-  drawer photo found, objectives moving on as they should.
-- Minor: the evidence card overlaps the bottom of the objective panel.
+Five runs in Studio by real input: walking, E/C/T/Q, mouse clicks on
+dialogue choices, the Case File, the timeline and the accusation. Each
+server log line below was read from the console.
 
-Stopped there: Studio disconnected from the MCP mid-run. The rest of run 1
-and runs 2 to 5 (route B, the plain dawn outro, the wrong and the unproven
-endings) are still to do.
+| Run | Route | Ending | Outro |
+|---|---|---|---|
+| 1 | Full case; Meera opens the phone (route A) | Case solved, fullest epilogue (HOME and BREAK) | `CUT-DAWN-HOME`, finished |
+| 2 | Investigate again (intro from `LIFT-OPEN`, finished); the phone's code from the drawer photo (route B) | Case solved, fullest epilogue | `CUT-DAWN-HOME` |
+| 3 | No message read | Case solved, plain epilogue | `CUT-DAWN`, skipped with two presses |
+| 4 | Accuse Meera | The wrong person was charged | none |
+| 5 | Accuse Victor with "Meera's Missed Call" as proof | The case didn't hold | none |
+
+Also checked on screen: a tap doesn't skip the intro and a hold does; the
+lift certificate, the restored whiteboard and the renumbered lift panel;
+the badge log appearing once Sam prints it; all 13 evidence items, all six
+contradictions and all seven deductions reached; the timeline puzzle; the
+closing screens' text.
+
+**Bugs found and fixed.** Items 1, 3, 4, 5, 6 (the sequence of events) and 7
+now have headless checks that fail on the old code; 2, 6 (the solution
+text), 8 and 9 were checked on screen in Studio:
+1. **A skipped intro handed the camera back looking down from above the lift
+   ceiling.** The default camera keeps the direction it is handed; a scene
+   cut short now hands back from behind the player.
+2. **The lift's floor buttons read 3-2-1.** Now 1-2-3 along the bottom.
+3. **Examining the records-room shelves framed the back of a wall**, and the
+   file cabinet framed its neighbour. The close-up now stops short of the
+   first solid thing between it and the object.
+4. **Showing evidence with more than eight items found errored**
+   (`ContextActionService: invalid hotkey`), which also skipped the gamepad
+   selection. Only keys 1-9 are bound; rows past nine show no number. The
+   headless shim now rejects nil hotkeys as Roblox does.
+5. **The timeline panel fitted five events; CASE-001 has seven.** The last
+   two rows hung below the panel. Sized for seven.
+6. **The closing screen cut off the sequence of events** (12:00 AM missing)
+   **and the "What happened" text** (last line missing on every ending).
+7. **The lift shots looked out through the player's hair.** A shot hid the
+   avatar once and the default camera scripts showed it again each frame;
+   it is now hidden every frame. The shim now resets the avatar's
+   transparency each frame as the default camera does.
+8. **The dawn outro's window stayed black.** The far skyline raised earlier
+   in this audit filled the view; it now tops out a few degrees above eye
+   level (405 parts, from 921), the haze bands and the dawn sun sit whole
+   studs off the sky plane (they were lost in the depth buffer at 0.6), and
+   the sun rises above the far roofs. Checked on screen at night and at
+   the dawn end state.
+9. **A flat clue (the phone) was framed from its own height** and the desk
+   edge hid it. Flat objects are now looked down on.
+
+Builder version is **12** (items 2 and 8 change baked geometry), so the
+saved place needs one more bake and save; until then Play rebuilds it at
+runtime and logs the stale-bake warning.
+
+**Noted, not changed:**
+- The evidence card overlaps the bottom line of the objective panel.
+- The Case File keeps its scroll position when reopened, so the open
+  questions at the top can be off screen.
+- Meera's hair accessory has two upright tufts that read like ears in the
+  close conversation shot.
+- The night sky's city glow (mauve over orange) is strong; grounded for a
+  Malaysian city at 12:40 AM, but worth an art pass.
+- The outro's skip needs the second press within the confirm window; a
+  slow second press re-arms it (by design).
+- The playthrough moved the character with a placement helper as well as
+  walking; one placement into the shelving flung the character out of the
+  map and it respawned at the lift. That is a test artefact (a walking
+  player can't get inside geometry), not a game bug.
 
 ## Remaining issues
 
@@ -179,6 +223,6 @@ endings) are still to do.
 4. The studio noticeboard puts Sam (the night guard) on the firm's kitchen
    rota; probably unintended.
 5. Performance on low-end devices with the larger skyline is unmeasured.
-6. No full manual playthrough on the v10 bake yet (5.6 step 2).
+6. The place needs baking and saving at builder 12 (see above).
 
 The proposal for the next step is `ROADMAP.md`, Phase 5, "5.6 proposal".
