@@ -371,19 +371,18 @@ a proposal the owner reviews before implementation (OD-12).
 | 5.2 | Localisation and continuity fixes, same case structure (`CASE_001_V2_LOCALISATION_SHEET.md`) | **Done and synced (362 unit, 179 playthrough, 76 engine checks; Studio Play Mode verified).** Timing decision C applied (badge-out 10:28, lift 10:29). Briefing shot left for 5.5 (D4B) |
 | 5.3 | v2 content that doesn't need the phone: EV-008 to EV-010, three new statements, CONTRA-005, DEDUCT-005/006, the badge log printed on request, the accusation's new motive and proof (`CASE_001_V2_CONTENT_SHEET_5_3.md`) | **Built and tested, awaiting review (385 unit, 204 playthrough, 76 engine checks; Studio Play Mode verified).** Sheet and five decisions approved as recommended (1A to 5A). Place synced after the owner saves |
 | 5.4 | The payoff: the phone (per revised D-10) with EV-011/012, the 11:48 and 11:49 events, CONTRA-006 and the drawer-photo clue; the ending variants; the dawn outro (`CASE_001_V2_CONTENT_SHEET_5_4.md`) | **Built and tested, awaiting review.** Plan and content sheet approved. Both phone routes, the cold-Meera route, CONTRA-006, DEDUCT-007, the 11:48 and 11:49 events, the four endings and the dawn outro. Place synced after the owner saves |
-| 5.5 | CASE-001 cinematic intro and dawn outro, staged sets, camera, audio, lighting, captions, hold-to-skip, and spacious plan-driven office | **Implemented; full audit 2026-10-02 (`AUDIT_PHASE_5_5.md`).** 471/471 unit tests in Studio's `UnitTestRunner` and headless, 351 playthrough and 76 engine checks headless. Intro played through in Studio to `reason=finished` (169 s, 21 shots) with the lift handoff. Office builders at v10; the saved place still carries an older bake (rebuilt at runtime) |
-| 5.6 | v2 release QA and presentation polish (proposal below) | Not started |
+| 5.5 | CASE-001 cinematic intro and dawn outro, staged sets, camera, audio, lighting, captions, hold-to-skip, and spacious plan-driven office | **Implemented; full audit 2026-10-02 (`AUDIT_PHASE_5_5.md`).** 471/471 unit tests in Studio's `UnitTestRunner` and headless, 351 playthrough and 76 engine checks headless. Intro played through in Studio to `reason=finished` (169 s, 21 shots) with the lift handoff. Office builders at v10, baked and saved into the place (5.6 step 1) |
+| 5.6 | v2 release QA and presentation polish (proposal below) | Started: step 1 (v10 bake saved) done |
 
-#### 5.6 proposal: release QA and presentation polish (not started)
+#### 5.6 proposal: release QA and presentation polish (step 1 done)
 
 What the 5.5 audit left open. Each item is small, and none changes the
 story, the evidence or the reasoning.
 
 **Must do before release**
-1. **Bake and save the place at builder v10.** Open the worktree's
-   `MysteryCaseRoblox.rbxl` (not the main checkout's), connect Rojo, run the
-   Edit-mode bake and save. Play then stops logging "not a bake of the
-   current plan". Commit the `.rbxl` on its own.
+1. ~~**Bake and save the place at builder v10.**~~ **Done 2026-10-02**
+   (commit "Bake and save the place at builder v10"): Play adopts the bake
+   with no stale-bake warning. See `AUDIT_PHASE_5_5.md`, "The saved place".
 2. **One full manual playthrough in Studio**, title to Case Closed, on the
    v10 bake: every objective, both phone routes, all four endings, the dawn
    outro, then "Investigate again" (the intro replays from the lift doors).

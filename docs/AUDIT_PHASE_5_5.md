@@ -120,26 +120,38 @@ before being kept:
 | `git diff --check` | Clean (run before commit) |
 
 **Not verified, and why**
-- The Studio runs above used the source as Rojo last synced it, before the
-  final two fixes (whiteboard, lift certificate). Those two are verified
-  headlessly only (tests and a scene dump), not on screen.
+- The Studio test and intro runs above used the source as Rojo last synced
+  it, before the final two fixes (whiteboard, lift certificate). Those two
+  are checked headlessly (tests and a scene dump) and in the v10 bake's data
+  (below), but not looked at on screen.
 - Replay from the lift doors and hold-to-skip were verified headlessly, not
   re-run in Studio in this pass.
-- The Studio session had the **main checkout's** `MysteryCaseRoblox.rbxl`
-  open (its bake is stamped v5; Play rebuilt it at runtime and logged the
-  warning). Nothing was saved into either place file. The `.rbxl` committed
-  on this branch is the one carried over from the other worktree, and it
-  doesn't carry a v10 bake.
+- During the runs above, the Studio session had the **main checkout's**
+  `MysteryCaseRoblox.rbxl` open, with an old bake (v5) that Play rebuilt at
+  runtime. See "The saved place" below for how that was resolved.
 - No physical gamepad, no real phone, no new performance measurement.
+
+## The saved place (5.6 step 1, done)
+
+With this branch's sources synced by Rojo, the owner ran
+`EnvironmentBake.bake(true)` in Edit mode and saved. Studio saved to the
+main checkout's place file; that file was copied into this branch and
+committed on its own. Checked in the saved file itself (decoding its
+chunks): `BuilderVersion` 10, the lift certificate, the approved whiteboard,
+this branch's scripts, no test or preview leftovers. In Studio: the
+`Backdrop` under the office is the new persistent model (night sky and four
+near towers), and Play adopts the bake ("adopting baked geometry", skyline
+921 parts) with no stale-bake warning. The main checkout's place file now
+holds this branch's scripts and bake; it was left as saved.
 
 ## Remaining issues
 
-1. Bake and save the place at v10 (see `ROADMAP.md`, 5.6, item 1).
-2. The lobby constable and the mamak rider are block figures.
-3. The far horizon glow behind the skyline doesn't render at its distance.
-4. The open plan reads sparse at night.
-5. The studio noticeboard puts Sam (the night guard) on the firm's kitchen
+1. The lobby constable and the mamak rider are block figures.
+2. The far horizon glow behind the skyline doesn't render at its distance.
+3. The open plan reads sparse at night.
+4. The studio noticeboard puts Sam (the night guard) on the firm's kitchen
    rota; probably unintended.
-6. Performance on low-end devices with the larger skyline is unmeasured.
+5. Performance on low-end devices with the larger skyline is unmeasured.
+6. No full manual playthrough on the v10 bake yet (5.6 step 2).
 
 The proposal for the next step is `ROADMAP.md`, Phase 5, "5.6 proposal".
