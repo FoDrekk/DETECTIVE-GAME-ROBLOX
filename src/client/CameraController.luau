@@ -21,6 +21,7 @@ local camera: Camera? = nil
 local blendToken = 0
 
 local HIDE_AVATAR_STEP = "MysteryCase_HideAvatarWhileExamining"
+local HIDE_IN_SHOT_STEP = "MysteryCase_HideAvatarInShot"
 
 local mode: "Explore" | "Examine" | "Cinematic" = "Explore"
 local focusPart: BasePart? = nil
@@ -424,6 +425,13 @@ function CameraController.playShot(from: CFrame, to: CFrame, duration: number, f
 	-- standing. Shown again when the scene hands the camera back.
 	shotHidesAvatar = true
 	setAvatarHidden(true)
+	-- Every frame, as for a close-up: the default camera scripts show the avatar
+	-- again, and a shot from the player's own eye line (the lift) then looks out
+	-- through their hair.
+	RunService:UnbindFromRenderStep(HIDE_IN_SHOT_STEP)
+	RunService:BindToRenderStep(HIDE_IN_SHOT_STEP, Enum.RenderPriority.Camera.Value + 1, function()
+		setAvatarHidden(true)
+	end)
 	setMovementEnabled(false)
 	if opts.mouseLook then
 		startLooking()
@@ -518,6 +526,7 @@ function CameraController.stopCinematic(blend: number?)
 	end
 	if shotHidesAvatar then
 		shotHidesAvatar = false
+		RunService:UnbindFromRenderStep(HIDE_IN_SHOT_STEP)
 		setAvatarHidden(false)
 	end
 	setMovementEnabled(true)

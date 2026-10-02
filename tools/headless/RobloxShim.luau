@@ -2772,6 +2772,17 @@ Scheduler.heartbeat = function(dt)
 	fireSignal(heartbeatSignal, dt)
 	if not Shim.isServer then
 		fireSignal(renderSteppedSignal, dt)
+		-- Roblox's default camera scripts write the avatar's
+		-- LocalTransparencyModifier every frame (0 at a normal zoom); anything
+		-- that hides the avatar has to keep doing so after them.
+		local character = Shim.localPlayer and Shim.localPlayer.Character
+		if character then
+			for _, d in ipairs(character:GetDescendants()) do
+				if d:IsA("BasePart") then
+					d.LocalTransparencyModifier = 0
+				end
+			end
+		end
 		if Shim.renderSteps then
 			for _, fn in pairs(Shim.renderSteps) do
 				task.spawn(fn, dt)
