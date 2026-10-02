@@ -34,47 +34,57 @@ Config.Environment = {
 	-- saved. See `815064d` for the incident this exists to catch: a floor fix
 	-- landed in the builders, but the already-baked `.rbxl` was never
 	-- re-baked, so the fix never reached the saved place.
-	BuilderVersion = 6,
+	BuilderVersion = 10,
 	-- 12:40 AM, after hours (OfficeRoom). Readability first: the local lights
 	-- carry the mood, ambient and exposure keep every room playable.
 	Night = {
 		ClockTime = 0.67,
 		Brightness = 0.6,
-		Ambient = Color3.fromRGB(40, 42, 50),
-		OutdoorAmbient = Color3.fromRGB(38, 44, 62),
-		EnvironmentDiffuseScale = 0.25,
-		EnvironmentSpecularScale = 0.45,
-		ExposureCompensation = 0.4,
+		Ambient = Color3.fromRGB(48, 51, 60),
+		OutdoorAmbient = Color3.fromRGB(44, 49, 62),
+		EnvironmentDiffuseScale = 0.3,
+		EnvironmentSpecularScale = 0.32,
+		ExposureCompensation = 0.55,
 		ShadowSoftness = 0.22,
 		-- Colour grade: a touch of contrast, slightly desaturated, warm.
-		Contrast = 0.1,
+		Contrast = 0.06,
 		Saturation = -0.12,
 		Tint = Color3.fromRGB(255, 247, 238),
 		-- Bloom only for things that actually glow (screens, signs, lamps).
 		BloomIntensity = 0.5,
 		BloomSize = 24,
 		BloomThreshold = 1.35,
+		-- The haze: thin enough that the room stays clear and the far city
+		-- reads through the windows, fading into sodium-orange light.
+		Atmosphere = {
+			Density = 0.07,
+			Offset = 0.25,
+			Color = Color3.fromRGB(120, 88, 76),
+			Decay = Color3.fromRGB(150, 92, 64),
+			Glare = 0,
+			Haze = 2.2,
+		},
 	},
 	-- Interior lighting plan (OfficeInterior). Brightness/Range per fixture;
 	-- `shadows` only where a shadow tells you something.
 	Interior = {
 		Lights = {
-			DanielOffice = { brightness = 1.4, range = 22, color = Color3.fromRGB(255, 232, 204), shadows = true },
-			MeetingRoom = { brightness = 0.5, range = 18, color = Color3.fromRGB(255, 240, 222) },
+			DanielOffice = { brightness = 1.35, range = 22, color = Color3.fromRGB(255, 238, 218), shadows = true },
+			MeetingRoom = { brightness = 0.55, range = 18, color = Color3.fromRGB(255, 240, 226) },
 			MeetingPendant = { brightness = 2.0, range = 16 },
-			Reception = { brightness = 1.1, range = 18, color = Color3.fromRGB(255, 226, 190), shadows = true },
-			Lobby = { brightness = 0.7, range = 16, color = Color3.fromRGB(255, 226, 190) },
+			Reception = { brightness = 1.0, range = 18, color = Color3.fromRGB(255, 234, 210), shadows = true },
+			Lobby = { brightness = 0.72, range = 17, color = Color3.fromRGB(250, 235, 216) },
 			OpenPlan = { brightness = 0.7, range = 20, color = Color3.fromRGB(255, 240, 222), shadows = true },
-			Studio = { brightness = 0.85, range = 22, color = Color3.fromRGB(226, 236, 255) },
+			Studio = { brightness = 0.82, range = 22, color = Color3.fromRGB(232, 236, 242) },
 			-- Night lights: a dim bank left on so a big floor isn't black.
 			NightLight = { brightness = 0.32, range = 16, color = Color3.fromRGB(236, 232, 226) },
-			Corridor = { brightness = 0.45, range = 15, color = Color3.fromRGB(230, 232, 255) },
-			WestHall = { brightness = 0.5, range = 14, color = Color3.fromRGB(255, 236, 214) },
-			Pantry = { brightness = 0.55, range = 12, color = Color3.fromRGB(255, 238, 210) },
-			Records = { brightness = 0.9, range = 14, color = Color3.fromRGB(206, 222, 255), shadows = true },
+			Corridor = { brightness = 0.5, range = 17, color = Color3.fromRGB(238, 236, 226) },
+			WestHall = { brightness = 0.5, range = 15, color = Color3.fromRGB(248, 237, 220) },
+			Pantry = { brightness = 0.8, range = 15, color = Color3.fromRGB(255, 242, 226) },
+			Records = { brightness = 0.82, range = 14, color = Color3.fromRGB(222, 228, 238), shadows = true },
 		},
 		-- The city's light through the north windows.
-		CityGlow = { Brightness = 0.55, Range = 16, Color = Color3.fromRGB(150, 172, 226) },
+		CityGlow = { Brightness = 0.6, Range = 18, Color = Color3.fromRGB(164, 180, 210) },
 	},
 }
 
@@ -162,8 +172,9 @@ Config.Audio = {
 		Motif = { id = "rbxassetid://1836904259", volume = 0.5, loops = true },
 		-- The dawn pad under the outro.
 		DawnPad = { id = "rbxassetid://1838792473", volume = 1.2, loops = true },
-		-- One-shots.
+		-- The phone vibrating: a bed, so it buzzes until a shot stops it.
 		PhoneBuzz = { id = "rbxassetid://121031853982816", volume = 1.0, loops = true },
+		-- One-shots.
 		Notification = { id = "rbxassetid://75568314388208", volume = 1.0 },
 		Thunder = { id = "rbxassetid://9120015808", volume = 0.5 },
 		Train = { id = "rbxassetid://9116330273", volume = 0.6 },
@@ -220,8 +231,6 @@ Config.Camera = {
 	},
 }
 
--- M6: title screen and the camera drift behind it (world coordinates of the
--- authored office; the shot ping-pongs between From and To).
 -- M9: connections the investigator makes.
 Config.Reasoning = {
 	-- Seconds before another pairing or answer is taken after a miss.
@@ -263,7 +272,7 @@ Config.Cutscene = {
 		points are relative to its set's origin; `world` sets are the office itself
 		(their points are world coordinates). `actions` lists what the set can be
 		told to do (Types.CutsceneAction.name): the server checks a scene against it
-		at boot, and CutsceneSets_Test checks each set really does them.
+		at boot, and the headless playthrough checks each set really does them.
 	]]
 	Sets = {
 		Bedroom = { origin = Vector3.new(0, 0, 800), actions = { "PhoneRing", "PhoneStop", "HandComes", "PhoneFlip" } },
@@ -306,46 +315,46 @@ Config.Cutscene = {
 		-- Kota Arwana at night in the rain: sodium orange, wet, alive.
 		CityNight = {
 			ClockTime = 0.6,
-			Brightness = 0.35,
-			Ambient = Color3.fromRGB(26, 28, 40),
-			OutdoorAmbient = Color3.fromRGB(56, 48, 46),
-			ExposureCompensation = 0.4,
+			Brightness = 0.8,
+			Ambient = Color3.fromRGB(62, 60, 74),
+			OutdoorAmbient = Color3.fromRGB(110, 92, 86),
+			ExposureCompensation = 0.9,
 			FogColor = Color3.fromRGB(46, 34, 34),
 			FogStart = 40,
 			FogEnd = 900,
-			Atmosphere = { Density = 0.2, Offset = 0.05, Color = Color3.fromRGB(80, 62, 60), Decay = Color3.fromRGB(150, 90, 60), Glare = 0, Haze = 1.0 },
+			Atmosphere = { Density = 0.1, Offset = 0.1, Color = Color3.fromRGB(80, 62, 60), Decay = Color3.fromRGB(150, 90, 60), Glare = 0, Haze = 1.6 },
 			Stars = 0,
-			Bloom = { intensity = 0.8, size = 28, threshold = 0.9 },
+			Bloom = { intensity = 0.5, size = 24, threshold = 1.1 },
 			Grade = { contrast = 0.14, saturation = -0.06, tint = Color3.fromRGB(255, 236, 222), brightness = 0 },
 			Vignette = 0.35,
 		},
 		-- Inside the car, lit by the dashboard and the streetlights going past.
 		CarInterior = {
 			ClockTime = 0.6,
-			Brightness = 0.15,
-			Ambient = Color3.fromRGB(16, 20, 30),
-			OutdoorAmbient = Color3.fromRGB(46, 42, 44),
-			ExposureCompensation = 0.6,
+			Brightness = 0.22,
+			Ambient = Color3.fromRGB(63, 67, 78),
+			OutdoorAmbient = Color3.fromRGB(82, 76, 77),
+			ExposureCompensation = 1.2,
 			FogColor = Color3.fromRGB(46, 34, 34),
 			FogStart = 40,
 			FogEnd = 900,
-			Atmosphere = { Density = 0.2, Offset = 0.05, Color = Color3.fromRGB(80, 62, 60), Decay = Color3.fromRGB(150, 90, 60), Glare = 0, Haze = 1.0 },
+			Atmosphere = { Density = 0.08, Offset = 0.05, Color = Color3.fromRGB(80, 62, 60), Decay = Color3.fromRGB(150, 90, 60), Glare = 0, Haze = 1.0 },
 			Stars = 0,
-			Bloom = { intensity = 0.7, size = 26, threshold = 0.9 },
+			Bloom = { intensity = 0.35, size = 20, threshold = 1.1 },
 			Grade = { contrast = 0.14, saturation = -0.1, tint = Color3.fromRGB(230, 240, 255), brightness = 0 },
 			Vignette = 0.5,
 		},
 		-- The tower's forecourt, cold and wet.
 		Forecourt = {
 			ClockTime = 0.65,
-			Brightness = 0.3,
-			Ambient = Color3.fromRGB(28, 32, 46),
-			OutdoorAmbient = Color3.fromRGB(46, 52, 70),
-			ExposureCompensation = 0.4,
+			Brightness = 0.6,
+			Ambient = Color3.fromRGB(48, 54, 72),
+			OutdoorAmbient = Color3.fromRGB(80, 86, 110),
+			ExposureCompensation = 0.8,
 			FogColor = Color3.fromRGB(30, 34, 46),
 			FogStart = 50,
 			FogEnd = 700,
-			Atmosphere = { Density = 0.22, Offset = 0.05, Color = Color3.fromRGB(60, 70, 96), Decay = Color3.fromRGB(70, 80, 120), Glare = 0, Haze = 1.0 },
+			Atmosphere = { Density = 0.1, Offset = 0.05, Color = Color3.fromRGB(60, 70, 96), Decay = Color3.fromRGB(70, 80, 120), Glare = 0, Haze = 1.0 },
 			Stars = 0,
 			Bloom = { intensity = 0.75, size = 26, threshold = 0.92 },
 			Grade = { contrast = 0.14, saturation = -0.12, tint = Color3.fromRGB(226, 236, 255), brightness = 0 },
@@ -354,21 +363,35 @@ Config.Cutscene = {
 		-- The tower lobby: marble and cold overhead light.
 		Lobby = {
 			ClockTime = 0.67,
-			Brightness = 0.25,
-			Ambient = Color3.fromRGB(44, 48, 58),
-			OutdoorAmbient = Color3.fromRGB(40, 44, 58),
-			ExposureCompensation = 0.35,
+			Brightness = 0.35,
+			Ambient = Color3.fromRGB(68, 72, 84),
+			OutdoorAmbient = Color3.fromRGB(56, 60, 74),
+			ExposureCompensation = 0.8,
 			FogColor = Color3.fromRGB(30, 34, 46),
 			FogStart = 200,
 			FogEnd = 2000,
 			Atmosphere = { Density = 0, Haze = 0 },
 			Stars = 0,
-			Bloom = { intensity = 0.5, size = 24, threshold = 1.0 },
-			Grade = { contrast = 0.1, saturation = -0.16, tint = Color3.fromRGB(232, 240, 255), brightness = 0 },
+			Bloom = { intensity = 0.35, size = 22, threshold = 1.1 },
+			Grade = { contrast = 0.08, saturation = -0.12, tint = Color3.fromRGB(232, 240, 255), brightness = 0 },
+			Vignette = 0.18,
+		},
+		-- The lift car: a small steel box under one hard ceiling light.
+		Lift = {
+			ClockTime = 0.67,
+			Brightness = 0.35,
+			Ambient = Color3.fromRGB(40, 42, 48),
+			OutdoorAmbient = Color3.fromRGB(48, 52, 65),
+			ExposureCompensation = 0.1,
+			FogColor = Color3.fromRGB(30, 34, 46),
+			FogStart = 200,
+			FogEnd = 2000,
+			Atmosphere = { Density = 0, Haze = 0 },
+			Stars = 0,
+			Bloom = { intensity = 0.3, size = 18, threshold = 1.2 },
+			Grade = { contrast = 0.12, saturation = -0.15, tint = Color3.fromRGB(236, 240, 248), brightness = 0 },
 			Vignette = 0.3,
 		},
-		-- Dawn over Kota Arwana: the deadline the case is played against
-		-- ("forensics can't get there till six").
 		-- The city from the air: warm haze and a long view.
 		CityAerial = {
 			ClockTime = 0.5,
@@ -379,12 +402,16 @@ Config.Cutscene = {
 			FogColor = Color3.fromRGB(70, 44, 36),
 			FogStart = 260,
 			FogEnd = 2600,
-			Atmosphere = { Density = 0.26, Offset = 0.05, Color = Color3.fromRGB(96, 66, 58), Decay = Color3.fromRGB(190, 100, 60), Glare = 0, Haze = 1.4 },
+			-- Thin: the city is hundreds of studs away, and any real density drowns it.
+			-- The haze and decay carry the sodium glow along the horizon instead.
+			Atmosphere = { Density = 0.08, Offset = 0.25, Color = Color3.fromRGB(110, 70, 58), Decay = Color3.fromRGB(220, 112, 58), Glare = 0, Haze = 2.6 },
 			Stars = 0,
-			Bloom = { intensity = 0.9, size = 30, threshold = 0.85 },
+			Bloom = { intensity = 0.45, size = 20, threshold = 1.2 },
 			Grade = { contrast = 0.14, saturation = -0.04, tint = Color3.fromRGB(255, 236, 222), brightness = 0 },
 			Vignette = 0.35,
 		},
+		-- Dawn over Kota Arwana: the deadline the case is played against
+		-- ("forensics can't get there till six").
 		Dawn = {
 			ClockTime = 6.1,
 			Brightness = 0.9,
@@ -403,6 +430,8 @@ Config.Cutscene = {
 	},
 }
 
+-- M6: the title screen, and the camera drift behind it (world coordinates of
+-- the office; the shot ping-pongs between From and To).
 Config.Presentation = {
 	Title = {
 		Kicker = "A MYSTERY CASE",

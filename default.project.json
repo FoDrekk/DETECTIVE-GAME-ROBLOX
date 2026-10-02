@@ -11,6 +11,10 @@
       },
       "UI": {
         "$path": "src/ui"
+      },
+      "Signals": {
+        "$className": "Folder",
+        "$ignoreUnknownInstances": true
       }
     },
 

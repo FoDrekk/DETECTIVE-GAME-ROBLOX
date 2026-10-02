@@ -45,10 +45,11 @@ local log = Logger.scoped("EnvironmentBake")
 local EnvironmentBake = {}
 
 -- Children of Workspace.Office that survive a reset: the builders adopt them
--- and place them again (the backdrop is shifted to the plan's north wall, the
--- spawn pad is moved into the lift). Everything else under the office is
--- either generated or the legacy Studio-authored asset, and is discarded.
-local KEPT = { Backdrop = true, InvestigatorSpawn = true }
+-- and place them again (the spawn pad is moved into the lift). Everything else
+-- under the office is either generated or the legacy Studio-authored asset, and
+-- is discarded -- including the old authored skyline backdrop, which stood
+-- where the plan's windows no longer are and hid the city behind it.
+local KEPT = { InvestigatorSpawn = true }
 
 local function office(): Instance?
 	return workspace:FindFirstChild(Config.Environment.OfficeModelName)

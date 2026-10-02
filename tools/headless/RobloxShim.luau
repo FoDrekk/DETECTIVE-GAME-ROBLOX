@@ -166,6 +166,14 @@ V2.__index = function(self, key)
 		return function(a, b, t)
 			return v2(a.X + (b.X - a.X) * t, a.Y + (b.Y - a.Y) * t)
 		end
+	elseif key == "Dot" then
+		return function(a, b)
+			return a.X * b.X + a.Y * b.Y
+		end
+	elseif key == "Cross" then
+		return function(a, b)
+			return a.X * b.Y - a.Y * b.X
+		end
 	end
 	error(`{key} is not a valid member of Vector2`, 2)
 end
@@ -188,6 +196,9 @@ V2.__div = function(a, b)
 		return v2(a.X / b, a.Y / b)
 	end
 	return v2(a.X / b.X, a.Y / b.Y)
+end
+V2.__unm = function(a)
+	return v2(-a.X, -a.Y)
 end
 V2.__eq = function(a, b)
 	return a.X == b.X and a.Y == b.Y
@@ -1407,7 +1418,12 @@ local function notifyChanged(self, key)
 		fireSignal(s)
 	end
 	if i.changed then
-		fireSignal(i.changed, key)
+		-- A value object's Changed carries the new value, not the property name.
+		if key == "Value" and isA(i.className, "ValueBase") then
+			fireSignal(i.changed, i.props.Value)
+		else
+			fireSignal(i.changed, key)
+		end
 	end
 end
 

@@ -20,8 +20,11 @@ from `rojo build` go to `/build/` (git-ignored) instead.
 The place still holds early copies of the scripts. Rojo replaces the ones the
 project maps. It also removes the stale `ReplicatedStorage.Config` and
 `ReplicatedStorage.Signals` left in the place, because `ReplicatedStorage`
-is marked `"$ignoreUnknownInstances": false`. Always play with Rojo
-connected (or from a `rojo build`), never the bare base place.
+is marked `"$ignoreUnknownInstances": false`. The one runtime folder there,
+`ReplicatedStorage.Signals` (the remotes the server creates at boot), is
+declared in the project so a connected Rojo session never deletes it
+mid-Play. Always play with Rojo connected (or from a `rojo build`), never the
+bare base place.
 
 ## Toolchain
 
@@ -128,16 +131,23 @@ MysteryCaseRoblox/
 
 ## Tests
 
-Headless unit tests live under `tests/` and run on the server during Play:
-
-```lua
--- In the command bar during Play, or via the disabled UnitTestRunner Script:
-require(game.ServerStorage.UnitTest.RunUnitTest)()          -- all
-require(game.ServerStorage.UnitTest.RunUnitTest)("Timeline") -- filtered
-```
+Unit tests live under `tests/` and run on the server during Play. Run them
+through `ServerScriptService.UnitTestRunner`: set it `Enabled` (in Edit mode,
+or on the Server DataModel during Play) and the whole suite runs once.
+`require`-ing `RunUnitTest` from the command bar or a plugin gives that context
+its own never-started copies of the server modules, so tests that rely on
+boot-time listeners fail for the wrong reason (see `docs/ROADMAP.md`,
+"Testing strategy").
 
 Each case is a ModuleScript under `tests/cases` named `<Module>_Test`. Results
-print `[PASS]` / `[FAIL]` / `[TIMEOUT]` plus a `[SUMMARY]` line.
+print `[PASS]` / `[FAIL]` / `[TIMEOUT]` plus a `[SUMMARY]` line. A full run
+floods the Output with the expected FireClient-to-mock-player errors, and
+`LogService:GetLogHistory()` keeps only 512 lines, so collect results from
+`LogService.MessageOut` when scripting a run. Restart Play afterwards: the
+suite drives the server-wide phase.
+
+The same suite, a scripted end-to-end playthrough and the cutscene-engine
+checks also run without Studio: see `tools/headless/README.md`.
 
 ## Status
 
@@ -148,6 +158,7 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for the forward plan (M1–M6).
 | Action | Keyboard | Gamepad | Touch |
 |---|---|---|---|
 | Interact / continue / begin / investigate again | E | X | Main action button (bottom-right, labelled with what it will do) |
+| Skip the intro (hold for a second; a tap does nothing) | Hold E or Space | Hold X | Hold the main action button |
 | Case File | C | Y | Case File button |
 | Timeline | T | LB | Timeline button |
 | Make an accusation (once it opens: CASE-001, after both suspects are spoken to) | Q | RB | Name Suspect button |
@@ -548,10 +559,16 @@ OBJECTIVE PROGRESS → NEXT CLUE
 
 ### Investigation flow (CASE-001)
 
-1. Player spawns in the office lobby → server enters `CaseBriefing`; client
-   shows the briefing and the **CURRENT OBJECTIVE** checklist (OBJ-001
-   "Investigate Daniel's office").
-2. Press **E** to begin → server enters `Investigation`.
+1. The session opens on the title screen (`CaseBriefing`). Press **E** to
+   begin → server enters `Investigation` (`GameStateService.requestBegin`,
+   accepted only from the briefing) and plays the CASE-001 intro, `CUT-INTRO`:
+   21 shots, 169 seconds, from the bedroom cold open to the lift doors
+   opening on level nine (`src/config/Case001Intro.luau`,
+   `docs/CASE_001_INTRO_SCREENPLAY.md`). Hold **E** (or Space) to skip it.
+   The intro ends with the investigator standing in the lift car, and the
+   **CURRENT OBJECTIVE** checklist opens on OBJ-000 (the night guard). A
+   replay after Case Closed starts the intro at the lift doors.
+2. Walk out of the lift: reception, the open plan, Daniel's office.
 3. Explore the office and find Daniel's desk, then Examine the Phone and Laptop
    and **Read** the Document. Each interaction is validated server-side; a dark
    evidence panel presents the discovery (with its time and details) and the

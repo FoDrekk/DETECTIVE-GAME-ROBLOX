@@ -355,8 +355,8 @@ local Case001: Types.CaseDefinition = {
 			category = "Environment",
 			relatedEvidenceIds = { "EV-005" },
 			propPlacement = {
-				position = Vector3.new(-29.8, 2.62, -20.72),
-				lookAt = Vector3.new(-29.8, 2.62, -25),
+				position = Vector3.new(-29.8, 2.62, -17.8),
+				lookAt = Vector3.new(-25, 2.62, -17.8),
 				style = "EspressoCup",
 			},
 		},
@@ -430,7 +430,7 @@ local Case001: Types.CaseDefinition = {
 			grantsEvidence = { "EV-012" },
 			-- The desk phone's own screen, woken once the code is worked out.
 			propPlacement = {
-				position = Vector3.new(-24.0, 2.79, -20.2),
+				position = Vector3.new(-24.0, 2.79, -18.1),
 				style = "PhoneScreen",
 				label = "Read Unlocked Phone",
 				revealWhen = { knows("Deduction", "DEDUCT-007") },

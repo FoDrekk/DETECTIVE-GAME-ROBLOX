@@ -139,7 +139,7 @@ recommended default; the product owner can redirect.)
 - Verified with a spawn-to-verdict-to-replay run in Studio (correct verdict
   sting, ducking, replay without the title) and the full suite (258 tests).
 
-### M7 — Interrogation and a lived-in office (story + visuals) — built, awaiting a Studio pass
+### M7 — Interrogation and a lived-in office (story + visuals) — built; Studio suite passed, manual regression pass pending
 
 - **Interrogation, not exposition**: conversations branch. The investigator
   picks questions; what is on offer depends on what they know (evidence,
@@ -182,7 +182,7 @@ recommended default; the product owner can redirect.)
   furniture is built from parts and built-in materials. See "Known
   follow-ups".
 
-### M8 — Stabilise and polish — built, awaiting a Studio pass
+### M8 — Stabilise and polish — built; Studio suite passed, manual regression pass pending
 
 - **Cinematic case briefing**: the dark centred panel is gone. The briefing
   is a slow shot across Daniel's office (chalk outline, desk lamp still on,
@@ -199,7 +199,7 @@ recommended default; the product owner can redirect.)
   replay), and a luau-lsp type check. **Not played in Roblox Studio**: the
   authoring environment has no Studio. See the Studio checklist in the PR.
 
-### M9 — The detective decides (player-driven reasoning) — built, awaiting a Studio pass
+### M9 — The detective decides (player-driven reasoning) — built; Studio suite passed, manual regression pass pending
 
 - **Contradictions are claimed.** A contradiction authored with `claim`
   never unlocks by itself. The player pairs the two facts in the Case File,
@@ -371,8 +371,55 @@ a proposal the owner reviews before implementation (OD-12).
 | 5.2 | Localisation and continuity fixes, same case structure (`CASE_001_V2_LOCALISATION_SHEET.md`) | **Done and synced (362 unit, 179 playthrough, 76 engine checks; Studio Play Mode verified).** Timing decision C applied (badge-out 10:28, lift 10:29). Briefing shot left for 5.5 (D4B) |
 | 5.3 | v2 content that doesn't need the phone: EV-008 to EV-010, three new statements, CONTRA-005, DEDUCT-005/006, the badge log printed on request, the accusation's new motive and proof (`CASE_001_V2_CONTENT_SHEET_5_3.md`) | **Built and tested, awaiting review (385 unit, 204 playthrough, 76 engine checks; Studio Play Mode verified).** Sheet and five decisions approved as recommended (1A to 5A). Place synced after the owner saves |
 | 5.4 | The payoff: the phone (per revised D-10) with EV-011/012, the 11:48 and 11:49 events, CONTRA-006 and the drawer-photo clue; the ending variants; the dawn outro (`CASE_001_V2_CONTENT_SHEET_5_4.md`) | **Built and tested, awaiting review.** Plan and content sheet approved. Both phone routes, the cold-Meera route, CONTRA-006, DEDUCT-007, the 11:48 and 11:49 events, the four endings and the dawn outro. Place synced after the owner saves |
-| 5.5 | CASE-001 cinematic intro and dawn outro, staged sets, camera, audio, lighting, captions, hold-to-skip, and spacious plan-driven office | **Implemented and verified in Studio; 466/466 unit tests pass.** |
-| 5.6 | v2 release QA | Not started |
+| 5.5 | CASE-001 cinematic intro and dawn outro, staged sets, camera, audio, lighting, captions, hold-to-skip, and spacious plan-driven office | **Implemented; full audit 2026-10-02 (`AUDIT_PHASE_5_5.md`).** 471/471 unit tests in Studio's `UnitTestRunner` and headless, 351 playthrough and 76 engine checks headless. Intro played through in Studio to `reason=finished` (169 s, 21 shots) with the lift handoff. Office builders at v10; the saved place still carries an older bake (rebuilt at runtime) |
+| 5.6 | v2 release QA and presentation polish (proposal below) | Not started |
+
+#### 5.6 proposal: release QA and presentation polish (not started)
+
+What the 5.5 audit left open. Each item is small, and none changes the
+story, the evidence or the reasoning.
+
+**Must do before release**
+1. **Bake and save the place at builder v10.** Open the worktree's
+   `MysteryCaseRoblox.rbxl` (not the main checkout's), connect Rojo, run the
+   Edit-mode bake and save. Play then stops logging "not a bake of the
+   current plan". Commit the `.rbxl` on its own.
+2. **One full manual playthrough in Studio**, title to Case Closed, on the
+   v10 bake: every objective, both phone routes, all four endings, the dawn
+   outro, then "Investigate again" (the intro replays from the lift doors).
+   Reconfirm the restored whiteboard and lift certificate on screen.
+3. **A physical gamepad pass**: hold-to-skip, mouse-look in the lift (stick
+   look is now frame-rate independent), the pickers and the Case File.
+4. **Low-end performance on the new scenery.** The skyline is now 921 parts
+   (90 towers, 795 lit windows), and the street and city sets are bigger.
+   Repeat R5's Galaxy A06 measurement in the open office and in the City
+   and Street shots. If the office is over budget, merge the window grids
+   into fewer parts per tower before cutting towers.
+
+**Should do (presentation)**
+5. **People in the sets.** The lobby constable and the mamak rider are block
+   figures. Give them R15 rigs built from a `HumanoidDescription`, as
+   `SuspectSpawner` builds the suspects, so the constable's nod reads.
+6. **The far horizon glow.** The haze bands behind the skyline (420 studs
+   out) don't draw at that distance. Either bring a single glow card inside
+   the culling range or carry the glow in the sky (`Sky` + `Atmosphere`
+   decay) only.
+7. **The open plan reads sparse** at night. Add desk-level clutter and a
+   second rank of task lamps along the studio desks (PropKit only, no new
+   interactables). While there: the studio noticeboard's "Kitchen rota:
+   week 3 — Sam" puts the night guard on the firm's kitchen rota; check that against
+   the story bible.
+
+**Process**
+8. **Make the Studio checks repeatable.** Two scripts in `tools/`: one that
+   arms a `LogService.MessageOut` collector and enables `UnitTestRunner`,
+   and one that plays the intro and reports the `CutsceneService` end
+   reason. Both run from the MCP or the command bar.
+9. **One place file in use at a time.** The session that baked and saved
+   should be the worktree's own place; note the open file in each audit.
+
+**Not in 5.6**: new evidence or dialogue, voice acting, per-player phases,
+CASE-002 content.
 
 ### Phase 6 — Connected-world proof of concept (Pelangi Square slice)
 

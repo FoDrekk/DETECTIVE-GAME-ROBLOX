@@ -58,11 +58,10 @@ function Spine.signage(interior: Instance)
 	local rect = OfficePlan.rect("Spine")
 	local z = rect.z1
 
-	-- "Sila imbas kad" (please tap your card) beside the entrance, with a surau
-	-- wayfinding plate above it (the prayer room is on another floor; no room
-	-- or door is implied here).
+	-- "Sila imbas kad" (please tap your card) beside the suite entrance. The
+	-- surau directory is beside the lift call button in Reception, so the entry
+	-- itself cannot be mistaken for a prayer-room door.
 	PropKit.sign(room, at(rect.x1 - 0.55, z - 0.05, NORTH, 4.5), "Sila imbas kad", Vector2.new(1.3, 0.34))
-	PropKit.sign(room, at(rect.x1 - 0.55, z - 0.05, NORTH, 5.05), "SURAU · TINGKAT 8", Vector2.new(1.55, 0.34))
 
 	-- "DILARANG MEROKOK" (no smoking) by the extinguisher.
 	PropKit.sign(room, at(rect.x0 - 0.05, -20.6, EAST, 4.4), "DILARANG MEROKOK", Vector2.new(2.0, 0.42), {

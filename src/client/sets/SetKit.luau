@@ -456,6 +456,11 @@ export type Double = {
 	pose: (joints: { [string]: CFrame }) -> (),
 	-- Put the double's root at `cf`.
 	place: (cf: CFrame) -> (),
+	-- Where its root goes for it to stand with its feet at `feet` (for tweening
+	-- a walk).
+	rootAt: (feet: CFrame) -> CFrame,
+	-- Seat it: hips on `seat` (the top of the seat, facing the way it faces).
+	sitOn: (seat: CFrame) -> (),
 	destroy: () -> (),
 }
 
@@ -470,9 +475,10 @@ SetKit.WalkAnimation = "rbxassetid://507777826"
 	stepping out, the reflection in the lift's mirror), and it has to be the
 	avatar the player chose. It is a clone of their character, so the rig is
 	right; only its root is anchored, so joints still move and animations play.
+	It stands with its feet at `feet`, however tall the player's avatar is.
 	Nil when the player has no character yet (a scene then simply goes without).
 ]]
-function SetKit.avatarDouble(parent: Instance, at: CFrame): Double?
+function SetKit.avatarDouble(parent: Instance, feet: CFrame): Double?
 	local player = Players.LocalPlayer
 	local character = player and player.Character
 	if not character then
@@ -507,7 +513,11 @@ function SetKit.avatarDouble(parent: Instance, at: CFrame): Double?
 	humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
 	humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
 	clone.Parent = parent
-	clone:PivotTo(at)
+	-- An R15 root stands its legs' length (HipHeight) plus half its own height
+	-- above the ground, and sits half its height above the seat.
+	local standHeight = humanoid.HipHeight + root.Size.Y / 2
+	local sitHeight = root.Size.Y / 2
+	clone:PivotTo(feet * CFrame.new(0, standHeight, 0))
 
 	local animator = humanoid:FindFirstChildOfClass("Animator")
 	if not animator then
@@ -552,6 +562,13 @@ function SetKit.avatarDouble(parent: Instance, at: CFrame): Double?
 		end,
 		place = function(cf: CFrame)
 			clone:PivotTo(cf)
+		end,
+		rootAt = function(at: CFrame): CFrame
+			return at * CFrame.new(0, standHeight, 0)
+		end,
+		sitOn = function(seat: CFrame)
+			clone:PivotTo(seat * CFrame.new(0, sitHeight, 0))
+			double.animate(SetKit.SitAnimation, true)
 		end,
 		destroy = function()
 			for _, track in ipairs(tracks) do

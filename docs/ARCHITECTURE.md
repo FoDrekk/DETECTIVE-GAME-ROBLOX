@@ -1046,7 +1046,7 @@ three builders expose a targeted patch, run once in Edit mode:
   position, pose, hair and clothes alone.
 
 Text baked into props was migrated with an explicit old-to-new table. The
-current plan-driven environment uses `BuilderVersion = 6`; bump it whenever
+current plan-driven environment uses `BuilderVersion = 10`; bump it whenever
 a builder change alters generated geometry or content.
 In Edit mode, `require` caches a module for the whole session; require a
 `Clone()` of the ModuleScript to run its current source.
@@ -1078,7 +1078,10 @@ it is also the check that a baked place was really patched.
   because `ReplicatedStorage` has no `$path`. The project now sets
   `"$ignoreUnknownInstances": false` on `ReplicatedStorage`, so connecting
   Rojo removes anything there that the project doesn't define. The
-  `Signals` folder is recreated at runtime.
+  `Signals` folder is recreated at runtime, and the project declares it
+  (`$ignoreUnknownInstances: true`): without that, a Rojo session left
+  connected while playing deleted the server's remotes (found in the
+  October 2026 audit, when the intro never started).
 - **Removed as unused** (no references in src, tests, tools or the project):
   the `InteractionPrompt`/`PromptCleared` remote names,
   `Config.Game.DefaultPhase`, `Config.Camera.DefaultDistance`/`DefaultHeight`/
@@ -1342,6 +1345,60 @@ CASE-001 v1 uses none of them, so it plays exactly as before.
 - **End to end:** `tools/headless/entry_engine.luau` drives the real server
   and client scripts through player inputs, on a fixture case made active for
   that run only.
+
+## The case intro and scene presentation (Phase 5.5)
+
+A case can name its opening scene (`CaseDefinition.intro = { cutsceneId,
+replacesBriefing }`). CASE-001's is `CUT-INTRO` (`src/config/Case001Intro.luau`),
+and it replaces the briefing screen, which showed a clue the intro withholds.
+
+**Flow.**
+- Play on the title screen asks the server to begin. `GameStateService.requestBegin`
+  accepts that only from `CaseBriefing`, broadcasts `Investigation` and starts the
+  intro (`CutsceneService.playIntro`).
+- A client asks for exactly three phase moves, each owned by one function:
+  begin (`requestBegin`), conclude (`requestConclude`) and replay
+  (`requestReplay`). Any other requested phase is ignored.
+- The intro is an ordinary server-timed scene. It is marked `isIntro` in its
+  payload, so the client skips it by holding the primary input or Space for
+  `Config.Cutscene.SkipHoldSeconds` instead of pressing twice.
+- A second showing in the same session starts at `replayFrom` (`LIFT-OPEN`).
+  Nothing in the intro discovers evidence or changes case state.
+
+**What a shot can ask for** (all by name, all checked by `CutsceneService.validate`
+at boot against the client's config):
+- `set`: where it is framed (`CutsceneSets`, the modules in `src/client/sets`).
+  A dressed set (bedroom, street, car, forecourt, lobby, city) is built on this
+  client only, round its own `origin` far from the office, for as long as a
+  scene uses it. Its camera points are relative to that origin. A world set
+  (`LiftCar`, `OfficeDawn`) adds to the real office and undoes every change.
+- `actions`: what happens in the set (`PhoneRing`, `DoorsOpen`, ...). Each set
+  lists the actions it knows in `Config.Cutscene.Sets`.
+- `lighting`: a named look from `Config.Cutscene.LightingPresets`
+  (`CutsceneLighting`). The world's own lighting is saved on the first look and
+  restored however the scene ends.
+- `focus`, `camera.ease`, `camera.fieldOfViewTo`, `camera.handheld`, and
+  `mouseLook` (the player turns the camera, but can't move).
+- `sounds`: cues from `Config.Audio.Cutscene` (`SoundController`). A cue marked
+  `loops` is a bed: it carries across cuts while each shot lists it, and fades at
+  the first cut whose shot doesn't. A shot that should keep the music going must
+  list it.
+- `titleCard`, `lines` (subtitles), `fadeIn`/`fadeOut`.
+
+**The player in the scene.** `SetKit.avatarDouble` clones the player's own
+avatar to stand, walk or sit in a set (the car, the forecourt, the lobby, the
+lift mirror). It is placed by its feet, using the avatar's own hip height, so
+any avatar size stands on the floor.
+
+**However a scene ends** (finished, held to skip, or ended by the server),
+`CutsceneView.close` undoes the camera, lighting, sets and sound.
+
+**Tests.** `CutsceneService_Test` covers the server side and CASE-001's intro
+data (beats, length, replay point, the motif rule). The headless playthrough
+plays the intro through the real client, holds to skip it, replays it from the
+lift doors, and checks every set builds, performs each action, keeps its parts
+out of the office, stands the investigator's double on its floor and leaves
+nothing behind.
 
 ## Headless verification
 

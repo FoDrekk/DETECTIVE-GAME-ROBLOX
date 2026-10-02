@@ -406,9 +406,12 @@ function CameraController.playShot(from: CFrame, to: CFrame, duration: number, f
 	-- A still shot with nothing alive in it needs no frame loop after the first.
 	local alive = looking or handheld > 0 or to ~= from or endFov ~= startFov
 	task.spawn(function()
+		local lastFrame = startClock
 		while token == cinematicToken do
 			local now = os.clock()
 			local elapsed = now - startClock
+			local dt = now - lastFrame
+			lastFrame = now
 			local alpha = math.min(elapsed / length, 1)
 			local eased = easeProgress(opts.ease, alpha)
 			local frame = from:Lerp(to, eased)
@@ -416,8 +419,8 @@ function CameraController.playShot(from: CFrame, to: CFrame, duration: number, f
 				-- The stick turns the view at a steady rate; the mouse and a drag
 				-- have already moved the offsets.
 				if lookStick.Magnitude > 0.15 then
-					lookYaw -= lookStick.X * LOOK_STICK_SPEED * (1 / 60)
-					lookPitch = math.clamp(lookPitch + lookStick.Y * LOOK_STICK_SPEED * (1 / 60), -LOOK_PITCH_LIMIT, LOOK_PITCH_LIMIT)
+					lookYaw -= lookStick.X * LOOK_STICK_SPEED * dt
+					lookPitch = math.clamp(lookPitch + lookStick.Y * LOOK_STICK_SPEED * dt, -LOOK_PITCH_LIMIT, LOOK_PITCH_LIMIT)
 				end
 				frame = CFrame.new(frame.Position) * CFrame.fromOrientation(basePitch + lookPitch, baseYaw + lookYaw, 0)
 			end

@@ -90,6 +90,10 @@ function Reception.build(interior: Instance)
 	local button = PropKit.newPart(room, "CallButton", Vector3.new(0.04, 0.18, 0.18), CFrame.new(faceX - 0.08, 3.6, panelZ), Color3.fromRGB(255, 196, 120), M.Neon)
 	button.Shape = Enum.PartType.Cylinder
 	button.CFrame = CFrame.new(faceX - 0.08, 3.6, panelZ)
+	PropKit.sign(room, at(faceX - 0.03, panelZ - 0.75, Kit.WEST, 4.7), "SURAU  ↓  TINGKAT 8", Vector2.new(1.7, 0.38), {
+		plate = Color3.fromRGB(224, 222, 212),
+		color = Color3.fromRGB(56, 68, 72),
+	})
 
 	-- Waiting area by the corridor.
 	PropKit.sofa(room, at(11.5, rect.z1 - 1.45, NORTH), 6, P.Fabric, M.Fabric)

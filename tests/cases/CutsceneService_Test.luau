@@ -518,6 +518,60 @@ return function(t)
 		expect.equal(#CutsceneService.validate(case001), 0)
 	end)
 
+	t.test("CASE-001's opening keeps its timed story beats and replays at the lift handoff", function()
+		local case001 = CaseRegistry.get("CASE-001") :: any
+		local intro = case001.cutscenes[1]
+		local duration = 0
+		local dialogue = ""
+		for _, shot in ipairs(intro.shots) do
+			duration += shot.duration
+			for _, line in ipairs(shot.lines or {}) do
+				dialogue ..= line.text .. "\n"
+			end
+		end
+		expect.equal(case001.intro.replacesBriefing, true)
+		expect.equal(intro.replayFrom, "LIFT-OPEN")
+		expect.equal(#intro.shots, 21)
+		expect.equal(duration, 169)
+		for _, beat in ipairs({
+			"Wisma Delima, level nine",
+			"Believe the room.",
+			"I'll be asleep. Call me when you know.",
+			"Tingkat sembilan, Inspektor.",
+			"Access logged 12:38 AM.",
+			"Jangan lupa makan.",
+		}) do
+			expect.truthy(string.find(dialogue, beat, 1, true))
+		end
+	end)
+
+	-- The screenplay's music rule: silence in the cold open, then one motif from
+	-- the city to the lift. A bed fades at any cut whose shot doesn't list it, so
+	-- a shot that forgets it would restart the music from the top.
+	t.test("CASE-001's motif is silent in the cold open, then unbroken until the lift stops it", function()
+		local intro = (CaseRegistry.get("CASE-001") :: any).cutscenes[1]
+		local entered, stopped = false, false
+		for _, shot in ipairs(intro.shots) do
+			local lists, stops = false, false
+			for _, cue in ipairs(shot.sounds or {}) do
+				if cue.cue == "Motif" then
+					lists = true
+					stops = stops or cue.stop == true
+				end
+			end
+			if string.sub(shot.id, 1, 4) == "BED-" then
+				expect.falsy(lists)
+			elseif not stopped then
+				entered = entered or lists
+				if entered and not lists then
+					error(`the motif drops out at {shot.id}`, 0)
+				end
+				stopped = stops
+			end
+		end
+		expect.truthy(entered and stopped)
+	end)
+
 	t.test("the validator reports a Solved close that names a scene that isn't there", function()
 		local broken = table.clone(CaseRegistry.get("CASE-001") :: any)
 		broken.solution = table.clone(broken.solution)

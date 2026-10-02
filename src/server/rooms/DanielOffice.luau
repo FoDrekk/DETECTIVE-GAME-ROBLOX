@@ -3,12 +3,12 @@
 	Daniel's office: the corner office, and the scene of the case. His light was
 	on; it's always on.
 
-	The arrangement is the one the case was written around, in a room with room
-	to walk in: Daniel's chair on the door side of his desk (pulled out and
-	turned toward the door: he got up), the visitor's chair across it with the
-	window behind, the tape outline on the open floor beside the desk, the
-	credenza under the window where his head struck it. The desk's things face
-	the doorway, so the investigator sees the evidence the way he did.
+	The layout leaves a clear approach from the door: Daniel's chair is behind
+	the desk facing the entrance, and the visitor's chair sits opposite. The
+	tape outline stays on the open floor beside the desk, the
+	credenza under the window where his head struck it. The desk's working
+	surface faces Daniel; evidence props stay visible and bound at their new
+	positions.
 
 	The interactable desk things (phone, laptop, agenda, pen, mug, the drawer)
 	are built here, by name, and the case binds its evidence to them
@@ -52,7 +52,7 @@ function DanielOffice.build(interior: Instance)
 	local base = PropKit.newPart(room, "Pedestal", Vector3.new(1.8, legHeight, 3.7), CFrame.new(d.X - 2.9, legHeight / 2, d.Z), P.WalnutDark, M.Wood)
 	base.CanCollide = true
 	PropKit.newPart(room, "PanelLeg", Vector3.new(0.3, legHeight, 3.8), CFrame.new(d.X + 3.65, legHeight / 2, d.Z), P.WalnutDark, M.Wood).CanCollide = true
-	PropKit.newPart(room, "Modesty", Vector3.new(6.2, 1.5, 0.12), CFrame.new(d.X + 0.4, 1.55, d.Z - 1.8), P.WalnutDark, M.Wood)
+	PropKit.newPart(room, "Modesty", Vector3.new(6.2, 1.5, 0.12), CFrame.new(d.X + 0.4, 1.55, d.Z + 1.8), P.WalnutDark, M.Wood)
 	for i = 0, 1 do
 		PropKit.newPart(room, "DrawerLine", Vector3.new(1.6, 0.03, 0.02), CFrame.new(d.X - 2.9, 0.75 + i * 0.7, d.Z + 1.86), P.Walnut, M.Wood)
 	end
@@ -61,33 +61,33 @@ function DanielOffice.build(interior: Instance)
 	collider.CanCollide = true
 	collider.CastShadow = false
 
-	-- The drawer, on the pedestal's chair-side face: the photo of Meera is in it.
-	local drawer = PropKit.newPart(room, "DeskDrawer", Vector3.new(1.8, 0.45, 0.12), CFrame.new(d.X - 2.9, 2.22, d.Z + 2.04), Color3.fromRGB(150, 104, 62), M.Wood)
+	-- The drawer faces Daniel's side; the photo of Meera is in it.
+	local drawer = PropKit.newPart(room, "DeskDrawer", Vector3.new(1.8, 0.45, 0.12), CFrame.new(d.X - 2.9, 2.22, d.Z - 2.04), Color3.fromRGB(150, 104, 62), M.Wood)
 	drawer.CanQuery = true
 	Kit.interactable(drawer, "Examine", "Examine Drawer")
-	PropKit.newPart(room, "DeskDrawer_Pull", Vector3.new(0.5, 0.06, 0.06), CFrame.new(d.X - 2.9, 2.22, d.Z + 2.13), Color3.fromRGB(40, 40, 44), M.Metal)
+	PropKit.newPart(room, "DeskDrawer_Pull", Vector3.new(0.5, 0.06, 0.06), CFrame.new(d.X - 2.9, 2.22, d.Z - 2.13), Color3.fromRGB(40, 40, 44), M.Metal)
 
 	------------------------------------------------------------------
-	-- Chairs: his, pulled out and turned toward the door; the visitor's,
-	-- pushed back from the desk.
+	-- Daniel sits behind the desk facing the entrance; the visitor faces him
+	-- from the entrance side. The positions leave a clear route around the desk.
 	------------------------------------------------------------------
-	PropKit.officeChair(room, at(d.X + 0.4, d.Z + 3.6, NORTH), {
+	PropKit.officeChair(room, at(d.X + 0.4, d.Z - 3.6, SOUTH), {
 		upholstery = P.Leather,
 		material = M.Leather,
 		highBack = true,
-		yaw = 38,
+		yaw = 0,
 	})
-	PropKit.sideChair(room, at(d.X - 1.8, d.Z - 4.0, SOUTH), { upholstery = P.FabricWarm, yaw = -14 })
+	PropKit.sideChair(room, at(d.X - 1.8, d.Z + 4.0, NORTH), { upholstery = P.FabricWarm, yaw = 0 })
 
 	------------------------------------------------------------------
-	-- On the desk. Everything faces the doorway.
+	-- On the desk. The monitor, laptop and notes face the seated boss.
 	------------------------------------------------------------------
 	-- The screen had gone to sleep; the lamp was left on.
-	PropKit.monitor(room, at(d.X, d.Z - 1.55, SOUTH, TOP), "off")
-	PropKit.deskLamp(room, at(d.X - 3.3, d.Z - 1.35, Vector3.new(0.5, 0, 1).Unit, TOP), true)
+	PropKit.monitor(room, at(d.X, d.Z + 1.55, NORTH, TOP), "off")
+	PropKit.deskLamp(room, at(d.X - 3.3, d.Z + 1.35, Vector3.new(0.5, 0, -1).Unit, TOP), true)
 
 	-- The phone: face up beside the keyboard, its screen faintly lit.
-	local phone = PropKit.newPart(room, "Phone", Vector3.new(0.7, 0.12, 1.3), CFrame.new(d.X + 3.5, TOP + 0.06, d.Z - 1.2), Color3.fromRGB(28, 30, 34), M.SmoothPlastic)
+	local phone = PropKit.newPart(room, "Phone", Vector3.new(0.7, 0.12, 1.3), CFrame.new(d.X + 3.5, TOP + 0.06, d.Z + 0.9), Color3.fromRGB(28, 30, 34), M.SmoothPlastic)
 	phone.CanQuery = true
 	Kit.interactable(phone, "Examine", "Examine Phone")
 	local screen = PropKit.newPart(
@@ -105,7 +105,7 @@ function DanielOffice.build(interior: Instance)
 	local laptop = Instance.new("Model")
 	laptop.Name = "Laptop"
 	laptop.Parent = room
-	local baseCF = CFrame.new(d.X - 1, TOP + 0.05, d.Z - 0.5)
+	local baseCF = CFrame.new(d.X - 1, TOP + 0.05, d.Z + 0.5)
 	local laptopBase = PropKit.newPart(laptop, "LaptopBase", Vector3.new(1.9, 0.1, 1.3), baseCF, Color3.fromRGB(150, 152, 158), M.SmoothPlastic)
 	laptopBase.CanQuery = true
 	Kit.interactable(laptopBase, "Examine", "Examine Laptop")
@@ -113,20 +113,20 @@ function DanielOffice.build(interior: Instance)
 	PropKit.newPart(laptop, "LaptopDisplay", Vector3.new(1.7, 1.0, 0.04), baseCF * CFrame.new(0, 0.567, -0.553) * CFrame.Angles(math.rad(-20), 0, 0), Color3.fromRGB(70, 108, 136), M.Neon).CastShadow = false
 
 	-- The agenda for tonight, squared on the desk.
-	local agenda = PropKit.newPart(room, "Document", Vector3.new(1.5, 0.04, 1.1), CFrame.new(d.X + 1.4, TOP + 0.02, d.Z - 0.4) * CFrame.Angles(0, math.rad(14), 0), Color3.fromRGB(226, 222, 210), M.SmoothPlastic)
+	local agenda = PropKit.newPart(room, "Document", Vector3.new(1.5, 0.04, 1.1), CFrame.new(d.X + 1.4, TOP + 0.02, d.Z + 0.7) * CFrame.Angles(0, math.rad(14), 0), Color3.fromRGB(226, 222, 210), M.SmoothPlastic)
 	agenda.CanQuery = true
 	agenda.CastShadow = false
 	Kit.interactable(agenda, "Read", "Read Document")
 
 	-- A fountain pen, uncapped.
-	local pen = PropKit.newPart(room, "Pen", Vector3.new(0.08, 0.08, 0.7), CFrame.new(d.X + 0.6, TOP + 0.08, d.Z - 1.4) * CFrame.Angles(0, math.rad(-30), 0), P.LeatherBlack, M.SmoothPlastic)
+	local pen = PropKit.newPart(room, "Pen", Vector3.new(0.08, 0.08, 0.7), CFrame.new(d.X + 0.6, TOP + 0.08, d.Z + 1.35) * CFrame.Angles(0, math.rad(-30), 0), P.LeatherBlack, M.SmoothPlastic)
 	pen.CanQuery = true
 	Kit.flavour(pen, "Examine Pen")
 
 	-- His mug of cold chamomile, the tag hanging over the rim: he didn't drink
 	-- coffee at night, which is what makes the espresso cup across the desk
 	-- worth a second look.
-	local mugPos = Vector3.new(d.X - 3.4, TOP + 0.3, d.Z + 0.3)
+	local mugPos = Vector3.new(d.X - 3.4, TOP + 0.3, d.Z - 0.3)
 	local mug = PropKit.newPart(room, "CoffeeCup", Vector3.new(0.6, 0.5, 0.5), CFrame.new(mugPos) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(232, 228, 220), M.SmoothPlastic)
 	mug.Shape = Enum.PartType.Cylinder
 	mug.CanQuery = true
@@ -149,8 +149,8 @@ function DanielOffice.build(interior: Instance)
 	PropKit.credenza(room, at(DanielOffice.OUTLINE.X + 1.1, rect.z0 + 0.65, SOUTH), 2.6)
 
 	-- A bookcase along the west wall, and a sofa to sit on.
-	PropKit.shelving(room, at(rect.x0 + 0.55, -20.5, EAST), 8, 7.4, 4, 31, { frame = P.WalnutDark, material = M.Wood, depth = 1.1 })
-	PropKit.sofa(room, at(rect.x0 + 1.45, -12.0, EAST), 5)
+	PropKit.shelving(room, at(rect.x0 + 0.55, -20.5, EAST), 7, 7.4, 4, 31, { frame = P.WalnutDark, material = M.Wood, depth = 1.1 })
+	PropKit.sofa(room, at(rect.x0 + 1.45, -12.0, EAST), 4.5)
 	PropKit.floorLamp(room, at(rect.x0 + 0.9, -16.0, EAST), true)
 	PropKit.framedArt(room, at(rect.x0 + 0.05, -12.0, EAST, 7.0), 3.2, 2.3, 11)
 	PropKit.plant(room, at(rect.x0 + 0.9, rect.z0 + 0.9, EAST), 0.9, "tree")

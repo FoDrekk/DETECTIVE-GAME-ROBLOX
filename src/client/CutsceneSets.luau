@@ -19,8 +19,8 @@
 	What happens in a set is named, not scripted here: a shot lists actions
 	(Types.CutsceneAction) and the set performs them (a phone buzzing, a door
 	sliding, a floor number changing). The config lists the actions each set
-	knows; the server checks a scene against it at boot and this module's tests
-	check every set really does each one.
+	knows; the server checks a scene against it at boot, and the headless
+	playthrough (tools/headless) checks every set really does each one.
 
 	Each set is a module in `sets/` named for it, returning
 	`build(origin: Vector3, parent: Folder): SetHandle`. A set that errors while
@@ -50,6 +50,9 @@ type SetDefinition = { world: boolean?, origin: Vector3?, actions: { string } }
 local CONTAINER_NAME = "MysteryCase_CutsceneSets"
 
 local built: { [string]: SetHandle } = {}
+-- Sets that failed to build during this scene: not retried on every shot and
+-- action that names them (the warning is logged once).
+local failed: { [string]: boolean } = {}
 local container: Folder? = nil
 
 local function definitionOf(name: string): SetDefinition?
@@ -125,13 +128,14 @@ function CutsceneSets.enter(name: string?): SetHandle?
 		return nil
 	end
 	local existing = built[name]
-	if existing then
+	if existing or failed[name] then
 		return existing
 	end
 	local definition = definitionOf(name)
 	local module = moduleFor(name)
 	if not definition or not module then
 		log:warn("no such set", { set = name })
+		failed[name] = true
 		return nil
 	end
 	local folder = Instance.new("Folder")
@@ -143,6 +147,7 @@ function CutsceneSets.enter(name: string?): SetHandle?
 	end)
 	if not ok or type(result) ~= "table" then
 		log:warn("set failed to build", { set = name, error = tostring(result) })
+		failed[name] = true
 		folder:Destroy()
 		return nil
 	end
@@ -196,6 +201,7 @@ end
 
 -- Take every set down. Called however a scene ends.
 function CutsceneSets.leaveAll()
+	table.clear(failed)
 	for name in pairs(table.clone(built)) do
 		CutsceneSets.release(name)
 	end

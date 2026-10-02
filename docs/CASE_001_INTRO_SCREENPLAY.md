@@ -1,6 +1,9 @@
 # CASE-001 — Intro Screenplay and Storyboard
 
-Status: **design for review.** Not implemented.
+Status: **Implemented.** The original storyboard below records the approved
+story decisions; the production cut is a revised 2:49 sequence in
+`src/config/Case001Intro.luau`. The shot map and implementation status are
+kept aligned below. The scene remains text-first; it has no recorded dialogue.
 
 Canon for names and times: `GAME_VISION.md` and `CASE_001_V2_STORY_BIBLE.md` §3.
 Decisions and rejected alternatives: `DESIGN_DECISIONS.md` D-17 to D-19.
@@ -30,14 +33,21 @@ The v1 briefing shot shows the second cup, so this intro **replaces**
 
 ## 2. Runtime
 
-**About 2 minutes 40 seconds** to full control.
-- 0:00–2:05 is cinematic.
-- 2:05–2:40 is the lift: you have mouse-look, not movement, then the doors
-  open.
+**About 2 minutes 49 seconds** to full control (within the approved 2–4 minute
+opening window).
+
+| Beat | Target | Treatment |
+|---|---:|---|
+| Cold open | 0:00–0:20 | Establishing bedroom move, clock insert, phone close-up, ringed hand turns it over, cut to black. |
+| Kota Arwana | 0:20–0:47.5 | Aerial push, LRT pass, mamak tableau, dispatch over the unmarked car. |
+| The call | 0:47.5–1:38 | SCU warrant close-up, caller screen and detective in the car, Nora's complete briefing, road view toward the tower. |
+| Arrival | 1:38–2:00 | Sedan and patrol car, rising move to the single lit ninth-floor window, detective at the entrance. |
+| Lobby | 2:00–2:14 | Constable's greeting, badge reader acceptance, detective crosses the turnstile. |
+| Lift | 2:14–2:49 | Doors close; floors climb; message arrives; player can look around the mirrored car; a short arrival pause, then doors open and control hands over. |
 
 **Why this length (PC-first reference)**
 - The owner asked for 2–4 minutes.
-- On PC, with cinematic presentation as the reference, 2:40 is long enough to
+- On PC, with cinematic presentation as the reference, roughly 2:50 is long enough to
   set up Kota Arwana, the SCU, Nora and the stakes without a single line of
   exposition the room could tell instead.
 - It is short enough that the first thing the player *does* happens under three
@@ -48,15 +58,41 @@ The v1 briefing shot shows the second cup, so this intro **replaces**
 **Skip rules**
 - First viewing: hold **Space** or **E** for 1 second to skip. Escape is
   Roblox-reserved.
-- Every later run starts at the lift doors (Shot 17).
+- Every later run starts at the lift doors (shot `LIFT-OPEN`).
 - Subtitles are always on for Malay lines.
 
-## 3. Shot list
+## 3. Shot map
 
-Framing is 16:9 PC reference, letterboxed throughout until the doors open.
-Durations are targets.
+Framing remains letterboxed until the lift opens. The production cut uses 21
+shots with moving wides, compressed inserts, deliberate hard cuts, restrained
+focus pulls and a longer player-controlled lift passage. The count and running
+times below describe the current implementation.
 
-### Scene 1 — "11:47" (cold open), 0:00–0:22
+| # | Time | Shot | Story action / sound |
+|---|---:|---|---|
+| 1–5 | 0:00–0:20 | Bedroom: wide, clock, ringing phone, hand, empty hold | Rain and room tone; phone is the loudest event; the ringed hand flips it face down; cut to black. |
+| 6–9 | 0:20–0:47.5 | City aerial, LRT, mamak, dispatch | Traffic motif enters; train and mamak ambience; Malay dispatch identifies Wisma Delima, level nine, and the 12:14 guard report. |
+| 10 | 0:47.5–0:52.5 | Warrant insert | Player-specific SCU identity and headshot; Nora calls. |
+| 11–13 | 0:52.5–1:38 | Three car framings | Caller ID and the detective's silhouette; Nora gives the complete case setup and deadline; the final move finds the tower through the windshield. Dialogue stays text-first. |
+| 14–16 | 1:38–2:00 | Forecourt, ninth-floor tilt, entrance | Sedan stops; the one lit window anchors the upward move; the investigator steps into the building. |
+| 17–18 | 2:00–2:14 | Constable, access reader | Sam is upstairs; the badge is accepted and logged at 12:38 AM; the investigator passes through. |
+| 19–21 | 2:14–2:49 | Lift ride, arrival pause, doors | Floors climb; the mirror and ROSAK dome are discoverable by looking; Nora's message arrives; score falls away before the doors open. |
+
+The ROSAK tape remains unexplained and has no interaction prompt. The access
+caption is not evidence. No case facts are granted or marked discovered during
+the scene. The player receives control at the same lift-door handoff on first
+play and replay.
+
+### The approved storyboard
+
+The storyboard the owner approved, kept as the reference for story content.
+Its shot numbers (1–17) are the ones §7 cites. The production cut above
+re-times and splits these beats into 21 shots, and nothing here was dropped
+from the story: the tablets and the face-down phone (`sets/Bedroom.luau`), the
+access caption and Nora's message (`Case001Intro.luau`) and the ROSAK dome
+(the real lift car, `OfficeShell.luau`) are all built.
+
+#### Scene 1 — "11:47" (cold open), 0:00–0:22
 
 | # | Time | Shot | Action | Sound | On screen |
 |---|---|---|---|---|---|
@@ -70,7 +106,7 @@ We never see a face, a room detail that names her, or a lanyard.
   Meera says "I took something. I was out by ten."
 - It's never pointed at and never needed.
 
-### Scene 2 — Kota Arwana, 0:22–0:50
+#### Scene 2 — Kota Arwana, 0:22–0:50
 
 | # | Time | Shot | Action | Sound | On screen |
 |---|---|---|---|---|---|
@@ -79,7 +115,7 @@ We never see a face, a room detail that names her, or a lanyard.
 | 7 | 0:36–0:42 | Street level, across the road | A 24-hour mamak, full at half twelve. Football on a wall TV, a teh tarik pulled high. A delivery rider in a rain poncho waits by his bike. A sign on the lamppost: *DILARANG MELETAK KENDERAAN*. | Mamak chatter, a TV cheer, rain on awnings | — |
 | 8 | 0:42–0:50 | Tracking alongside an unmarked sedan at a red light | Wipers. The police radio crackles. | **Radio, in Malay:** "Kawalan kepada semua unit. Kes mati mengejut, Wisma Delima, Jalan Merbau, tingkat sembilan. Dilaporkan pengawal keselamatan, dua belas empat belas pagi." | Subtitle: *"Control to all units. Sudden death, Wisma Delima, Jalan Merbau, ninth floor. Reported by the security guard at 12:14 AM."* |
 
-### Scene 3 — The call, 0:50–1:40
+#### Scene 3 — The call, 0:50–1:40
 
 | # | Time | Shot | Action | Sound | On screen |
 |---|---|---|---|---|---|
@@ -87,7 +123,7 @@ We never see a face, a room detail that names her, or a lanyard.
 | 10 | 0:56–1:30 | Medium, the driver's side through a rain-streaked window, the face lit by the dashboard phone | The detective answers on speaker. The light turns green. | Nora's call (script §4); the motif low underneath | Caller ID: **SUPT. NORA — SCU**. Dialogue in the conversation style. |
 | 11 | 1:30–1:40 | Over-the-shoulder through the windscreen | Between towers, **Wisma Delima**: mostly dark, and **one lit window on the ninth floor** | The motif lifts slightly; wipers | — |
 
-### Scene 4 — Wisma Delima, 1:40–2:05
+#### Scene 4 — Wisma Delima, 1:40–2:05
 
 | # | Time | Shot | Action | Sound | On screen |
 |---|---|---|---|---|---|
@@ -98,7 +134,7 @@ We never see a face, a room detail that names her, or a lanyard.
 Shot 14 quietly teaches that the building remembers every badge. It pays off
 when Sam prints the log. It does not mention Victor.
 
-### Scene 5 — The lift, 2:05–2:40 (mouse-look, no movement)
+#### Scene 5 — The lift, 2:05–2:40 (mouse-look, no movement)
 
 | # | Time | Shot | Action | Sound | On screen |
 |---|---|---|---|---|---|
@@ -110,7 +146,7 @@ The ROSAK tape is the first thread of *Titik Buta* (`LONG_TERM_MYSTERY.md`).
 - Most players won't see it; the ones who do will remember it when the office
   cameras are dark too.
 
-### Scene 6 — Level 9, 2:36–2:40, then control
+#### Scene 6 — Level 9, 2:36–2:40, then control
 
 | # | Time | Shot | Action | Sound | On screen |
 |---|---|---|---|---|---|
@@ -202,7 +238,7 @@ the radio, the language and the food do that.
 | Dark cameras | ROSAK on the lift dome (Shot 15) |
 | Dawn as the deadline | "Forensics can't get there till six" |
 
-## 8. Production notes (for the implementation proposal, not tonight)
+## 8. Production notes (the original proposal; now built)
 
 **New sets**
 - A small condo bedroom (Bukit Pelangi).
@@ -228,6 +264,12 @@ the radio, the language and the food do that.
 - The lift mirror showing the real avatar.
 - The display name on the card.
 
+Built in Phase 5.5 as `CutsceneService` (server-timed shots, replay from
+`LIFT-OPEN`), `CutsceneView` (letterbox, captions, hold-to-skip),
+`CutsceneSets` with one module per dressed set in `src/client/sets`, and
+`CutsceneLighting` presets in `Config.Cutscene.Lighting`. See
+`ARCHITECTURE.md`, "The case intro and scene presentation (Phase 5.5)".
+
 ## 9. Prototype specification: an animatic before any sets
 
 To test pacing cheaply, build a **throwaway animatic place** (not the game
@@ -238,3 +280,36 @@ place) before committing to sets:
 - the subtitles and a temp soundtrack.
 
 Watch it three times and cut anything that drags. Only then build sets.
+
+## 10. Production pass notes (full audit, 2026-10-02)
+
+Story, dialogue, timing and shot count are unchanged: 21 shots, 169 seconds,
+replay from `LIFT-OPEN`. What changed is how the shots read on screen.
+
+- **City aerial.** The camera sits lower and closer, with a narrower lens
+  (FOV 48), so the towers fill the frame instead of a far, fogged grid. The
+  city set keeps its geometry within ~500 studs of the camera, where Roblox
+  still draws small parts, and the haze was thinned so the lit windows
+  survive.
+- **Street (LRT and mamak).** Rebuilt as a place: a guideway on piers that
+  the train crosses, two-storey shophouses with a few rooms lit upstairs,
+  sodium lamps on both kerbs, a lit mamak interior behind the glass,
+  stools at the tables. The unmarked car drives in along the kerb as one
+  model, headlamps lit, and pulls up (only its body used to move, leaving
+  the roof, wheels and lamps behind). The mamak shot frames the teh tarik
+  and the rider at a tighter lens.
+- **Car.** Nora's first framing is tighter on the phone. The windscreen shot
+  looks up at Wisma Delima, with lamp posts and rain along the road.
+- **Forecourt and lobby.** The sedan drives in and the investigator steps out
+  of the driver's door; the tower carries its name; the lobby has a ceiling
+  and downlights. The investigator's double is placed by its feet, so it
+  stands on the floor in every set whatever the avatar's proportions (it was
+  placed by its root before), walks to the reader and through the gate.
+- **Lift.** Its own lighting preset (`Lift`): a dim, cool, closed car
+  instead of the lobby's look, with a softer ceiling panel.
+- **Sound.** The phone's buzz stops when the hand turns it over, and the
+  motif is listed on every shot it plays through, so it carries unbroken
+  from the city to the lift (a test pins this).
+- **Known gaps.** The constable is a simple block figure, not a rigged
+  character; the far horizon glow behind the city doesn't render at its
+  distance. Both are in the next-phase proposal (`ROADMAP.md`, 5.6).

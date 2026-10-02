@@ -76,13 +76,14 @@ function MeetingRoom.build(interior: Instance)
 		lightInfluence = 0,
 	})
 
-	-- The whiteboard, on the south wall: last quarter, and a partnership struck out.
+	-- The whiteboard, on the south wall: last quarter, and a partnership struck
+	-- out, in Daniel's hand (as the case's observation text describes it).
 	local wallZ = rect.z1
 	local board = PropKit.newPart(room, "Whiteboard", Vector3.new(9, 4.5, 0.2), CFrame.new(21, 6, wallZ - 0.1), Color3.fromRGB(238, 238, 234), M.SmoothPlastic)
 	board.CanQuery = true
 	Kit.flavour(board, "Examine Whiteboard")
 	PropKit.newPart(room, "WhiteboardFrame", Vector3.new(9.4, 4.9, 0.15), CFrame.new(21, 6, wallZ - 0.06), Color3.fromRGB(150, 152, 156), M.SmoothPlastic).CastShadow = false
-	local gui = PropKit.label(board, Enum.NormalId.Front, "", { pixelsPerStud = 60 })
+	local gui = PropKit.label(board, Enum.NormalId.Front, "", { pixelsPerStud = 60, lightInfluence = 0 })
 	local text = gui:FindFirstChildOfClass("TextLabel")
 	if text then
 		text.RichText = true
@@ -103,10 +104,22 @@ function MeetingRoom.build(interior: Instance)
 		local marker = PropKit.newPart(room, "Marker", Vector3.new(0.6, 0.12, 0.12), CFrame.new(19.8 + i * 0.7, 3.73, wallZ - 0.4), color, M.SmoothPlastic)
 		marker.Shape = Enum.PartType.Cylinder
 	end
-	-- Sticky notes round its edge.
-	for i, spec in ipairs({ { 16.2, 7.6 }, { 26.0, 5.2 }, { 26.9, 7.4 } }) do
-		local note = PropKit.newPart(room, `Sticky_{i}`, Vector3.new(0.9, 0.9, 0.05), CFrame.new(spec[1], spec[2], wallZ - 0.235) * CFrame.Angles(0, 0, math.rad(i * 4 - 6)), Color3.fromRGB(240, 224, 130), M.SmoothPlastic)
+	-- Three small reminders at the edge, each carrying one useful note.
+	local noteSpecs: { { x: number, y: number, text: string } } = {
+		{ x = 16.2, y = 7.6, text = "FRI 10" },
+		{ x = 26.0, y = 5.2, text = "DRAFT V3" },
+		{ x = 26.9, y = 7.4, text = "ROOM 9B" },
+	}
+	for i, spec in ipairs(noteSpecs) do
+		local note = PropKit.newPart(room, `Sticky_{i}`, Vector3.new(0.9, 0.9, 0.05), CFrame.new(spec.x, spec.y, wallZ - 0.235) * CFrame.Angles(0, 0, math.rad(i * 4 - 6)), Color3.fromRGB(240, 224, 130), M.SmoothPlastic)
 		note.CastShadow = false
+		PropKit.label(note, Enum.NormalId.Front, spec.text, {
+			color = Color3.fromRGB(54, 52, 42),
+			font = Enum.Font.GothamBold,
+			size = 11,
+			lightInfluence = 0,
+			padding = 2,
+		})
 	end
 
 	PropKit.wallClock(room, at(31.6, wallZ - 0.05, NORTH, 8.4), 12, 40)

@@ -166,7 +166,7 @@ function LiftCar.build(_origin: Vector3, parent: Folder)
 
 	-- The avatar in the mirror: it faces the way the player looks, so turning to
 	-- the glass shows their face, and looking at the doors shows their back.
-	local double = SetKit.avatarDouble(parent, CFrame.new(2 * planeX - 31.75, 3.2, 23.75))
+	local double = SetKit.avatarDouble(parent, CFrame.new(2 * planeX - OfficePlan.Spawn.X, OfficePlan.Spawn.Y, OfficePlan.Spawn.Z))
 	if double then
 		double.animate(SetKit.IdleAnimation, true)
 		scope.add(RunService.RenderStepped:Connect(function()

@@ -273,6 +273,11 @@ local function exteriorWall(parent: Instance, w: OfficePlan.Wall)
 			local panes = math.max(1, math.ceil((b - a) / 11.5))
 			local glassPart = glass(folder, `WinGlass_{index}`, axis, at, a + 0.25, b - 0.25, sill + 0.25, head - 0.25, 0.7, WINDOW_TINT)
 			glassPart.Name = `WinGlass_{index}`
+			-- Plain, not the Glass material: Roblox's glass all but hides the lit
+			-- city behind it, which is the whole point of these windows.
+			glassPart.Material = M.SmoothPlastic
+			glassPart.Transparency = 0.84
+			glassPart.Reflectance = 0.1
 			-- The city's glow, through the glass into the room.
 			local style = Config.Environment.Interior.CityGlow
 			PropKit.light(glassPart, "SurfaceLight", style.Brightness, style.Range, style.Color, {
@@ -397,9 +402,9 @@ local function liftCar(parent: Instance)
 	-- Ceiling with a recessed light panel.
 	local lid = PropKit.newPart(folder, "Ceiling", Vector3.new(width, 0.2, depth), CFrame.new(cx, ceilingY + 0.1, cz), STEEL_DARK, M.Metal)
 	lid.CastShadow = false
-	local panel = PropKit.newPart(folder, "LightPanel", Vector3.new(width - 2.6, 0.06, depth - 2.6), CFrame.new(cx, ceilingY - 0.03, cz), Color3.fromRGB(246, 242, 232), M.Neon)
+	local panel = PropKit.newPart(folder, "LightPanel", Vector3.new(width - 2.6, 0.06, depth - 2.6), CFrame.new(cx, ceilingY - 0.03, cz), Color3.fromRGB(226, 222, 212), M.Neon)
 	panel.CastShadow = false
-	PropKit.light(panel, "PointLight", 1.1, 11, Color3.fromRGB(255, 244, 226), { shadows = false })
+	PropKit.light(panel, "PointLight", 1.3, 14, Color3.fromRGB(255, 244, 226), { shadows = false })
 
 	-- Steel cladding on the walls' inner faces.
 	local function cladding(name: string, size: Vector3, position: Vector3, color: Color3?)
@@ -431,7 +436,7 @@ local function liftCar(parent: Instance)
 		M.Glass
 	)
 	mirror.Transparency = 0.25
-	mirror.Reflectance = 0.55
+	mirror.Reflectance = 0.32
 	mirror.CastShadow = false
 
 	-- Handrails on the side walls.
@@ -467,8 +472,43 @@ local function liftCar(parent: Instance)
 		})
 	end
 
-	-- The inspection certificate, framed, on the south wall.
-	local cert = PropKit.newPart(folder, "Certificate", Vector3.new(1.5, 1.1, 0.06), CFrame.new(cx - 1.4, 5.6, car.z1 - 0.19), Color3.fromRGB(226, 222, 210), M.SmoothPlastic)
+	-- Flush passenger controls on the south wall keep the cabin functional
+	-- while leaving its mirrored, cinematic character unobstructed.
+	local controlX, controlY, controlZ = car.x0 + 1.25, 4.95, car.z1 - 0.2
+	local controlPanel = PropKit.newPart(folder, "ControlPanel", Vector3.new(1.65, 2.95, 0.08), CFrame.new(controlX, controlY, controlZ), Color3.fromRGB(42, 46, 52), M.Metal)
+	controlPanel.CastShadow = false
+	controlPanel.Reflectance = 0.12
+	for floorNumber = 1, 9 do
+		local column = (floorNumber - 1) % 3
+		local row = math.floor((floorNumber - 1) / 3)
+		local button = PropKit.newPart(
+			folder,
+			`FloorButton_{floorNumber}`,
+			Vector3.new(0.31, 0.31, 0.07),
+			CFrame.new(controlX - 0.48 + column * 0.48, controlY + 0.72 - row * 0.48, controlZ - 0.08),
+			if floorNumber == 9 then Color3.fromRGB(226, 178, 108) else Color3.fromRGB(160, 168, 174),
+			M.Metal
+		)
+		button.CastShadow = false
+		PropKit.label(button, Enum.NormalId.Front, tostring(floorNumber), {
+			color = if floorNumber == 9 then Color3.fromRGB(34, 28, 20) else Color3.fromRGB(242, 242, 236),
+			font = Enum.Font.Code,
+			lightInfluence = 0,
+			pixelsPerStud = 100,
+		})
+	end
+	local alarm = PropKit.newPart(folder, "EmergencyCallButton", Vector3.new(0.38, 0.38, 0.08), CFrame.new(controlX - 0.48, controlY - 0.82, controlZ - 0.08), Color3.fromRGB(156, 65, 54), M.Metal)
+	alarm.CastShadow = false
+	PropKit.label(alarm, Enum.NormalId.Front, "!", { color = Color3.fromRGB(255, 238, 224), font = Enum.Font.GothamBold, lightInfluence = 0, pixelsPerStud = 100 })
+	local grille = PropKit.newPart(folder, "IntercomGrille", Vector3.new(0.62, 0.3, 0.05), CFrame.new(controlX + 0.37, controlY - 0.82, controlZ - 0.07), Color3.fromRGB(25, 28, 32), M.Metal)
+	grille.CastShadow = false
+	for i = 0, 4 do
+		local slot = PropKit.newPart(folder, `IntercomSlot_{i}`, Vector3.new(0.46, 0.025, 0.012), CFrame.new(controlX + 0.37, controlY - 0.73 - i * 0.045, controlZ - 0.105), Color3.fromRGB(118, 124, 128), M.Metal)
+		slot.CastShadow = false
+	end
+	-- The inspection certificate, framed, beside the controls (the intro's lift
+	-- shot lets the player look around at it).
+	local cert = PropKit.newPart(folder, "Certificate", Vector3.new(1.5, 1.1, 0.06), CFrame.new(cx + 0.45, 5.6, car.z1 - 0.19), Color3.fromRGB(226, 222, 210), M.SmoothPlastic)
 	cert.CastShadow = false
 	PropKit.label(cert, Enum.NormalId.Front, "PERAKUAN KELAYAKAN\nTingkat 1 - 9\nLuput: 03/2027", {
 		color = Color3.fromRGB(40, 40, 46),
@@ -476,7 +516,7 @@ local function liftCar(parent: Instance)
 		pixelsPerStud = 120,
 		padding = 6,
 	})
-	PropKit.newPart(folder, "CertificateFrame", Vector3.new(1.7, 1.3, 0.05), CFrame.new(cx - 1.4, 5.6, car.z1 - 0.16), P.LeatherBlack, M.Wood).CastShadow = false
+	PropKit.newPart(folder, "CertificateFrame", Vector3.new(1.7, 1.3, 0.05), CFrame.new(cx + 0.45, 5.6, car.z1 - 0.16), P.LeatherBlack, M.Wood).CastShadow = false
 
 	-- The door surround on the reception side.
 	local surroundColor = STEEL_DARK

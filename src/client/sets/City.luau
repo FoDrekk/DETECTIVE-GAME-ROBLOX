@@ -6,12 +6,15 @@
 	strung with lamps and moving light, an elevated LRT line, and a red aviation
 	light blinking on the tallest roof.
 
-	It is seen for eight seconds from a camera a hundred and fifty studs up, so
+	It is seen for seven seconds from a camera a hundred and fifty studs up, so
 	nothing here has detail below what a lit window or a lamp gives: the city is
-	made of light on dark shapes, and the distance (fog, haze) does the rest.
+	made of light on dark shapes, and the haze does the rest.
 
 	Local coordinates: the river runs from the near left toward the far right; the
-	camera looks north (-Z) from about (-90, 165, 700).
+	camera hangs over the river's east bank near (40, 165, 280) and pushes in
+	toward the twin towers. Keep what the shot needs within about five hundred
+	studs of it: Roblox stops drawing small parts (a lit window) further out than
+	that, sooner on a low graphics setting.
 
 	Actions:
 	  TrafficFlows   the cars on the avenues begin to move, and the LRT train runs
@@ -76,9 +79,10 @@ local function relativeToRiver(course: { Vector2 }, x: number, z: number): (numb
 		local d = (p - closest).Magnitude
 		if d < best then
 			best = d
-			-- The flow runs from a to b; "right" of it is the cross product's sign.
+			-- The flow runs from a to b (here, north: -Z). In (x, z), a positive cross
+			-- product is to the east of the flow.
 			local cross = ab.X * (p.Y - a.Y) - ab.Y * (p.X - a.X)
-			side = if cross > 0 then -1 else 1
+			side = if cross > 0 then 1 else -1
 		end
 	end
 	return best, side
@@ -95,7 +99,7 @@ function City.build(origin: Vector3, parent: Folder)
 	-- Ground, sky and the horizon glow
 	--------------------------------------------------------------------
 	SetKit.part(parent, "Ground", Vector3.new(2000, 1, 2000), CFrame.new(at(0, -0.5, 0)), C3(22, 20, 26), M.SmoothPlastic, { castShadow = false })
-	SetKit.gradientSky(parent, "Sky", CFrame.lookAt(at(0, 260, -1250), at(0, 260, 0)), 2040, 900, {
+	SetKit.gradientSky(parent, "Sky", CFrame.lookAt(at(0, 260, -1250), at(0, 260, 0)), 3600, 900, {
 		{ at = 0, color = C3(26, 16, 26) },
 		{ at = 0.3, color = C3(64, 30, 36) },
 		{ at = 0.5, color = C3(150, 62, 40) },
@@ -352,7 +356,7 @@ function City.build(origin: Vector3, parent: Folder)
 	--------------------------------------------------------------------
 	-- Rain over the camera's part of the sky
 	--------------------------------------------------------------------
-	SetKit.rain(parent, CFrame.new(at(-70, 220, 560)), Vector3.new(420, 0.2, 420), 170, { rate = 1600, speed = 95, length = 3.2, slant = -4 })
+	SetKit.rain(parent, CFrame.new(at(20, 230, 240)), Vector3.new(360, 0.2, 360), 170, { rate = 1600, speed = 95, length = 3.2, slant = -4 })
 
 	local actions: { [string]: (args: { [string]: any }?) -> () } = {
 		TrafficFlows = function()

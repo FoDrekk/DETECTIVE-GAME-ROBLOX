@@ -327,4 +327,37 @@ return function(t)
 		expect.truthy(after)
 		expect.truthy(after.timelineReconstructed)
 	end)
+
+	-- A client names the phase it wants; only beginning from the briefing is a
+	-- move it may ask for here (concluding and replaying have their own checks).
+	t.test("beginning is only accepted from the briefing", function()
+		resetToInvestigation()
+		local player = makePlayer()
+		expect.falsy(GameStateService.requestBegin(player))
+		expect.equal(GameStateService.getPhase(), "Investigation")
+
+		GameStateService.setPhase("CaseBriefing")
+		expect.truthy(GameStateService.requestBegin(player))
+		expect.equal(GameStateService.getPhase(), "Investigation")
+	end)
+
+	t.test("a player with no case data cannot begin", function()
+		resetToInvestigation()
+		GameStateService.setPhase("CaseBriefing")
+		local stranger = { UserId = t.nextUserId(), Name = "BeginStranger" }
+		expect.falsy(GameStateService.requestBegin(stranger :: any))
+		expect.equal(GameStateService.getPhase(), "CaseBriefing")
+		GameStateService.setPhase("Investigation")
+	end)
+
+	-- Mid-investigation, asking for the briefing is a replay request, and a
+	-- replay is only valid from the closing screen: nothing is wiped.
+	t.test("asking for the briefing mid-investigation changes nothing", function()
+		resetToInvestigation()
+		local player = makePlayer()
+		completeObj001(player)
+		expect.falsy(GameStateService.requestReplay(player))
+		expect.equal(GameStateService.getPhase(), "Investigation")
+		expect.truthy(PlayerDataService.get(player).caseState.completedObjectives["OBJ-001"])
+	end)
 end

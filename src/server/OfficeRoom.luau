@@ -76,12 +76,9 @@ local function applyNightLighting()
 		existingAtmo:Destroy()
 	end
 	local atmo = Instance.new("Atmosphere")
-	atmo.Density = 0.3
-	atmo.Offset = 0.05
-	atmo.Color = Color3.fromRGB(52, 60, 84)
-	atmo.Decay = Color3.fromRGB(24, 26, 38)
-	atmo.Glare = 0
-	atmo.Haze = 1.4
+	for property, value in pairs(night.Atmosphere) do
+		(atmo :: any)[property] = value
+	end
 	atmo.Parent = Lighting
 
 	local grade = Lighting:FindFirstChild("MysteryCase_Grade")

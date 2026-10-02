@@ -231,9 +231,9 @@ local function buildEvidenceMarkers(folder: Instance)
 	local d = DanielOffice.DESK
 	local top = 2.9
 	local markers = {
-		{ n = 1, pos = Vector3.new(d.X + 3.5, top, d.Z - 0.2) }, -- before the phone
-		{ n = 2, pos = Vector3.new(d.X - 1.0, top, d.Z + 0.55) }, -- before the laptop
-		{ n = 3, pos = Vector3.new(d.X + 1.4, top, d.Z + 0.55) }, -- before the agenda
+		{ n = 1, pos = Vector3.new(d.X + 3.5, top, d.Z + 1.65) }, -- before the phone
+		{ n = 2, pos = Vector3.new(d.X - 1.0, top, d.Z + 1.35) }, -- before the laptop
+		{ n = 3, pos = Vector3.new(d.X + 1.4, top, d.Z + 1.55) }, -- before the agenda
 	}
 	for _, marker in ipairs(markers) do
 		local card = Instance.new("Part")
