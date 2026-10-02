@@ -161,6 +161,17 @@ local function throughIntro(label: string, expectFrom: string, watch: number, sk
 	check(ended and ended[1].active == false and ended[1].id == "CUT-INTRO", `{label}: the server ends the intro`)
 	check(sentCount("EvidenceDiscovered") == discovered, `{label}: the intro hands over no evidence`)
 	check(camera.CameraType == Enum.CameraType.Custom, `{label}: the camera is back with the player`)
+	if skip then
+		-- Roblox's camera keeps the direction it is handed: from behind the player,
+		-- level, not the angle of whichever shot was cut short.
+		local look = camera.CFrame.LookVector
+		local root = (player.Character :: Model):FindFirstChild("HumanoidRootPart") :: BasePart
+		local facing = Vector3.new(root.CFrame.LookVector.X, 0, root.CFrame.LookVector.Z).Unit
+		check(
+			look.Y > -0.4 and Vector3.new(look.X, 0, look.Z).Unit:Dot(facing) > 0.9,
+			`{label}: a skipped intro hands the camera back from behind the player`
+		)
+	end
 	check(workspace:FindFirstChild("MysteryCase_CutsceneSets") == nil, `{label}: the scene's sets are taken down`)
 	local head = player.Character and player.Character:FindFirstChild("Head") :: BasePart?
 	check(head and head.LocalTransparencyModifier == 0, `{label}: the avatar is visible again`)

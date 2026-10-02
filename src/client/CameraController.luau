@@ -516,6 +516,27 @@ function CameraController.stopCinematic(blend: number?)
 	end
 end
 
+--[[
+	Point the camera from just behind the player, level with the way they face.
+	Roblox's own camera takes its direction from wherever the camera last looked,
+	so a scene cut short (skipped, or ended by the server) calls this before
+	handing back; otherwise the player starts looking down from the angle of a
+	shot that may have been framed far away.
+]]
+function CameraController.lookFromBehindPlayer()
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if not root or not root:IsA("BasePart") then
+		return
+	end
+	local focus = root.Position + Vector3.new(0, 1.5, 0)
+	local facing = Vector3.new(root.CFrame.LookVector.X, 0, root.CFrame.LookVector.Z)
+	if facing.Magnitude < 1e-3 then
+		return
+	end
+	getCamera().CFrame = CFrame.lookAt(focus - facing.Unit * 8 + Vector3.new(0, 1.5, 0), focus)
+end
+
 function CameraController.stopExamining()
 	setExplore()
 end

@@ -268,6 +268,11 @@ local function close(handover: boolean)
 	setSkipHint(false)
 	setMeter(nil)
 	unbindSkipKeys()
+	-- Cut short, the scene's last frame may be any shot, anywhere: hand back from
+	-- behind the player instead (a finished scene ends where the player is).
+	if not handover then
+		CameraController.lookFromBehindPlayer()
+	end
 	CameraController.stopCinematic(if handover and payload and payload.isIntro then Style.Handover else nil)
 	CutsceneLighting.focus(nil, 0)
 	CutsceneLighting.restore(if handover then 0.4 else 0)

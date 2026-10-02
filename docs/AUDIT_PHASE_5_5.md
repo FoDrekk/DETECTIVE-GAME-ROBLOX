@@ -144,6 +144,33 @@ near towers), and Play adopts the bake ("adopting baked geometry", skyline
 921 parts) with no stale-bake warning. The main checkout's place file now
 holds this branch's scripts and bake; it was left as saved.
 
+## Manual playthrough (5.6 step 2, in progress)
+
+Run 1, in Studio on the v10 bake, by real input (keys, mouse clicks on the
+dialogue choices, walking):
+- Title, then the intro: a tap doesn't skip; holding E does
+  (`reason=skipped`).
+- **Bug found and fixed: a skipped intro handed the camera back looking down
+  from above the lift ceiling.** Roblox's camera keeps the direction it is
+  handed, and a skip ends on whatever shot was playing (here the bedroom).
+  `CutsceneView` now points the camera from behind the player before handing
+  back a scene that was cut short (`CameraController.lookFromBehindPlayer`).
+  Re-checked in Studio; the headless playthrough checks it (and fails
+  without the fix).
+- **Bug found and fixed: the lift's floor buttons read 3-2-1 left to right**
+  (the carried-over control panel counted along +X, which is the viewer's
+  left). Now 1-2-3 along the bottom row, 9 top right. Builder version 11,
+  so the saved v10 bake is flagged stale until it is baked and saved again.
+- The certificate and the restored whiteboard checked on screen.
+- Sam's whole conversation; the badge log appears on the counter once he
+  has printed it; Daniel's office: phone, laptop, agenda, second cup and the
+  drawer photo found, objectives moving on as they should.
+- Minor: the evidence card overlaps the bottom of the objective panel.
+
+Stopped there: Studio disconnected from the MCP mid-run. The rest of run 1
+and runs 2 to 5 (route B, the plain dawn outro, the wrong and the unproven
+endings) are still to do.
+
 ## Remaining issues
 
 1. The lobby constable and the mamak rider are block figures.

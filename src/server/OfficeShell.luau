@@ -478,14 +478,16 @@ local function liftCar(parent: Instance)
 	local controlPanel = PropKit.newPart(folder, "ControlPanel", Vector3.new(1.65, 2.95, 0.08), CFrame.new(controlX, controlY, controlZ), Color3.fromRGB(42, 46, 52), M.Metal)
 	controlPanel.CastShadow = false
 	controlPanel.Reflectance = 0.12
+	-- Read from inside the car, facing this wall: 1 2 3 along the bottom row, 9
+	-- at top right. Facing +Z, the car's +X is on the viewer's left.
 	for floorNumber = 1, 9 do
 		local column = (floorNumber - 1) % 3
-		local row = math.floor((floorNumber - 1) / 3)
+		local row = 2 - math.floor((floorNumber - 1) / 3)
 		local button = PropKit.newPart(
 			folder,
 			`FloorButton_{floorNumber}`,
 			Vector3.new(0.31, 0.31, 0.07),
-			CFrame.new(controlX - 0.48 + column * 0.48, controlY + 0.72 - row * 0.48, controlZ - 0.08),
+			CFrame.new(controlX + 0.48 - column * 0.48, controlY + 0.72 - row * 0.48, controlZ - 0.08),
 			if floorNumber == 9 then Color3.fromRGB(226, 178, 108) else Color3.fromRGB(160, 168, 174),
 			M.Metal
 		)

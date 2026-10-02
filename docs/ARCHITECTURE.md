@@ -1046,7 +1046,7 @@ three builders expose a targeted patch, run once in Edit mode:
   position, pose, hair and clothes alone.
 
 Text baked into props was migrated with an explicit old-to-new table. The
-current plan-driven environment uses `BuilderVersion = 10`; bump it whenever
+current plan-driven environment uses `BuilderVersion = 11`; bump it whenever
 a builder change alters generated geometry or content.
 In Edit mode, `require` caches a module for the whole session; require a
 `Clone()` of the ModuleScript to run its current source.
