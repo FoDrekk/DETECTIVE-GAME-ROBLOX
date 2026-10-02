@@ -874,6 +874,15 @@ check(
 	string.find(closingText("Stats"), "Timeline reconstructed", 1, true) ~= nil,
 	"the closing stats credit reconstructing the timeline"
 )
+-- All seven events of the night have room on the closing screen.
+do
+	local label = find(gui("MysteryCase_CaseClosed"), "Timeline") :: TextLabel
+	local lines = #string.split(label.Text, "\n")
+	check(
+		lines == 7 and label.Size.Y.Offset >= lines * label.TextSize * label.LineHeight,
+		`the closing screen has room for every event ({lines} lines in {label.Size.Y.Offset} px)`
+	)
+end
 -- Phase 3 (R1): the fixed-size panels shrink to fit a phone held sideways.
 do
 	local function fitScale(guiName: string, panelName: string): number?

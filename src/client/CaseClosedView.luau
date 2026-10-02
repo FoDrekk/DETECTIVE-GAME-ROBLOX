@@ -295,10 +295,11 @@ function CaseClosedView.start()
 		parent = root,
 	})
 
+	-- Seven lines (CASE-001's whole night) at 13 px, line height 1.3.
 	timelineLabel = Components.text({
 		name = "Timeline",
 		text = "",
-		size = UDim2.new(1, 0, 0, 96),
+		size = UDim2.new(1, 0, 0, 124),
 		position = UDim2.fromOffset(0, 374),
 		textSize = 13,
 		color = Theme.TextPrimary,
