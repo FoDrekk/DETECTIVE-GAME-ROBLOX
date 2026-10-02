@@ -187,7 +187,10 @@ function CameraController.examine(part: BasePart)
 		side = Vector3.xAxis
 	end
 
-	local eye = focus - toward * distance + side * (distance * 0.18) + Vector3.new(0, size.Y * 0.25, 0)
+	-- A flat thing (a phone, a sheet of paper) is looked down on; from its own
+	-- height the desk edge hides it.
+	local lift = if size.Y < 1 then distance * 0.6 else size.Y * 0.25
+	local eye = focus - toward * distance + side * (distance * 0.18) + Vector3.new(0, lift, 0)
 
 	-- Keep the shot in the room: a big object (a shelving unit) frames from far
 	-- enough back to end up behind a wall, or behind the cabinet next to it.

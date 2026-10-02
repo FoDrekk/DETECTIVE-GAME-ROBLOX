@@ -47,7 +47,9 @@ local AVIATION_RED = Color3.fromRGB(255, 50, 40)
 -- are big and sparse: from the office they are a few lit windows each, fading
 -- into the haze (the office Atmosphere), which is what gives the view depth.
 -- The neighbours are lower than level nine: their roofs sit under the window
--- line, so the view goes over them to the city.
+-- line, so the view goes over them to the city. The far layers top out a few
+-- degrees above eye level (about 5 to 17 from the windows), so there is sky
+-- over the city: the night's glow, and the dawn the outro brings up in it.
 local NEAR_TOWERS = {
 	{ x = -30, width = 14, height = 4, depth = 10, beyond = 11, color = Color3.fromRGB(26, 28, 38) },
 	{ x = -12, width = 16, height = 6, depth = 10, beyond = 17, color = Color3.fromRGB(22, 24, 34) },
@@ -58,9 +60,9 @@ local SKY_BEYOND = 420
 local LAYERS = {
 	{ beyond = 26, span = 80, minWidth = 8, maxWidth = 14, minHeight = 2, maxHeight = 8, color = Color3.fromRGB(20, 22, 30), windowScale = 1, facade = true },
 	{ beyond = 32, span = 80, minWidth = 10, maxWidth = 18, minHeight = 3, maxHeight = 10, color = Color3.fromRGB(26, 29, 40), windowScale = 0.8, facade = false },
-	{ beyond = 80, span = 150, minWidth = 12, maxWidth = 22, minHeight = 40, maxHeight = 110, color = Color3.fromRGB(22, 24, 34), windowScale = 1.6, facade = false },
-	{ beyond = 160, span = 270, minWidth = 16, maxWidth = 30, minHeight = 60, maxHeight = 170, color = Color3.fromRGB(24, 26, 36), windowScale = 2.2, facade = false },
-	{ beyond = 280, span = 420, minWidth = 22, maxWidth = 40, minHeight = 80, maxHeight = 220, color = Color3.fromRGB(26, 28, 38), windowScale = 3, facade = false },
+	{ beyond = 80, span = 150, minWidth = 12, maxWidth = 22, minHeight = 12, maxHeight = 30, color = Color3.fromRGB(22, 24, 34), windowScale = 1.6, facade = false },
+	{ beyond = 160, span = 270, minWidth = 16, maxWidth = 30, minHeight = 22, maxHeight = 55, color = Color3.fromRGB(24, 26, 36), windowScale = 2.2, facade = false },
+	{ beyond = 280, span = 420, minWidth = 22, maxWidth = 40, minHeight = 38, maxHeight = 95, color = Color3.fromRGB(26, 28, 38), windowScale = 3, facade = false },
 }
 local LIT_CHANCE = 0.2
 local COOL_CHANCE = 0.25
@@ -242,9 +244,11 @@ function CitySkyline.start()
 	buildRoadway(folder, northZ)
 
 	-- City-light haze: stacked bands, brightest at the horizon, in front of
-	-- the authored sky plane. Neon so they hold their colour at night.
+	-- the authored sky plane. Neon so they hold their colour at night. Whole
+	-- studs in front of it, not fractions: at four hundred studs out the depth
+	-- buffer can't tell planes that close apart, and the sky drew over them.
 	local sky = backdrop:FindFirstChild("NightSky")
-	local skyZ = if sky and sky:IsA("BasePart") then sky.Position.Z + 0.6 else northZ - SKY_BEYOND + 0.6
+	local skyZ = if sky and sky:IsA("BasePart") then sky.Position.Z + 6 else northZ - SKY_BEYOND + 6
 	local bands = {
 		{ height = 90, color = Color3.fromRGB(150, 100, 78) },
 		{ height = 200, color = Color3.fromRGB(88, 70, 86) },
@@ -256,7 +260,7 @@ function CitySkyline.start()
 		block(
 			`Haze_{index}`,
 			Vector3.new(1400, band.height, 0.2),
-			Vector3.new(0, band.height / 2 - 2, skyZ + (#bands - index) * 0.1),
+			Vector3.new(0, band.height / 2 - 2, skyZ + (#bands - index) * 2),
 			band.color,
 			Enum.Material.Neon,
 			folder

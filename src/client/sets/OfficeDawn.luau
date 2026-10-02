@@ -49,8 +49,10 @@ function OfficeDawn.build(_origin: Vector3, parent: Folder)
 	-- The sun: a large self-lit disc in front of the sky plane and behind the towers,
 	-- below the horizon until it rises.
 	local northZ = OfficePlan.getWall("North").at
-	local sunZ = if sky and sky:IsA("BasePart") then sky.Position.Z + 1.0 else northZ - 35
-	local sun = SetKit.ball(parent, "Sun", 16, Vector3.new(6, -9, sunZ), Color3.fromRGB(255, 226, 168), Enum.Material.Neon, { transparency = 1, castShadow = false })
+	-- In front of the haze bands (a few studs off the sky plane), and rising to
+	-- a few degrees over the far towers' roofs.
+	local sunZ = if sky and sky:IsA("BasePart") then sky.Position.Z + 14 else northZ - 35
+	local sun = SetKit.ball(parent, "Sun", 24, Vector3.new(6, -20, sunZ), Color3.fromRGB(255, 226, 168), Enum.Material.Neon, { transparency = 1, castShadow = false })
 
 	-- The lamps: every light the office's interior owns, dimmed as the day comes.
 	local lamps: { { light: Light, from: number } } = {}
@@ -69,7 +71,7 @@ function OfficeDawn.build(_origin: Vector3, parent: Folder)
 			for _, entry in ipairs(tinted) do
 				scope.add(SetKit.tween(entry.part, seconds, { Color = entry.to }))
 			end
-			scope.add(SetKit.tween(sun, seconds, { Position = Vector3.new(6, 7, sunZ), Transparency = 0.05 }))
+			scope.add(SetKit.tween(sun, seconds, { Position = Vector3.new(6, 60, sunZ), Transparency = 0.05 }))
 			for _, lamp in ipairs(lamps) do
 				scope.add(SetKit.tween(lamp.light, seconds, { Brightness = lamp.from * LAMP_FRACTION }))
 			end
