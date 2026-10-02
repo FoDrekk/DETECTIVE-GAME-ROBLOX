@@ -196,9 +196,12 @@ text), 8 and 9 were checked on screen in Studio:
 9. **A flat clue (the phone) was framed from its own height** and the desk
    edge hid it. Flat objects are now looked down on.
 
-Builder version is **12** (items 2 and 8 change baked geometry), so the
-saved place needs one more bake and save; until then Play rebuilds it at
-runtime and logs the stale-bake warning.
+Builder version is **12** (items 2 and 8 change baked geometry). The place
+was baked and saved at 12 from a fresh Studio session: the saved file's
+stamp is 12, the skyline is 383 parts topping out at 93 studs, and Play
+adopts it with no stale-bake warning. (A first attempt stamped 11 and kept
+the old skyline: the bake ran before Rojo had synced the v12 scripts. Check
+`Config.Environment.BuilderVersion` in the command bar before baking.)
 
 **Noted, not changed:**
 - The evidence card overlaps the bottom line of the objective panel.
@@ -223,6 +226,5 @@ runtime and logs the stale-bake warning.
 4. The studio noticeboard puts Sam (the night guard) on the firm's kitchen
    rota; probably unintended.
 5. Performance on low-end devices with the larger skyline is unmeasured.
-6. The place needs baking and saving at builder 12 (see above).
 
 The proposal for the next step is `ROADMAP.md`, Phase 5, "5.6 proposal".
