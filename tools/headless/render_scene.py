@@ -8,8 +8,10 @@ materials are flat colours. It exists to catch spatial mistakes when Studio
 isn't available -- props floating, overlapping, blocking a doorway, facing the
 wall, rooms left unlit -- not to judge the final look.
 
-  python3 render_scene.py scene.txt out_dir
-Writes plan.png (top-down, floor to 11.5 studs) and a few perspective shots.
+  python3 render_scene.py scene.txt out_dir [--plan-only] [--shots name,name]
+Writes plan.png (top-down, floor to 11.5 studs) and a few perspective shots
+(all of them, or just the named ones). The ray-cast shots are slow, so
+--plan-only is the quick way to check a layout.
 Requires numpy and pillow.
 """
 import math
@@ -67,8 +69,8 @@ def face_dir(light):
     }.get(face)
 
 
-def plan(parts, lights, out, scale=16):
-    xmin, xmax, zmin, zmax = -31, 31, -25, 25
+def plan(parts, lights, out, scale=14):
+    xmin, xmax, zmin, zmax = -38, 38, -30, 30
     w, h = int((xmax - xmin) * scale), int((zmax - zmin) * scale)
     img = Image.new("RGB", (w, h), (10, 10, 12))
     draw = ImageDraw.Draw(img, "RGBA")
@@ -217,20 +219,35 @@ def render(parts, lights, eye, target, out, width=640, height=360, fov=70):
     Image.fromarray((col.reshape(height, width, 3) * 255).astype(np.uint8)).save(out)
 
 
+# Named viewpoints (eye, target) for the current plan (OfficePlan): the places
+# a player first sees each room from.
+SHOTS = {
+    "entrance": ((0.5, 5.4, 26.2), (0, 4.5, -22)),
+    "lift_arrival": ((31.4, 5.0, 23.75), (8, 3.5, 19)),
+    "daniel_door": ((-21.5, 5.8, -6.2), (-27, 3, -19)),
+    "daniel_corner": ((-19.4, 6.4, -9.9), (-27, 2.8, -20)),
+    "meeting_room": ((8.2, 6.5, -10), (23, 3, -19)),
+    "reception": ((9, 6, 10), (24, 3, 20)),
+    "corridor_window": ((0, 5.8, 8), (0, 4.5, -26)),
+    "open_plan": ((-7, 7, 5), (-24, 2, 16)),
+    "pantry": ((-5.8, 5.5, -9.6), (-14, 3, -13)),
+    "studio": ((7.5, 6, -6), (23, 3, 2.5)),
+    "archive": ((-9.0, 6.2, -20.0), (-12, 3, -26)),
+}
+
+
 if __name__ == "__main__":
-    scene, out_dir = sys.argv[1], Path(sys.argv[2])
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    scene, out_dir = args[0], Path(args[1])
     out_dir.mkdir(parents=True, exist_ok=True)
     parts, lights = load(scene)
     plan(parts, lights, out_dir / "plan.png")
-    shots = {
-        "spawn_view": ((18, 5.2, 12), (19, 4, 2)),
-        "daniel_office": ((-19.2, 6.2, -3.2), (-25, 2.5, -9)),
-        "meeting_room": ((13.5, 6.5, -8.5), (23, 3, -17)),
-        "lobby": ((14, 6, 9), (26, 3.5, 20)),
-        "corridor_mara": ((-2, 5.8, -7), (-4, 4.5, -24)),
-        "open_plan": ((-8, 7, 5), (-24, 2, 18)),
-        "kitchenette": ((-5, 5.5, -16), (-13, 3, -20)),
-    }
-    for name, (eye, target) in shots.items():
-        render(parts, lights, eye, target, out_dir / f"{name}.png")
+    if "--plan-only" not in sys.argv:
+        wanted = SHOTS.keys()
+        for a in sys.argv[1:]:
+            if a.startswith("--shots="):
+                wanted = a.split("=", 1)[1].split(",")
+        for name in wanted:
+            eye, target = SHOTS[name]
+            render(parts, lights, eye, target, out_dir / f"{name}.png")
     print("rendered", len(parts), "parts,", len(lights), "lights ->", out_dir)

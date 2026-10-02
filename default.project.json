@@ -11,6 +11,10 @@
       },
       "UI": {
         "$path": "src/ui"
+      },
+      "Signals": {
+        "$className": "Folder",
+        "$ignoreUnknownInstances": true
       }
     },
 
@@ -60,9 +64,6 @@
       "$className": "Workspace",
       "$properties": {
         "FilteringEnabled": true
-      },
-      "Office": {
-        "$path": "assets/Office.rbxm"
       }
     },
 

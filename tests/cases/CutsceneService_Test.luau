@@ -10,6 +10,10 @@
 	remembers what was seen across a replay so a replay can start part-way
 	through.
 
+	Phase 5.5 adds the intro: a case names its opening scene, the server plays
+	it when the investigation begins and marks it (isIntro) so the client skips
+	it by holding; the validator checks every new field a shot can carry.
+
 	Time is a test clock (CutsceneService.useClock): it moves only when a
 	test says so, so nothing here waits in real time and the suite behaves
 	the same headless as inside a live Studio session. The real timer that
@@ -28,6 +32,7 @@ return function(t)
 	local EvidenceService = require(Server:WaitForChild("EvidenceService"))
 	local PlayerDataService = require(Server:WaitForChild("PlayerDataService"))
 	local StoryEvents = require(Server:WaitForChild("StoryEvents"))
+	local GameStateService = require(Server:WaitForChild("GameStateService"))
 	local Interactable = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Interactable"))
 	local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 	local CaseRegistry = require(ServerStorage:WaitForChild("Config"):WaitForChild("CaseRegistry"))
@@ -89,11 +94,89 @@ return function(t)
 	}
 	CaseRegistry.register(fixture :: any)
 
+	-- A case that opens on a scene: three shots (a replay starts at the third),
+	-- using a set, a lighting preset, a bed, a one-shot, an action and a card that
+	-- all really exist in Config (the validator checks that), plus an ordinary
+	-- scene that isn't its intro.
+	local INTRO_CASE_ID = "CASE-TEST-INTRO"
+	local introFixture = table.clone(fixture)
+	introFixture.id = INTRO_CASE_ID
+	introFixture.title = "Intro Fixture"
+	introFixture.intro = { cutsceneId = "CUT-INTRO", replacesBriefing = true }
+	introFixture.cutscenes = {
+		{
+			id = "CUT-INTRO",
+			replayFrom = "I3",
+			shots = {
+				{
+					id = "I1",
+					duration = 2,
+					set = "Street",
+					lighting = "CityNight",
+					camera = { from = point(0), to = point(1), ease = "Out", handheld = 0.3, fieldOfViewTo = 60 },
+					focus = { distance = 20, toDistance = 12, blur = 0.5 },
+					sounds = { { at = 0, cue = "RainStreet", fade = 0.5 } },
+					actions = { { at = 1, name = "TrainPasses" } },
+				},
+				{
+					id = "I2",
+					duration = 2,
+					camera = { from = point(2) },
+					sounds = { { at = 0, cue = "RainStreet" }, { at = 1, cue = "Thunder" } },
+				},
+				{
+					id = "I3",
+					duration = 2,
+					set = "LiftCar",
+					mouseLook = true,
+					camera = { from = point(3) },
+					actions = { { at = 1, name = "DoorsOpen" } },
+					titleCard = { at = 0.5, duration = 1, title = "CASE 001" },
+				},
+			},
+		},
+		{ id = "CUT-PLAIN", shots = { { id = "P1", duration = 2, camera = { from = point(4) } } } },
+	}
+	CaseRegistry.register(introFixture :: any)
+
 	local function makePlayer(): any
 		local id = t.nextUserId()
 		local player = { UserId = id, Name = `CS{id}` }
 		PlayerDataService.initialize(player, CASE_ID)
 		return player
+	end
+
+	local function makeIntroPlayer(): any
+		local id = t.nextUserId()
+		local player = { UserId = id, Name = `CI{id}` }
+		PlayerDataService.initialize(player, INTRO_CASE_ID)
+		return player
+	end
+
+	-- BindableEvent delivery is deferred: give it a frame to land.
+	local function settle(done: () -> boolean)
+		for _ = 1, 30 do
+			task.wait()
+			if done() then
+				return
+			end
+		end
+	end
+
+	-- The scene payloads the server sent `player` while fn ran.
+	local function withPayloads(player: any, fn: () -> ()): { any }
+		local sent = {}
+		local connection = CutsceneService.onUpdated().Event:Connect(function(who, payload)
+			if who.UserId == player.UserId then
+				table.insert(sent, payload)
+			end
+		end)
+		fn()
+		settle(function()
+			return #sent >= 1
+		end)
+		connection:Disconnect()
+		return sent
 	end
 
 	local function active(player: any): any
@@ -425,14 +508,68 @@ return function(t)
 		end
 	end)
 
-	t.test("CASE-001's two dawn scenes validate clean, and its Solved close names only real ones", function()
+	t.test("CASE-001's intro and dawn scenes validate clean, and its Solved close names only real ones", function()
 		local case001 = CaseRegistry.get("CASE-001") :: any
 		local ids = {}
 		for _, cutscene in ipairs(case001.cutscenes) do
 			table.insert(ids, cutscene.id)
 		end
-		expect.deepEqual(ids, { "CUT-DAWN", "CUT-DAWN-HOME" })
+		expect.deepEqual(ids, { "CUT-INTRO", "CUT-DAWN", "CUT-DAWN-HOME" })
 		expect.equal(#CutsceneService.validate(case001), 0)
+	end)
+
+	t.test("CASE-001's opening keeps its timed story beats and replays at the lift handoff", function()
+		local case001 = CaseRegistry.get("CASE-001") :: any
+		local intro = case001.cutscenes[1]
+		local duration = 0
+		local dialogue = ""
+		for _, shot in ipairs(intro.shots) do
+			duration += shot.duration
+			for _, line in ipairs(shot.lines or {}) do
+				dialogue ..= line.text .. "\n"
+			end
+		end
+		expect.equal(case001.intro.replacesBriefing, true)
+		expect.equal(intro.replayFrom, "LIFT-OPEN")
+		expect.equal(#intro.shots, 21)
+		expect.equal(duration, 169)
+		for _, beat in ipairs({
+			"Wisma Delima, level nine",
+			"Believe the room.",
+			"I'll be asleep. Call me when you know.",
+			"Tingkat sembilan, Inspektor.",
+			"Access logged 12:38 AM.",
+			"Jangan lupa makan.",
+		}) do
+			expect.truthy(string.find(dialogue, beat, 1, true))
+		end
+	end)
+
+	-- The screenplay's music rule: silence in the cold open, then one motif from
+	-- the city to the lift. A bed fades at any cut whose shot doesn't list it, so
+	-- a shot that forgets it would restart the music from the top.
+	t.test("CASE-001's motif is silent in the cold open, then unbroken until the lift stops it", function()
+		local intro = (CaseRegistry.get("CASE-001") :: any).cutscenes[1]
+		local entered, stopped = false, false
+		for _, shot in ipairs(intro.shots) do
+			local lists, stops = false, false
+			for _, cue in ipairs(shot.sounds or {}) do
+				if cue.cue == "Motif" then
+					lists = true
+					stops = stops or cue.stop == true
+				end
+			end
+			if string.sub(shot.id, 1, 4) == "BED-" then
+				expect.falsy(lists)
+			elseif not stopped then
+				entered = entered or lists
+				if entered and not lists then
+					error(`the motif drops out at {shot.id}`, 0)
+				end
+				stopped = stops
+			end
+		end
+		expect.truthy(entered and stopped)
 	end)
 
 	t.test("the validator reports a Solved close that names a scene that isn't there", function()
@@ -442,5 +579,191 @@ return function(t)
 		local problems = CutsceneService.validate(broken)
 		expect.equal(#problems, 1)
 		expect.truthy(string.find(problems[1], "CUT-GHOST", 1, true))
+	end)
+
+	-- Phase 5.5: the intro.
+
+	t.test("the intro fixture validates clean, including every set, preset, cue and action it names", function()
+		expect.equal(#CutsceneService.validate(introFixture :: any), 0)
+	end)
+
+	t.test("a case's intro is found and played, and its payload says it is the intro", function()
+		local player = makeIntroPlayer()
+		expect.equal(CutsceneService.getIntroId(player), "CUT-INTRO")
+		local sent = withPayloads(player, function()
+			local ok, reason = CutsceneService.playIntro(player)
+			expect.truthy(ok)
+			expect.equal(reason, nil)
+		end)
+		expect.equal(CutsceneService.getActiveId(player), "CUT-INTRO")
+		expect.equal(#sent, 1)
+		expect.equal(sent[1].active, true)
+		expect.equal(sent[1].id, "CUT-INTRO")
+		expect.equal(sent[1].isIntro, true)
+		expect.equal(sent[1].skippable, true)
+		expect.equal(#sent[1].shots, 3)
+		tidy(player)
+	end)
+
+	t.test("an ordinary scene of the same case is not marked as the intro", function()
+		local player = makeIntroPlayer()
+		local sent = withPayloads(player, function()
+			expect.truthy(CutsceneService.play(player, "CUT-PLAIN"))
+		end)
+		expect.equal(#sent, 1)
+		expect.equal(sent[1].isIntro, nil)
+		tidy(player)
+	end)
+
+	t.test("a case without an intro plays nothing when the investigation begins", function()
+		local player = makePlayer()
+		expect.equal(CutsceneService.getIntroId(player), nil)
+		local ok, reason = CutsceneService.playIntro(player)
+		expect.falsy(ok)
+		expect.equal(reason, "no-intro")
+		expect.falsy(GameStateService.beginInvestigation(player))
+		expect.falsy(CutsceneService.isPlaying(player))
+	end)
+
+	t.test("beginning the investigation starts the intro, and only for a case that has one", function()
+		local player = makeIntroPlayer()
+		expect.truthy(GameStateService.beginInvestigation(player))
+		expect.equal(CutsceneService.getActiveId(player), "CUT-INTRO")
+		tidy(player)
+	end)
+
+	t.test("a player with no case data starts nothing", function()
+		local nobody = { UserId = t.nextUserId(), Name = "Nobody" } :: any
+		expect.equal(CutsceneService.getIntroId(nobody), nil)
+		expect.falsy(GameStateService.beginInvestigation(nobody))
+	end)
+
+	t.test("the intro's second showing starts at its replayFrom shot", function()
+		local player = makeIntroPlayer()
+		withClock(function(advance)
+			CutsceneService.playIntro(player)
+			expect.near(active(player).duration, 6, 1e-6)
+			expect.truthy(CutsceneService.finish(player, "CUT-INTRO", true)) -- a skip counts as seen
+			CutsceneService.playIntro(player)
+			expect.near(active(player).duration, 2, 1e-6) -- I3 alone
+			advance(2)
+			expect.truthy(CutsceneService.finish(player, "CUT-INTRO", false))
+		end)
+	end)
+
+	t.test("the intro's first showing plays from the top, in full", function()
+		local player = makeIntroPlayer()
+		local sent = withPayloads(player, function()
+			CutsceneService.playIntro(player)
+		end)
+		expect.equal(sent[1].shots[1].id, "I1")
+		tidy(player)
+	end)
+
+	t.test("the validator reports an intro that names no scene, or one that can't be skipped", function()
+		local ghost = table.clone(introFixture)
+		ghost.intro = { cutsceneId = "CUT-NOPE" }
+		local problems = CutsceneService.validate(ghost :: any)
+		expect.equal(#problems, 1)
+		expect.truthy(string.find(problems[1], "unknown cutscene 'CUT-NOPE'", 1, true))
+
+		local locked = table.clone(introFixture)
+		locked.intro = { cutsceneId = "CUT-INTRO" }
+		locked.cutscenes = {
+			{ id = "CUT-INTRO", skippable = false, shots = { { id = "L", duration = 2, camera = { from = point(0) } } } },
+		}
+		problems = CutsceneService.validate(locked :: any)
+		expect.equal(#problems, 1)
+		expect.truthy(string.find(problems[1], "must be skippable", 1, true))
+	end)
+
+	t.test("the validator reports what would silently do nothing on screen", function()
+		local broken = {
+			cutscenes = {
+				{
+					id = "BAD",
+					shots = {
+						{
+							id = "A",
+							duration = 4,
+							set = "Nowhere",
+							lighting = "Neon",
+							mouseLook = true,
+							camera = { from = point(0), to = point(9), fieldOfViewTo = 0, ease = "Bouncy", handheld = 2 },
+							focus = { distance = -1, blur = 3, radius = -2 },
+							sounds = {
+								{ at = 0, cue = "NoSuchCue" },
+								{ at = 9, cue = "RainStreet" },
+								{ at = 0, cue = "RainStreet", volume = 50, fade = -1, from = -3 },
+								{ at = 1, cue = "Thunder", stop = true },
+							},
+							actions = { { at = 9, name = "TrainPasses" } },
+							titleCard = { at = 3, duration = 5, title = "" },
+						},
+						{
+							id = "B",
+							duration = 2,
+							set = "Street",
+							camera = { from = point(0) },
+							actions = { { at = 0, name = "DoorsOpen" } },
+						},
+						{
+							id = "C",
+							duration = 2,
+							camera = { from = point(0) },
+							actions = { { at = 0, name = "Anything" } },
+						},
+					},
+				},
+			},
+		}
+		local text = table.concat(CutsceneService.validate(broken :: any), "\n")
+		for _, expected in ipairs({
+			"unknown set 'Nowhere'",
+			"unknown lighting preset 'Neon'",
+			"can't also move the camera",
+			"field of view 0 is out of range",
+			"unknown ease 'Bouncy'",
+			"handheld must be between 0 and 1",
+			"focus distance must be positive",
+			"focus blur must be between 0 and 1",
+			"focus radius can't be negative",
+			"unknown cue 'NoSuchCue'",
+			"starts outside its shot",
+			"volume must be between 0 and 10",
+			"fade can't be negative",
+			"'from' can't be negative",
+			"'Anything' needs the shot to name a set",
+			"happens outside its shot",
+			"set 'Street' has no action 'DoorsOpen'",
+			"title card has no title",
+			"title card runs outside its shot",
+		}) do
+			if not string.find(text, expected, 1, true) then
+				error(`the validator did not report '{expected}'; it said:\n{text}`, 0)
+			end
+		end
+		-- Stopping a cue is allowed, whatever the cue is (sound 4 is a valid stop).
+		expect.falsy(string.find(text, "sound 4", 1, true))
+	end)
+
+	t.test("every set, preset and cue the config names is well formed", function()
+		for name, set in pairs(Config.Cutscene.Sets) do
+			expect.truthy(type(set.actions) == "table" and #set.actions > 0)
+			if not set.world then
+				expect.truthy(typeof(set.origin) == "Vector3")
+			end
+			for _, action in ipairs(set.actions) do
+				expect.equal(type(action), "string")
+			end
+			expect.truthy(type(name) == "string")
+		end
+		for _, spec in pairs(Config.Audio.Cutscene) do
+			expect.truthy(string.match(spec.id, "^rbxassetid://%d+$") ~= nil)
+			expect.truthy(spec.volume > 0 and spec.volume <= 10)
+		end
+		for _, preset in pairs(Config.Cutscene.LightingPresets) do
+			expect.truthy(type(preset) == "table")
+		end
 	end)
 end

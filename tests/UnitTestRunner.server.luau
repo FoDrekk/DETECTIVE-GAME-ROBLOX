@@ -7,4 +7,10 @@
 ]]
 
 local ServerStorage = game:GetService("ServerStorage")
-require(ServerStorage:WaitForChild("UnitTest"):WaitForChild("RunUnitTest"))()
+-- Full case-playthrough tests can exceed the harness's 5-second default in
+-- Studio while deferred Roblox events settle; keep a bounded but practical
+-- per-test ceiling for this manual Studio runner.
+local totals = require(ServerStorage:WaitForChild("UnitTest"):WaitForChild("RunUnitTest"))(nil, 15)
+for _, failure in ipairs(totals.failures) do
+	warn(failure)
+end

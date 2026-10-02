@@ -25,7 +25,13 @@
 
 	Every end -- reached, skipped, or timed out -- publishes the
 	"CutsceneFinished" StoryEvent, which is how whatever follows a scene
-	(future: the intro handing over to the investigation) picks up.
+	(the outro handing over to the closing summary) picks up.
+
+	Phase 5.5: a case can name its opening scene (CaseDefinition.intro).
+	GameStateService plays it when the investigation begins; `play` marks it
+	(CutscenePayload.isIntro) so the client skips it by holding, not by tapping
+	twice. It is an ordinary scene in every other way: server-timed, skippable,
+	replay-aware (a second viewing starts at its `replayFrom` shot).
 
 	Time comes from one source (os.clock; `useClock` lets a test supply its
 	own), and the backstop is a plain check (`expire`) that `play` schedules,
@@ -116,6 +122,19 @@ function CutsceneService.getActiveId(player: Player): string?
 	return active and active.id
 end
 
+-- Phase 5.5: the id of the scene this player's case opens with, if it has one.
+function CutsceneService.getIntroId(player: Player): string?
+	local data = PlayerDataService.get(player)
+	local caseDef = data and CaseService.getCase(data.caseState.caseId)
+	local intro = caseDef and caseDef.intro
+	return intro and intro.cutsceneId
+end
+
+local function isIntroOf(caseDef: Types.CaseDefinition?, cutsceneId: string): boolean
+	local intro = caseDef and caseDef.intro
+	return intro ~= nil and intro.cutsceneId == cutsceneId
+end
+
 type EndReason = "finished" | "skipped" | "timeout"
 
 local function endScene(player: Player, data: Types.PlayerData, reason: EndReason)
@@ -169,18 +188,21 @@ function CutsceneService.play(player: Player, cutsceneId: string): (boolean, str
 
 	-- The grace is fixed now, so the backstop and its check always agree.
 	local grace = Config.Cutscene.EndGrace
+	local isIntro = isIntroOf(CaseService.getCase(data.caseState.caseId), cutscene.id)
 	data.caseState.activeCutscene = { id = cutscene.id, startedAt = clock(), duration = duration, grace = grace }
 	log:info("cutscene playing", {
 		player = player.Name,
 		cutsceneId = cutscene.id,
 		from = shots[1].id,
 		seconds = duration,
+		intro = isIntro,
 	})
 	updatedEvent:Fire(player, {
 		active = true,
 		id = cutscene.id,
 		shots = shots,
 		skippable = cutscene.skippable ~= false,
+		isIntro = if isIntro then true else nil,
 	} :: Types.CutscenePayload)
 
 	-- The backstop: a scene the client never reports on still ends. `expire`
@@ -190,6 +212,19 @@ function CutsceneService.play(player: Player, cutsceneId: string): (boolean, str
 		CutsceneService.expire(player)
 	end)
 	return true, nil
+end
+
+--[[
+	Phase 5.5: play the scene this player's case opens with (a replay starts it
+	at its `replayFrom` shot). Called by GameStateService once the investigation
+	has begun. A case without an intro returns (false, "no-intro").
+]]
+function CutsceneService.playIntro(player: Player): (boolean, string?)
+	local introId = CutsceneService.getIntroId(player)
+	if not introId then
+		return false, "no-intro"
+	end
+	return CutsceneService.play(player, introId)
 end
 
 --[[
@@ -247,6 +282,100 @@ function CutsceneService.finish(player: Player, cutsceneId: any, skipped: any): 
 	return true, nil
 end
 
+local function isNumber(value: any): boolean
+	return type(value) == "number" and value == value
+end
+
+--[[
+	Phase 5.5: what a shot may ask of the client's presentation. Every name is
+	checked against the tables the client reads (Config.Cutscene.Sets and
+	LightingPresets, Config.Audio.Cutscene), so a typo is a boot warning here
+	rather than a silent nothing on screen.
+]]
+local function validateShotPresentation(problems: { string }, where: string, shot: Types.CutsceneShot)
+	local camera = shot.camera
+	if camera then
+		local fovTo = camera.fieldOfViewTo
+		if fovTo ~= nil and (not isNumber(fovTo) or fovTo < 1 or fovTo > 120) then
+			table.insert(problems, `{where}: field of view {fovTo} is out of range`)
+		end
+		if camera.ease ~= nil and not table.find(Config.Cutscene.Eases, camera.ease) then
+			table.insert(problems, `{where}: unknown ease '{camera.ease}'`)
+		end
+		local handheld = camera.handheld
+		if handheld ~= nil and (not isNumber(handheld) or handheld < 0 or handheld > 1) then
+			table.insert(problems, `{where}: handheld must be between 0 and 1`)
+		end
+		if shot.mouseLook and camera.to and camera.from and camera.to.position ~= camera.from.position then
+			table.insert(problems, `{where}: a mouseLook shot can't also move the camera`)
+		end
+	end
+
+	local set = shot.set
+	local setConfig = if set ~= nil then (Config.Cutscene.Sets :: any)[set] else nil
+	if set ~= nil and setConfig == nil then
+		table.insert(problems, `{where}: unknown set '{set}'`)
+	end
+	if shot.lighting ~= nil and (Config.Cutscene.LightingPresets :: any)[shot.lighting] == nil then
+		table.insert(problems, `{where}: unknown lighting preset '{shot.lighting}'`)
+	end
+
+	local focus = shot.focus
+	if focus then
+		if not isNumber(focus.distance) or focus.distance <= 0 or (focus.toDistance ~= nil and (not isNumber(focus.toDistance) or focus.toDistance <= 0)) then
+			table.insert(problems, `{where}: focus distance must be positive`)
+		end
+		if focus.blur ~= nil and (not isNumber(focus.blur) or focus.blur < 0 or focus.blur > 1) then
+			table.insert(problems, `{where}: focus blur must be between 0 and 1`)
+		end
+		if focus.radius ~= nil and (not isNumber(focus.radius) or focus.radius < 0) then
+			table.insert(problems, `{where}: focus radius can't be negative`)
+		end
+	end
+
+	for index, cue in ipairs(shot.sounds or {}) do
+		local at = `{where} sound {index}`
+		local spec = (Config.Audio.Cutscene :: any)[cue.cue]
+		if spec == nil then
+			table.insert(problems, `{at}: unknown cue '{cue.cue}'`)
+		end
+		if not isNumber(cue.at) or cue.at < 0 or cue.at > shot.duration + 1e-6 then
+			table.insert(problems, `{at}: starts outside its shot`)
+		end
+		if cue.volume ~= nil and (not isNumber(cue.volume) or cue.volume < 0 or cue.volume > 10) then
+			table.insert(problems, `{at}: volume must be between 0 and 10`)
+		end
+		if cue.fade ~= nil and (not isNumber(cue.fade) or cue.fade < 0) then
+			table.insert(problems, `{at}: fade can't be negative`)
+		end
+		if cue.from ~= nil and (not isNumber(cue.from) or cue.from < 0) then
+			table.insert(problems, `{at}: 'from' can't be negative`)
+		end
+	end
+
+	for index, action in ipairs(shot.actions or {}) do
+		local at = `{where} action {index}`
+		if not isNumber(action.at) or action.at < 0 or action.at > shot.duration + 1e-6 then
+			table.insert(problems, `{at}: happens outside its shot`)
+		end
+		if set == nil then
+			table.insert(problems, `{at}: '{action.name}' needs the shot to name a set`)
+		elseif setConfig ~= nil and not table.find(setConfig.actions, action.name) then
+			table.insert(problems, `{at}: set '{set}' has no action '{action.name}'`)
+		end
+	end
+
+	local card = shot.titleCard
+	if card then
+		if type(card.title) ~= "string" or card.title == "" then
+			table.insert(problems, `{where}: title card has no title`)
+		end
+		if not isNumber(card.at) or not isNumber(card.duration) or card.at < 0 or card.duration <= 0 or card.at + card.duration > shot.duration + 1e-6 then
+			table.insert(problems, `{where}: title card runs outside its shot`)
+		end
+	end
+end
+
 --[[
 	Structural check of a case's scenes. Returns human-readable problems
 	(empty when sound). Pure: no player state.
@@ -293,9 +422,23 @@ function CutsceneService.validate(caseDef: Types.CaseDefinition): { string }
 					table.insert(problems, `{at}: runs outside its shot`)
 				end
 			end
+			validateShotPresentation(problems, where, shot)
 		end
 		if cutscene.replayFrom and not shotIds[cutscene.replayFrom] then
 			table.insert(problems, `{label}: replayFrom '{cutscene.replayFrom}' is not one of its shots`)
+		end
+	end
+	-- Phase 5.5: the opening scene must be a real one, and one a returning player
+	-- can leave (an intro is skipped by holding).
+	local intro = caseDef.intro
+	if intro then
+		if not ids[intro.cutsceneId] then
+			table.insert(problems, `intro: unknown cutscene '{intro.cutsceneId}'`)
+		end
+		for _, cutscene in ipairs(caseDef.cutscenes or {}) do
+			if cutscene.id == intro.cutsceneId and cutscene.skippable == false then
+				table.insert(problems, `intro: '{cutscene.id}' must be skippable`)
+			end
 		end
 	end
 	-- Phase 5.4: a Solved close's scenes must be real ones.

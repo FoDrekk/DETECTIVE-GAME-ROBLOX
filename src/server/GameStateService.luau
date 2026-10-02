@@ -243,6 +243,43 @@ function GameStateService.requestReplay(player: Player): boolean
 	return true
 end
 
+--[[
+	Phase 5.5: the investigation has begun for this player. A case that names an
+	opening scene (CaseDefinition.intro) starts it here, after the phase has been
+	broadcast, so the client already knows it is in the investigation when the
+	scene arrives. A case without one opens straight onto the investigation, as it
+	always did. Only the player's own request to begin ever reaches this (the
+	RequestPhaseChange handler below): nothing that sets the phase directly, a
+	test or server logic, starts a scene as a side effect.
+	Returns true if a scene was started.
+]]
+function GameStateService.beginInvestigation(player: Player): boolean
+	return (CutsceneService.playIntro(player))
+end
+
+--[[
+	The player asks to begin (Play on the title screen, or Begin on a briefing).
+	Only valid from CaseBriefing: a client can't use this to walk the shared
+	phase back into a briefing, or reopen a closed case. Returns true if the
+	investigation began.
+]]
+function GameStateService.requestBegin(player: Player): boolean
+	if not PlayerDataService.get(player) or GameStateService.getPhase() ~= "CaseBriefing" then
+		return false
+	end
+	if not GameStateService.setPhase("Investigation") then
+		return false
+	end
+	for _, p in ipairs(game:GetService("Players"):GetPlayers()) do
+		PlayerDataService.setPhase(p, "Investigation")
+	end
+	broadcast("Investigation")
+	for _, p in ipairs(game:GetService("Players"):GetPlayers()) do
+		GameStateService.beginInvestigation(p)
+	end
+	return true
+end
+
 local function grantCase(player: Player)
 	local payload = CaseService.buildClientPayload(player)
 	if payload then
@@ -274,31 +311,16 @@ function GameStateService.start()
 	end)
 
 	requestPhaseChange.OnServerEvent:Connect(function(player: Player, phase: Types.GamePhase)
-		if type(phase) ~= "string" then
-			return
-		end
-		if not PlayerDataService.get(player) then
-			return
-		end
-		-- CaseClosed additionally requires gameplay authorization (Phase
-		-- 2L), not just graph legality -- dispatched to the dedicated,
-		-- independently-testable function that owns it.
-		if phase == "CaseClosed" then
+		-- A client asks for exactly three moves, each checked by the function that
+		-- owns it: begin the investigation, conclude it (which also needs an
+		-- accusation, Phase 2L), and start again from the closing screen (M4).
+		-- Any other phase it names is ignored.
+		if phase == "Investigation" then
+			GameStateService.requestBegin(player)
+		elseif phase == "CaseClosed" then
 			GameStateService.requestConclude(player)
-			return
-		end
-		-- M4: asking for the briefing from the closing screen is a replay,
-		-- which also resets this player's case state.
-		if phase == "CaseBriefing" and GameStateService.getPhase() == "CaseClosed" then
+		elseif phase == "CaseBriefing" then
 			GameStateService.requestReplay(player)
-			return
-		end
-		-- Only allow the shared, server-validated transition.
-		if GameStateService.setPhase(phase) then
-			for _, p in ipairs(game:GetService("Players"):GetPlayers()) do
-				PlayerDataService.setPhase(p, phase)
-			end
-			broadcast(phase)
 		end
 	end)
 

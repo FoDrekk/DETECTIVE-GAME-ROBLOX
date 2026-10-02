@@ -422,7 +422,8 @@ local function showChoices(payload: Types.DialoguePayload)
 
 		local key = Components.text({
 			name = "Key",
-			text = if scheme == "Keyboard" then tostring(index) else "›",
+			-- 1-9 have keys; a longer list (showing evidence) is clicked past nine.
+			text = if scheme == "Keyboard" and index <= #NUMBER_KEYS then tostring(index) else "›",
 			size = UDim2.new(0, 34, 1, 0),
 			font = Theme.FontBold,
 			textSize = 15,
@@ -502,7 +503,7 @@ local function showChoices(payload: Types.DialoguePayload)
 			end
 		end
 		return Enum.ContextActionResult.Pass
-	end, false, table.unpack(NUMBER_KEYS, 1, #choices))
+	end, false, table.unpack(NUMBER_KEYS, 1, math.min(#choices, #NUMBER_KEYS)))
 
 	if scheme == "Gamepad" and choiceButtons[1] then
 		GuiService.SelectedObject = choiceButtons[1]

@@ -166,6 +166,14 @@ V2.__index = function(self, key)
 		return function(a, b, t)
 			return v2(a.X + (b.X - a.X) * t, a.Y + (b.Y - a.Y) * t)
 		end
+	elseif key == "Dot" then
+		return function(a, b)
+			return a.X * b.X + a.Y * b.Y
+		end
+	elseif key == "Cross" then
+		return function(a, b)
+			return a.X * b.Y - a.Y * b.X
+		end
 	end
 	error(`{key} is not a valid member of Vector2`, 2)
 end
@@ -188,6 +196,9 @@ V2.__div = function(a, b)
 		return v2(a.X / b, a.Y / b)
 	end
 	return v2(a.X / b.X, a.Y / b.Y)
+end
+V2.__unm = function(a)
+	return v2(-a.X, -a.Y)
 end
 V2.__eq = function(a, b)
 	return a.X == b.X and a.Y == b.Y
@@ -1407,7 +1418,12 @@ local function notifyChanged(self, key)
 		fireSignal(s)
 	end
 	if i.changed then
-		fireSignal(i.changed, key)
+		-- A value object's Changed carries the new value, not the property name.
+		if key == "Value" and isA(i.className, "ValueBase") then
+			fireSignal(i.changed, i.props.Value)
+		else
+			fireSignal(i.changed, key)
+		end
 	end
 end
 
@@ -2756,6 +2772,17 @@ Scheduler.heartbeat = function(dt)
 	fireSignal(heartbeatSignal, dt)
 	if not Shim.isServer then
 		fireSignal(renderSteppedSignal, dt)
+		-- Roblox's default camera scripts write the avatar's
+		-- LocalTransparencyModifier every frame (0 at a normal zoom); anything
+		-- that hides the avatar has to keep doing so after them.
+		local character = Shim.localPlayer and Shim.localPlayer.Character
+		if character then
+			for _, d in ipairs(character:GetDescendants()) do
+				if d:IsA("BasePart") then
+					d.LocalTransparencyModifier = 0
+				end
+			end
+		end
 		if Shim.renderSteps then
 			for _, fn in pairs(Shim.renderSteps) do
 				task.spawn(fn, dt)
@@ -2866,12 +2893,24 @@ Methods.Debris = {
 	end,
 }
 
+-- As in Roblox: a nil hotkey (say, unpacking past the end of a key list) is an
+-- error, not a quietly shorter binding.
+local function checkHotkeys(...)
+	for i = 1, select("#", ...) do
+		if select(i, ...) == nil then
+			error("ContextActionService:BindAction called with an invalid hotkey (should be either Enum.KeyCode, Enum.UserInputType or string)", 3)
+		end
+	end
+end
+
 Methods.ContextActionService = {
 	BindAction = function(_, name, fn, createTouch, ...)
+		checkHotkeys(...)
 		Shim.boundActions = Shim.boundActions or {}
 		Shim.boundActions[name] = { fn = fn, keys = { ... } }
 	end,
 	BindActionAtPriority = function(_, name, fn, createTouch, priority, ...)
+		checkHotkeys(...)
 		Shim.boundActions = Shim.boundActions or {}
 		Shim.boundActions[name] = { fn = fn, keys = { ... } }
 	end,

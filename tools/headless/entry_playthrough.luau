@@ -124,38 +124,135 @@ local function pressInteract()
 	Shim.advance(0.5)
 end
 
--- Title screen, then the briefing.
+local camera = workspace.CurrentCamera :: Camera
+
+-- Phase 5.5: the case opens on its intro, not a briefing screen. `expectFrom` is
+-- the shot it should start at (the top on a first run, the lift doors on a
+-- replay). Lets it run for `watch` seconds, then either holds E to skip or waits
+-- for the end, and checks the investigation is handed back cleanly.
+local function throughIntro(label: string, expectFrom: string, watch: number, skip: boolean)
+	local sent = lastSent("CutsceneUpdated")
+	local payload = sent and sent[1]
+	check(payload and payload.active and payload.id == "CUT-INTRO" and payload.isIntro, `{label}: the intro plays`)
+	check(payload and payload.shots and payload.shots[1].id == expectFrom, `{label}: it starts at {expectFrom}`)
+	local discovered = sentCount("EvidenceDiscovered")
+	Shim.advance(watch)
+	check(camera.CameraType == Enum.CameraType.Scriptable, `{label}: the scene has the camera`)
+	check(InteractionController.getCurrent() == nil, `{label}: nothing can be examined during the scene`)
+	if skip then
+		-- A tap does nothing; a held E skips.
+		InputController.invoke("Interact")
+		Shim.advance(0.3)
+		InputController.release("Interact")
+		Shim.advance(0.5)
+		check(lastSent("CutsceneUpdated")[1].active, `{label}: a tap doesn't skip the intro`)
+		InputController.invoke("Interact")
+		Shim.advance(1.6)
+		InputController.release("Interact")
+	else
+		local total = 0
+		for _, shot in ipairs(payload and payload.shots or {}) do
+			total += shot.duration
+		end
+		Shim.advance(total - watch + 1)
+	end
+	Shim.advance(2)
+	local ended = lastSent("CutsceneUpdated")
+	check(ended and ended[1].active == false and ended[1].id == "CUT-INTRO", `{label}: the server ends the intro`)
+	check(sentCount("EvidenceDiscovered") == discovered, `{label}: the intro hands over no evidence`)
+	check(camera.CameraType == Enum.CameraType.Custom, `{label}: the camera is back with the player`)
+	if skip then
+		-- Roblox's camera keeps the direction it is handed: from behind the player,
+		-- level, not the angle of whichever shot was cut short.
+		local look = camera.CFrame.LookVector
+		local root = (player.Character :: Model):FindFirstChild("HumanoidRootPart") :: BasePart
+		local facing = Vector3.new(root.CFrame.LookVector.X, 0, root.CFrame.LookVector.Z).Unit
+		check(
+			look.Y > -0.4 and Vector3.new(look.X, 0, look.Z).Unit:Dot(facing) > 0.9,
+			`{label}: a skipped intro hands the camera back from behind the player`
+		)
+	end
+	check(workspace:FindFirstChild("MysteryCase_CutsceneSets") == nil, `{label}: the scene's sets are taken down`)
+	local head = player.Character and player.Character:FindFirstChild("Head") :: BasePart?
+	check(head and head.LocalTransparencyModifier == 0, `{label}: the avatar is visible again`)
+end
+
+-- Title screen, then the intro.
 check(TitleScreenView.isOpen(), "title screen is showing on join")
+check(playerGui:FindFirstChild("MysteryCase_Briefing", true) == nil
+	or not (playerGui:FindFirstChild("MysteryCase_Briefing", true) :: ScreenGui).Enabled, "no briefing screen for CASE-001")
 pressInteract()
 Shim.advance(1.5) -- the title fades to black, then out
 check(not TitleScreenView.isOpen(), "E dismisses the title screen")
--- The briefing: words over a shot of the crime scene, and a Begin button.
-local briefingGui = playerGui:FindFirstChild("MysteryCase_Briefing", true) :: ScreenGui
-Shim.advance(3) -- the lines arrive one after another
-local function briefingText(name: string): string
-	local label = briefingGui:FindFirstChild(name, true)
-	return if label and (label:IsA("TextLabel") or label:IsA("TextButton")) then label.Text else ""
-end
-check(briefingGui.Enabled, "the briefing shows once the title is gone")
-check(briefingText("CaseNumber") == "CASE 001", "briefing: case number")
-check(briefingText("Title") == "THE LAST CALL", "briefing: title")
-check(string.find(briefingText("Hook"), "never answered", 1, true) ~= nil, "briefing: story hook")
-local settingLine = briefingText("Setting")
-check(
-	string.find(settingLine, "12:40 AM", 1, true) and string.find(settingLine, "Rozario &amp; Lim", 1, true),
-	"briefing: time and place (rich text, escaped)"
-)
-local camera = workspace.CurrentCamera :: Camera
-check(camera.CameraType == Enum.CameraType.Scriptable, "briefing: the camera holds the crime-scene shot")
-say(`  [BRIEFING] {briefingText("CaseNumber")} / {briefingText("Title")} / {briefingText("Hook")}`)
-local beginButton = briefingGui:FindFirstChild("Begin", true) :: TextButton
-check(beginButton and beginButton.Text ~= "", "briefing: the Begin button is labelled")
-Shim.fireSignal(beginButton.Activated) -- click Begin investigation
-Shim.advance(1.5)
 local phase = lastSent("PhaseChanged")
-check(phase and phase[1] == "Investigation", "clicking Begin starts the investigation (phase Investigation)")
-check(camera.CameraType == Enum.CameraType.Custom, "the camera is back with the player")
-check(not briefingGui.Enabled, "the briefing is gone")
+check(phase and phase[1] == "Investigation", "Play goes straight into the investigation")
+do
+	-- The dispatch is on the radio a little way in: subtitles show under the bars.
+	local sent = lastSent("CutsceneUpdated")
+	local seconds = 0
+	for _, shot in ipairs(sent and sent[1].shots or {}) do
+		if shot.id == "CITY-DISPATCH" then
+			break
+		end
+		seconds += shot.duration
+	end
+	Shim.advance(seconds + 1)
+	local line = playerGui:FindFirstChild("MysteryCase_Cutscene", true)
+	line = line and line:FindFirstChild("Line", true)
+	check(line and string.find((line :: TextLabel).Text, "Wisma Delima", 1, true), "the dispatch is subtitled")
+end
+throughIntro("first run", "BED-WIDE", 2, true)
+
+-- Every set a scene can be framed in builds, does each action the config says
+-- it knows, stands the investigator's double on its floor, and leaves nothing
+-- behind (the lift's hidden office parts shown again).
+do
+	local Config = Shim.require(game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Config"))
+	local CutsceneSets = Shim.require(Client:WaitForChild("CutsceneSets"))
+	for _, name in ipairs(CutsceneSets.names()) do
+		local handle = CutsceneSets.enter(name)
+		if check(handle, `set {name} builds`) then
+			for _, action in ipairs(Config.Cutscene.Sets[name].actions) do
+				local ok, err = pcall(handle.act, action, nil)
+				check(ok, `set {name} does {action}` .. (if ok then "" else `: {err}`))
+			end
+			Shim.advance(4)
+			local folder = workspace:FindFirstChild("MysteryCase_CutsceneSets")
+			-- A dressed set is built round its own origin, far from the office: a
+			-- part placed in world coordinates by mistake would stand in the office.
+			if not CutsceneSets.isWorld(name) and folder and folder:FindFirstChild(name) then
+				local strays = 0
+				for _, d in ipairs(folder[name]:GetDescendants()) do
+					if d:IsA("BasePart") and math.abs(d.Position.X) < 60 and math.abs(d.Position.Z) < 60 then
+						strays += 1
+					end
+				end
+				check(strays == 0, `set {name}: nothing stands in the office ({strays} parts)`)
+			end
+			local double = folder and folder:FindFirstChild(name) and folder[name]:FindFirstChild("Double")
+			-- The mirror's double stands in the reflection, the car's sits: only the
+			-- standing ones on a set's own floor are checked here.
+			if double and (name == "Lobby" or name == "Forecourt") then
+				local lowest = math.huge
+				for _, d in ipairs(double:GetDescendants()) do
+					if d:IsA("BasePart") then
+						lowest = math.min(lowest, d.Position.Y - d.Size.Y / 2)
+					end
+				end
+				check(math.abs(lowest - CutsceneSets.origin(name).Y) < 0.3, `set {name}: the double stands on the floor`)
+			end
+		end
+	end
+	CutsceneSets.leaveAll()
+	check(workspace:FindFirstChild("MysteryCase_CutsceneSets") == nil, "sets: all taken down")
+	local hidden = 0
+	for _, d in ipairs(workspace:WaitForChild("Office"):GetDescendants()) do
+		if d:IsA("BasePart") and d.LocalTransparencyModifier ~= 0 then
+			hidden += 1
+		end
+	end
+	check(hidden == 0, "sets: no office part left hidden")
+end
 
 --------------------------------------------------------------------------
 -- Moving around
@@ -210,6 +307,24 @@ local function examine(target: Instance, label: string): boolean
 	pressInteract()
 	local answered = #Shim.remoteLog > before
 	check(answered, `examining {label} gets a response`)
+	-- The close-up looks at the object, not at the back of a wall.
+	Shim.advance(1)
+	if camera.CameraType == Enum.CameraType.Scriptable then
+		local part = partOf(target)
+		local params = RaycastParams.new()
+		params.FilterType = Enum.RaycastFilterType.Exclude
+		params.FilterDescendantsInstances = { character() }
+		params.RespectCanCollide = true
+		local from = camera.CFrame.Position
+		local hit = workspace:Raycast(from, part.Position - from, params)
+		local inside = hit and part.CFrame:PointToObjectSpace(hit.Position)
+		check(
+			not hit
+				or hit.Instance == part
+				or (math.abs(inside.X) <= part.Size.X / 2 + 0.6 and math.abs(inside.Y) <= part.Size.Y / 2 + 0.6 and math.abs(inside.Z) <= part.Size.Z / 2 + 0.6),
+			`{label}: nothing solid between the close-up and the object`
+		)
+	end
 	if EvidencePanel.isOpen() then
 		pressInteract() -- [E] Continue
 		check(not EvidencePanel.isOpen(), `{label}: the readout closes with E`)
@@ -676,8 +791,18 @@ if check(timelineGui, "the timeline opens with T") then
 			Shim.advance(0.2)
 		end
 	end
-	local ordered = rowOrder()
+	local ordered, orderedRows = rowOrder()
 	check(table.concat(ordered, ",") == table.concat(canonical, ","), "rows reordered into the night's order")
+	-- All seven rows sit inside the panel, not spilling out below it.
+	local panel = (timelineGui :: Instance):FindFirstChild("Timeline") :: Frame
+	local list = panel:FindFirstChild("Events") :: Frame
+	local pad = panel:FindFirstChildOfClass("UIPadding") :: UIPadding
+	local listHeight = panel.Size.Y.Offset - pad.PaddingTop.Offset - pad.PaddingBottom.Offset + list.Size.Y.Offset
+	local lowest = 0
+	for _, row in ipairs(orderedRows) do
+		lowest = math.max(lowest, row.Position.Y.Offset + row.Size.Y.Offset)
+	end
+	check(lowest <= listHeight, `every timeline row fits in the panel ({lowest} of {listHeight} px)`)
 	for _, d in ipairs((timelineGui :: Instance):GetDescendants()) do
 		if d:IsA("TextButton") and d.Name ~= "MoveUp" and d.Name ~= "MoveDown" and d.Visible then
 			Shim.fireSignal(d.Activated)
@@ -749,6 +874,15 @@ check(
 	string.find(closingText("Stats"), "Timeline reconstructed", 1, true) ~= nil,
 	"the closing stats credit reconstructing the timeline"
 )
+-- All seven events of the night have room on the closing screen.
+do
+	local label = find(gui("MysteryCase_CaseClosed"), "Timeline") :: TextLabel
+	local lines = #string.split(label.Text, "\n")
+	check(
+		lines == 7 and label.Size.Y.Offset >= lines * label.TextSize * label.LineHeight,
+		`the closing screen has room for every event ({lines} lines in {label.Size.Y.Offset} px)`
+	)
+end
 -- Phase 3 (R1): the fixed-size panels shrink to fit a phone held sideways.
 do
 	local function fitScale(guiName: string, panelName: string): number?
@@ -772,22 +906,12 @@ do
 	check(fitScale("MysteryCase_CaseClosed", "CaseClosed") == 1, "back on a desktop screen, full size again")
 end
 
--- Investigate again: a clean second run.
+-- Investigate again: a clean second run. The intro replays from the lift doors.
 pressInteract()
 Shim.advance(2)
 local replayPhase = lastSent("PhaseChanged")
-check(replayPhase and replayPhase[1] == "CaseBriefing", "E on the closing screen starts again at the briefing")
-check(
-	briefingGui.Enabled and camera.CameraType == Enum.CameraType.Scriptable,
-	"the replay opens on the briefing shot again"
-)
-pressInteract() -- [E] Begin investigation
-Shim.advance(1.5)
-local secondRun = lastSent("PhaseChanged")
-check(
-	secondRun and secondRun[1] == "Investigation" and camera.CameraType == Enum.CameraType.Custom,
-	"E begins the second run, camera back with the player"
-)
+check(replayPhase and replayPhase[1] == "Investigation", "E on the closing screen starts the investigation again")
+throughIntro("replay", "LIFT-OPEN", 3, false)
 -- Phase 3 (R3): nothing from the solved run carries into the second.
 do
 	local fresh = reasoning()
@@ -914,8 +1038,7 @@ Shim.advance(3)
 check(closingText("Title") == "Case solved.", "route B: the closing screen: 'Case solved.'")
 pressInteract()
 Shim.advance(2)
-pressInteract() -- [E] Begin investigation
-Shim.advance(1.5)
+throughIntro("third run", "LIFT-OPEN", 1, true)
 check(
 	not evidenceProp("EV-011"):IsDescendantOf(workspace) and not evidenceProp("EV-004"):IsDescendantOf(workspace),
 	"the next run holds the lit screen and the printout back again"

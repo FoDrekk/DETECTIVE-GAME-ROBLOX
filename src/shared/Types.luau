@@ -40,7 +40,7 @@ export type EvidenceDefinition = {
 	relatedEvidenceIds: { string }?,
 	-- Optional: where to place a physical, code-spawned interactable prop for
 	-- this evidence in the current office environment, for evidence that has
-	-- no hand-placed counterpart in the Studio-authored `assets/Office.rbxm`.
+	-- no authored counterpart in the generated office.
 	-- Mirrors `SuspectDefinition.npcPlacement` exactly. Absent means the
 	-- evidence must already exist as a Studio-authored interactable (as
 	-- EV-001/002/003 do). Purely technical staging, not story content.
@@ -448,6 +448,11 @@ export type CaseBriefing = {
 
 export type CasePayload = {
 	briefing: CaseBriefing,
+	-- Phase 5.5: this case opens on a scene instead of the static briefing
+	-- screen, so the client goes straight from the title screen to the
+	-- investigation and lets the intro play. Says nothing about the scene
+	-- itself: its shots only ever travel when the server starts it.
+	introReplacesBriefing: boolean?,
 }
 
 export type CaseDefinition = {
@@ -488,6 +493,22 @@ export type CaseDefinition = {
 	-- Phase 5.1: scripted scenes (shots, subtitles), played on the server's
 	-- word by CutsceneService. Optional: a case without any has none.
 	cutscenes: { CutsceneDefinition }?,
+	-- Phase 5.5: the scene this case opens with. Optional: a case without one
+	-- opens on its briefing, exactly as before.
+	intro: CaseIntro?,
+}
+
+--[[
+	Phase 5.5: the scene a case opens with. Data, so a case says "this is my
+	intro" and the engine plays it: the server starts `cutsceneId` when the
+	investigation begins, and the static briefing screen is skipped for a case
+	whose intro replaces it (`replacesBriefing`).
+]]
+export type CaseIntro = {
+	cutsceneId: string,
+	-- The briefing screen is retired for this case: the intro does its job
+	-- (CASE-001's briefing showed something the intro withholds).
+	replacesBriefing: boolean?,
 }
 
 --[[
@@ -516,10 +537,89 @@ export type CutsceneShot = {
 		to: CutsceneCameraPoint?,
 		-- Degrees; absent keeps the player's own field of view.
 		fieldOfView: number?,
+		-- Phase 5.5: the field of view the move ends on (a slow push-in or pull-out).
+		fieldOfViewTo: number?,
+		-- Phase 5.5: how the move eases. "InOut" (the default), "Out", "In", "Linear".
+		ease: string?,
+		-- Phase 5.5: a hand-held sway, 0 (locked off) to 1 (a running camera).
+		handheld: number?,
 	},
 	fadeIn: number?,
 	fadeOut: number?,
 	lines: { CutsceneLine }?,
+	-- Phase 5.5: the set the shot is framed in. Its camera points are the set's
+	-- own coordinates; the client builds the set and offsets them. Absent: the
+	-- points are world coordinates (the office).
+	set: string?,
+	-- Phase 5.5: the look of the shot, a named preset of
+	-- Config.Cutscene.LightingPresets (sky, ambient, grade, bloom). Client-side
+	-- only. Absent: the world's own lighting.
+	lighting: string?,
+	-- Phase 5.5: the shot's depth of field.
+	focus: CutsceneFocus?,
+	-- Phase 5.5: sounds fired at their own moments in the shot (named cues of
+	-- Config.Audio.Cutscene: a scene never carries an asset id).
+	sounds: { CutsceneSoundCue }?,
+	-- Phase 5.5: things that happen in the set at their own moments (a phone
+	-- buzzing, a door sliding, a floor number changing): named actions the set
+	-- knows how to perform.
+	actions: { CutsceneAction }?,
+	-- Phase 5.5: a card over the shot (the title card).
+	titleCard: CutsceneTitleCard?,
+	-- Phase 5.5: the shot hands the look to the player: the camera stays at
+	-- `camera.from.position` (it cannot also move) and they turn it. Presence,
+	-- not control: they still can't move (the lift).
+	mouseLook: boolean?,
+}
+
+-- Phase 5.5: what is sharp in a shot. `distance` studs from the camera stays in
+-- focus (with `radius` studs of depth either side); `toDistance` racks the
+-- focus there over the shot. `blur` is how strongly the rest softens (0..1).
+export type CutsceneFocus = {
+	distance: number,
+	toDistance: number?,
+	radius: number?,
+	blur: number?,
+}
+
+--[[
+	Phase 5.5: a named cue of Config.Audio.Cutscene, played `at` seconds into its
+	shot. `volume` overrides the cue's own for this shot.
+
+	A cue whose config says `loops` is a bed (rain, traffic, the music). A bed
+	keeps going across cuts for as long as each shot asks for it (rain that
+	restarted on every cut would announce the edit), and fades out at the first
+	shot that doesn't. `stop` ends a bed mid-shot instead of starting it (a phone
+	buzzing until a hand turns it over). Any other cue is a one-shot: it plays once
+	and is never carried over. `fade` is the seconds a cue takes to come in (or,
+	with `stop`, to go out). `from` starts the sound that many seconds into the
+	recording.
+]]
+export type CutsceneSoundCue = {
+	at: number,
+	cue: string,
+	volume: number?,
+	stop: boolean?,
+	fade: number?,
+	from: number?,
+}
+
+-- Phase 5.5: `name` is one of the actions the shot's set defines
+-- (CutsceneSets); `args` are its parameters.
+export type CutsceneAction = {
+	at: number,
+	name: string,
+	args: { [string]: any }?,
+}
+
+-- Phase 5.5: a card over the shot: `title`, with an optional second line and a
+-- small line over it, shown from `at` seconds into the shot for `duration`.
+export type CutsceneTitleCard = {
+	at: number,
+	duration: number,
+	title: string,
+	subtitle: string?,
+	kicker: string?,
 }
 
 export type CutsceneCameraPoint = {
@@ -771,6 +871,10 @@ export type CutscenePayload = {
 	id: string?,
 	shots: { CutsceneShot }?,
 	skippable: boolean?,
+	-- Phase 5.5: this scene is the case's intro, so it is skipped by holding
+	-- (a hold can't happen by accident) and hands over to the investigation
+	-- rather than returning to whatever was on screen before it.
+	isIntro: boolean?,
 }
 
 export type DialoguePresentPayload = {

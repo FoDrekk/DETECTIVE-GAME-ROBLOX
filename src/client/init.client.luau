@@ -70,6 +70,16 @@ local cutsceneFinished = Signals.wait(Signals.Names.CutsceneFinished)
 
 local currentPhase: Types.GamePhase = "MainMenu"
 local lastBriefing: Types.CaseBriefing? = nil
+-- Phase 5.5: the case opens on a scene in place of the briefing screen. Then
+-- Play (on the title screen) or Investigate again goes straight to the
+-- investigation, and the server starts the scene.
+local introReplacesBriefing = false
+-- The begin request has gone to the server for this case run (never sent twice).
+local beginRequested = false
+-- The client asked to begin and is waiting for the scene the server will start:
+-- it holds the investigation's screen the way a scene on screen does.
+local introPending = false
+local applyPhase: (phase: Types.GamePhase) -> ()
 local lastCaseClosedSummary: Types.CaseClosedSummary? = nil
 -- Whether the server says this player may accuse now (M9: that can be
 -- before every objective is done). Purely a UX gate for offering the
@@ -92,14 +102,50 @@ local function closeOverlays()
 	CaseFileView.close()
 	AccusationView.close()
 	CameraController.stopExamining()
-	if currentPhase == "Investigation" and not CutsceneView.isPlaying() then
+	if currentPhase == "Investigation" and not CutsceneView.isPlaying() and not introPending then
 		InteractionController.resumeScan()
+	end
+end
+
+-- Phase 5.5: ask the server to begin the investigation. For a case whose intro
+-- replaces its briefing this is all Play does; the scene follows from the server.
+local function beginInvestigation()
+	if beginRequested then
+		return
+	end
+	beginRequested = true
+	if introReplacesBriefing then
+		introPending = true
+		task.delay(Config.Cutscene.IntroWait, function()
+			if introPending and not CutsceneView.isPlaying() then
+				-- No scene came: the investigation is simply on.
+				introPending = false
+				TitleScreenView.release()
+				applyPhase(currentPhase)
+			end
+		end)
+	end
+	requestPhaseChange:FireServer("Investigation")
+end
+
+-- Show the briefing, or (for a case whose intro replaces it) begin at once, once
+-- the title screen is out of the way.
+local function showBriefingOrBegin()
+	local briefing = lastBriefing
+	if currentPhase ~= "CaseBriefing" or not briefing or TitleScreenView.isOpen() then
+		return
+	end
+	if introReplacesBriefing then
+		beginInvestigation()
+	else
+		CaseBriefingView.show(briefing)
 	end
 end
 
 -- Phase 5.1: a scene takes the whole screen. Everything else steps aside
 -- while it plays, and comes back the way the phase has it afterwards.
 local function beforeCutscene()
+	introPending = false
 	EvidencePanel.close()
 	ObservationPanel.close()
 	TimelineView.close()
@@ -135,14 +181,18 @@ end
 local reasoningFactCount = 0
 local timelineEstablished = false
 
-local function applyPhase(phase: Types.GamePhase)
+function applyPhase(phase: Types.GamePhase)
 	currentPhase = phase
 	-- The E key is active during the briefing (to begin), the investigation,
 	-- and the closing screen (to investigate again, M4).
 	local interactEnabled = phase == "CaseBriefing" or phase == "Investigation" or phase == "CaseClosed"
+	local sceneUp = CutsceneView.isPlaying() or introPending
 
 	if phase == "CaseBriefing" then
 		-- A fresh case (first join or a replay): forget the last one's ending.
+		beginRequested = false
+		introPending = false
+		sceneUp = CutsceneView.isPlaying()
 		accusationOpen = false
 		accusationAnnounced = false
 		lastCaseClosedSummary = nil
@@ -150,10 +200,10 @@ local function applyPhase(phase: Types.GamePhase)
 		timelineEstablished = false
 	end
 
-	SoundController.setDucked(phase == "CaseClosed" or CutsceneView.isPlaying())
+	SoundController.setDucked(phase == "CaseClosed" or sceneUp)
 	InputController.setInteractEnabled(interactEnabled)
-	ObjectiveView.setActive(phase == "Investigation" and not CutsceneView.isPlaying())
-	if phase == "Investigation" and not CutsceneView.isPlaying() then
+	ObjectiveView.setActive(phase == "Investigation" and not sceneUp)
+	if phase == "Investigation" and not sceneUp then
 		InteractionController.resumeScan()
 	else
 		InteractionController.pauseScan()
@@ -161,10 +211,9 @@ local function applyPhase(phase: Types.GamePhase)
 	end
 
 	if phase == "CaseBriefing" then
-		-- Held back while the title screen is up; shown when it closes.
-		if lastBriefing and not TitleScreenView.isOpen() then
-			CaseBriefingView.show(lastBriefing)
-		end
+		-- Held back while the title screen is up; shown (or, for a case whose
+		-- intro replaces it, skipped past) when it closes.
+		showBriefingOrBegin()
 	else
 		CaseBriefingView.hide()
 	end
@@ -232,7 +281,7 @@ local function bootstrap()
 			elseif EvidencePanel.isOpen() then
 				return "Continue"
 			elseif currentPhase == "CaseBriefing" then
-				return "Begin investigation"
+				return if introReplacesBriefing then nil else "Begin investigation"
 			elseif currentPhase == "CaseClosed" then
 				return "Investigate again"
 			elseif currentPhase == "Investigation" and not AccusationView.isOpen() then
@@ -240,6 +289,9 @@ local function bootstrap()
 				return if target then target.label else nil
 			end
 			return nil
+		end,
+		primaryHold = function(): boolean
+			return CutsceneView.isPlaying() and CutsceneView.primaryHold()
 		end,
 		showInvestigationButtons = function(): boolean
 			return currentPhase == "Investigation" and not DialogueView.isOpen() and not CutsceneView.isPlaying()
@@ -255,7 +307,7 @@ local function bootstrap()
 	-- Interaction scanning.
 	InteractionController.start()
 	InteractionController.onPromptChanged().Event:Connect(function(prompt)
-		if currentPhase ~= "Investigation" or CutsceneView.isPlaying() then
+		if currentPhase ~= "Investigation" or CutsceneView.isPlaying() or introPending then
 			InteractionPromptView.setPrompt(nil)
 			return
 		end
@@ -291,11 +343,15 @@ local function bootstrap()
 			-- [E] Investigate again. The server validates and resets.
 			requestPhaseChange:FireServer("CaseBriefing")
 		elseif currentPhase == "CaseBriefing" then
-			requestPhaseChange:FireServer("Investigation")
-		elseif currentPhase == "Investigation" then
+			-- (With an intro in place of the briefing this begins nothing new:
+			-- the title screen's Play already did.)
+			beginInvestigation()
+		elseif currentPhase == "Investigation" and not introPending then
 			InteractionController.requestInteract()
 		end
 	end)
+	-- Phase 5.5: letting go of the primary input ends a hold that hadn't finished.
+	InputController.onInteractReleased(CutsceneView.handlePrimaryReleased)
 
 	-- Timeline and Case File are non-modal information overlays: they can be
 	-- opened while exploring and are dismissed with their own key or ESC.
@@ -395,7 +451,7 @@ local function bootstrap()
 
 	-- Briefing "begin" intent.
 	CaseBriefingView.onBeginRequested().Event:Connect(function()
-		requestPhaseChange:FireServer("Investigation")
+		beginInvestigation()
 	end)
 
 	-- Server -> client events.
@@ -405,10 +461,10 @@ local function bootstrap()
 
 	caseBriefingLoaded.OnClientEvent:Connect(function(payload: Types.CasePayload)
 		lastBriefing = payload.briefing
+		introReplacesBriefing = payload.introReplacesBriefing == true
 		TitleScreenView.setCase(payload.briefing)
-		if currentPhase == "CaseBriefing" and not TitleScreenView.isOpen() then
-			CaseBriefingView.show(payload.briefing)
-		end
+		TitleScreenView.setHandoff(introReplacesBriefing)
+		showBriefingOrBegin()
 	end)
 
 	evidenceDiscovered.OnClientEvent:Connect(function(payload: Types.EvidencePayload)
@@ -525,6 +581,8 @@ local function bootstrap()
 		if payload.active then
 			beforeCutscene()
 			CutsceneView.play(payload)
+			-- The scene has the screen: the title's held black can lift.
+			TitleScreenView.release()
 		elseif CutsceneView.stop(payload.id) then
 			afterCutscene()
 		end
@@ -551,9 +609,7 @@ local function bootstrap()
 	-- M6: the title screen, once per session. Closing it reveals whatever the
 	-- phase shows -- the briefing, on a first join.
 	TitleScreenView.onDismissed().Event:Connect(function()
-		if currentPhase == "CaseBriefing" and lastBriefing then
-			CaseBriefingView.show(lastBriefing)
-		end
+		showBriefingOrBegin()
 	end)
 	TitleScreenView.open()
 

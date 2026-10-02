@@ -1,5 +1,7 @@
--- Entry: run the unit-test suite (tests/cases) headlessly.
-local filter = Shim.env.TEST_FILTER
+-- Entry: run the unit-test suite (tests/cases) headlessly. An optional first
+-- argument runs only the case modules whose name contains it:
+--   luau tests.luau -a Cutscene
+local filter = ({ ... })[1]
 local ServerStorage = game:GetService("ServerStorage")
 -- Like pressing Play in Studio: the server bootstrap runs first.
 Shim.runScript(game:GetService("ServerScriptService"):WaitForChild("Server"))
