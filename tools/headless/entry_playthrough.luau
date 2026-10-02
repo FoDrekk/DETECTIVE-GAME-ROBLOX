@@ -791,8 +791,18 @@ if check(timelineGui, "the timeline opens with T") then
 			Shim.advance(0.2)
 		end
 	end
-	local ordered = rowOrder()
+	local ordered, orderedRows = rowOrder()
 	check(table.concat(ordered, ",") == table.concat(canonical, ","), "rows reordered into the night's order")
+	-- All seven rows sit inside the panel, not spilling out below it.
+	local panel = (timelineGui :: Instance):FindFirstChild("Timeline") :: Frame
+	local list = panel:FindFirstChild("Events") :: Frame
+	local pad = panel:FindFirstChildOfClass("UIPadding") :: UIPadding
+	local listHeight = panel.Size.Y.Offset - pad.PaddingTop.Offset - pad.PaddingBottom.Offset + list.Size.Y.Offset
+	local lowest = 0
+	for _, row in ipairs(orderedRows) do
+		lowest = math.max(lowest, row.Position.Y.Offset + row.Size.Y.Offset)
+	end
+	check(lowest <= listHeight, `every timeline row fits in the panel ({lowest} of {listHeight} px)`)
 	for _, d in ipairs((timelineGui :: Instance):GetDescendants()) do
 		if d:IsA("TextButton") and d.Name ~= "MoveUp" and d.Name ~= "MoveDown" and d.Visible then
 			Shim.fireSignal(d.Activated)

@@ -325,9 +325,11 @@ function TimelineView.start()
 	gui = Components.screenGui("MysteryCase_Timeline", 16)
 	gui.Enabled = false
 
+	-- Tall enough for seven events (CASE-001's full night: 72 px a row) above
+	-- the confirm button; fitToViewport shrinks it on a smaller screen.
 	root = Components.frame({
 		name = "Timeline",
-		size = UDim2.fromOffset(520, 500),
+		size = UDim2.fromOffset(520, 700),
 		position = UDim2.fromScale(0.5, 0.5),
 		anchor = Vector2.new(0.5, 0.5),
 		color = Theme.Panel,
@@ -338,7 +340,7 @@ function TimelineView.start()
 	})
 	root.Visible = false
 	Components.padding(root, 26)
-	Components.fitToViewport(root, Vector2.new(520, 500))
+	Components.fitToViewport(root, Vector2.new(520, 700))
 
 	local accent = Components.frame({
 		name = "Accent",
@@ -394,7 +396,7 @@ function TimelineView.start()
 
 	listFrame = Components.frame({
 		name = "Events",
-		size = UDim2.new(1, 0, 1, -160),
+		size = UDim2.new(1, 0, 1, -150),
 		position = UDim2.fromOffset(0, 86),
 		transparency = 1,
 		parent = root,
