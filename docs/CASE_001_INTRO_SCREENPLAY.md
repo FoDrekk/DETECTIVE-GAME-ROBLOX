@@ -310,6 +310,6 @@ replay from `LIFT-OPEN`. What changed is how the shots read on screen.
 - **Sound.** The phone's buzz stops when the hand turns it over, and the
   motif is listed on every shot it plays through, so it carries unbroken
   from the city to the lift (a test pins this).
-- **Known gaps.** The constable is a simple block figure, not a rigged
-  character; the far horizon glow behind the city doesn't render at its
-  distance. Both are in the next-phase proposal (`ROADMAP.md`, 5.6).
+- **Known gap.** The constable is a simple block figure, not a rigged
+  character (`ROADMAP.md`, 5.6). The horizon glow behind the city, which did
+  not render at its distance, was fixed in the playthrough pass.

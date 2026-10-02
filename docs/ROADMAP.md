@@ -400,10 +400,8 @@ story, the evidence or the reasoning.
 5. **People in the sets.** The lobby constable and the mamak rider are block
    figures. Give them R15 rigs built from a `HumanoidDescription`, as
    `SuspectSpawner` builds the suspects, so the constable's nod reads.
-6. **The far horizon glow.** The haze bands behind the skyline (420 studs
-   out) don't draw at that distance. Either bring a single glow card inside
-   the culling range or carry the glow in the sky (`Sky` + `Atmosphere`
-   decay) only.
+6. ~~**The far horizon glow.**~~ Fixed in the playthrough (haze bands moved
+   off the sky plane, far towers lowered): it renders, at night and at dawn.
 7. **The open plan reads sparse** at night. Add desk-level clutter and a
    second rank of task lamps along the studio desks (PropKit only, no new
    interactables). While there: the studio noticeboard's "Kitchen rota:

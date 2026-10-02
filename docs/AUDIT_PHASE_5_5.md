@@ -221,10 +221,9 @@ the old skyline: the bake ran before Rojo had synced the v12 scripts. Check
 ## Remaining issues
 
 1. The lobby constable and the mamak rider are block figures.
-2. The far horizon glow behind the skyline doesn't render at its distance.
-3. The open plan reads sparse at night.
-4. The studio noticeboard puts Sam (the night guard) on the firm's kitchen
+2. The open plan reads sparse at night.
+3. The studio noticeboard puts Sam (the night guard) on the firm's kitchen
    rota; probably unintended.
-5. Performance on low-end devices with the larger skyline is unmeasured.
+4. Performance on low-end devices with the skyline is unmeasured.
 
 The proposal for the next step is `ROADMAP.md`, Phase 5, "5.6 proposal".
