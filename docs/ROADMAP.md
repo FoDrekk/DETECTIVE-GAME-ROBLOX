@@ -372,9 +372,9 @@ a proposal the owner reviews before implementation (OD-12).
 | 5.3 | v2 content that doesn't need the phone: EV-008 to EV-010, three new statements, CONTRA-005, DEDUCT-005/006, the badge log printed on request, the accusation's new motive and proof (`CASE_001_V2_CONTENT_SHEET_5_3.md`) | **Built and tested, awaiting review (385 unit, 204 playthrough, 76 engine checks; Studio Play Mode verified).** Sheet and five decisions approved as recommended (1A to 5A). Place synced after the owner saves |
 | 5.4 | The payoff: the phone (per revised D-10) with EV-011/012, the 11:48 and 11:49 events, CONTRA-006 and the drawer-photo clue; the ending variants; the dawn outro (`CASE_001_V2_CONTENT_SHEET_5_4.md`) | **Built and tested, awaiting review.** Plan and content sheet approved. Both phone routes, the cold-Meera route, CONTRA-006, DEDUCT-007, the 11:48 and 11:49 events, the four endings and the dawn outro. Place synced after the owner saves |
 | 5.5 | CASE-001 cinematic intro and dawn outro, staged sets, camera, audio, lighting, captions, hold-to-skip, and spacious plan-driven office | **Implemented; full audit 2026-10-02 (`AUDIT_PHASE_5_5.md`).** 471/471 unit tests in Studio's `UnitTestRunner` and headless, 351 playthrough and 76 engine checks headless. Intro played through in Studio to `reason=finished` (169 s, 21 shots) with the lift handoff. Office builders at v12, baked and saved into the place |
-| 5.6 | v2 release QA and presentation polish (proposal below) | In progress: steps 1 and 2 done (v12 bake saved; manual playthrough: five runs, both phone routes, all four endings; nine bugs fixed) |
+| 5.6 | v2 release QA and presentation polish (proposal below) | In progress: steps 1, 2 and 8 done (v12 bake saved; manual playthrough: five runs, both phone routes, all four endings; nine bugs fixed; the Studio checks scripted) |
 
-#### 5.6 proposal: release QA and presentation polish (steps 1 and 2 done)
+#### 5.6 proposal: release QA and presentation polish (steps 1, 2 and 8 done)
 
 What the 5.5 audit left open. Each item is small, and none changes the
 story, the evidence or the reasoning.
@@ -409,10 +409,17 @@ story, the evidence or the reasoning.
    the story bible.
 
 **Process**
-8. **Make the Studio checks repeatable.** Two scripts in `tools/`: one that
-   arms a `LogService.MessageOut` collector and enables `UnitTestRunner`,
-   and one that plays the intro and reports the `CutsceneService` end
-   reason. Both run from the MCP or the command bar.
+8. ~~**Make the Studio checks repeatable.**~~ **Done 2026-10-03**:
+   `tools/studio-checks/`. `unit_tests.luau` switches on `UnitTestRunner`
+   and collects its result; `cutscenes.luau` reports each scene's starting
+   shot, length and `CutsceneService` end reason, with any warning or error
+   logged while it ran (run on the Client, it lists the client's own). Both
+   run on the Server during Play, from the MCP or the command bar; the intro
+   itself starts from the title screen (the MCP presses E with
+   `user_keyboard_input`). First runs, on the main checkout's place (v12
+   bake): 471/471 in 20.1 s, with 3,098 expected mock-player errors and no
+   others; `CUT-INTRO` from `BED-WIDE` (169 s) ended `finished` after 171 s,
+   with no warning or error on either side.
 9. **One place file in use at a time.** The session that baked and saved
    should be the worktree's own place; note the open file in each audit.
 
@@ -526,6 +533,11 @@ CASE-002 content.
   - Those contexts get their own, never-started copies of the server modules.
   - Tests that depend on listeners registered at boot (for example, a
     contradiction claimed by showing evidence) then fail for the wrong reason.
+- **The Studio checks are scripted** (`tools/studio-checks`; each header
+  says how to run it): the unit suite through `UnitTestRunner`, and every
+  scene's end reason with the warnings and errors around it. An MCP call
+  times out after about half a minute, so both keep listening after the
+  call returns, and anything that outlasts a call is read on the next run.
 - **Unit tests never wait in real time.** A full run in Studio floods the
   Output with the expected mock-player errors, which stalls the engine. Time
   goes through a seam instead (`CutsceneService.useClock`).

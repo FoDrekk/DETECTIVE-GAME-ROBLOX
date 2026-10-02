@@ -121,6 +121,7 @@ MysteryCaseRoblox/
 ├─ docs/                    # design docs, case bible, localisation notes
 ├─ tests/                   # unit tests -> ServerStorage.UnitTest (cases + fixtures)
 ├─ tools/headless/          # run the tests / a playthrough without Studio
+├─ tools/studio-checks/     # Studio Play checks: the unit suite, the scenes
 └─ src/
    ├─ server/               -> ServerScriptService.Server
    ├─ client/               -> StarterPlayer.StarterPlayerScripts.Client
@@ -145,6 +146,13 @@ floods the Output with the expected FireClient-to-mock-player errors, and
 `LogService:GetLogHistory()` keeps only 512 lines, so collect results from
 `LogService.MessageOut` when scripting a run. Restart Play afterwards: the
 suite drives the server-wide phase.
+
+`tools/studio-checks/` scripts both Studio checks. Press Play and run them on
+the Server, from the Studio MCP's `execute_luau` or the command bar:
+`unit_tests.luau` switches the runner on and collects its result, and
+`cutscenes.luau` reports each scene's starting shot, length and end reason
+(`finished`, `skipped` or `timeout`) with any warning or error logged while it
+ran. Each script's header says how to drive it.
 
 The same suite, a scripted end-to-end playthrough and the cutscene-engine
 checks also run without Studio: see `tools/headless/README.md`.
