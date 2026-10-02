@@ -325,7 +325,4 @@ end
 ]]
 OfficePlan.Spawn = Vector3.new(31.75, 0.2, OfficePlan.Lift.doorZ)
 
--- The window at the end of the spine, where Meera stands looking out.
-OfficePlan.SpineWindow = Vector3.new(0, 3, -24.6)
-
 return OfficePlan

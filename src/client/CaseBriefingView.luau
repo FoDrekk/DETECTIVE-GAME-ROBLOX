@@ -1,6 +1,6 @@
 --!strict
 --[[
-	CaseBriefingView (M8)
+	CaseBriefingView
 	The case opens on the scene itself: the camera drifts slowly across
 	Daniel's office while the case number, the title, a two-line hook and
 	the time and place settle into the lower left, over a soft corner shade

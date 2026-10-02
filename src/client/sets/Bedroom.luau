@@ -1,6 +1,6 @@
 --!strict
 --[[
-	Bedroom (Phase 5.5): the cold open's set. A condo bedroom in Bukit Pelangi at
+	Bedroom: the cold open's set. A condo bedroom in Bukit Pelangi at
 	11:47 at night: rain on a big window, the city orange behind it, a bedside
 	table with a clock, a phone and a strip of tablets, and a hand.
 
@@ -42,7 +42,6 @@ local BLANKET = C3(104, 88, 98)
 local SKIN = C3(224, 184, 160)
 local NAIL = C3(228, 192, 182)
 local GOLD = C3(238, 192, 88)
-local ALUMINIUM = C3(28, 30, 34)
 
 local WALL = 0.5
 local TABLE_TOP = 2.2

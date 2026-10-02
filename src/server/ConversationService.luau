@@ -1,7 +1,7 @@
 --!strict
 --[[
 	ConversationService
-	Authoritative, data-driven suspect conversations (Phase 2G).
+	Authoritative, data-driven suspect conversations.
 
 	Conversations are authored in case data (CaseDefinition.conversations) as
 	a small per-suspect graph of DialogueNodeDefinitions. No dialogue content
@@ -24,7 +24,7 @@
 	<id>" intent with no state of its own. A choice id is re-validated
 	against the player's own state before it is honoured.
 
-	Presenting evidence (M9): a choice with `present` asks the investigator
+	Presenting evidence: a choice with `present` asks the investigator
 	to show something instead of moving on. The line then waits with the
 	evidence they have found listed; they pick one (present) or back out.
 	The server matches it against the choice's authored outcomes -- the
@@ -36,7 +36,7 @@
 	from here) registers with onPresented and unlocks it synchronously,
 	before the reaction line is sent.
 
-	Handing evidence over (Phase 5.1): a node with `grantsEvidence` discovers
+	Handing evidence over: a node with `grantsEvidence` discovers
 	that evidence through EvidenceService.grant the moment it is reached,
 	before its line is sent (so questions about it are offered at once);
 	the line carries the names of what it newly handed over.
@@ -71,7 +71,7 @@ function ConversationService.onUpdated(): BindableEvent
 	return dialogueUpdatedEvent
 end
 
--- M9: synchronous listeners for evidence shown in a conversation, called
+-- Synchronous listeners for evidence shown in a conversation, called
 -- as (player, { suspectId, evidenceId, landed, claims }).
 type PresentedListener = (Player, { suspectId: string, evidenceId: string, landed: boolean, claims: string? }) -> ()
 local presentedListeners: { PresentedListener } = {}
@@ -289,7 +289,7 @@ local function presentableEvidence(data: Types.PlayerData): { { id: string, name
 	return out
 end
 
--- Phase 5.1: hand over the evidence a line grants, through EvidenceService
+-- Hand over the evidence a line grants, through EvidenceService
 -- (idempotent: anything already found is skipped). Returns the display
 -- names of what this line newly discovered, for the line's own notice.
 local function grantEvidence(player: Player, data: Types.PlayerData, evidenceIds: { string }): { string }?
@@ -383,7 +383,7 @@ local function completeConversation(player: Player, data: Types.PlayerData, susp
 end
 
 -- Make `node` the player's current line: remember what it sets, unlock its
--- statement, hand over any evidence it grants (Phase 5.1), and send it
+-- statement, hand over any evidence it grants, and send it
 -- (with whatever choices it now offers).
 local function enterNode(
 	player: Player,
@@ -448,7 +448,7 @@ function ConversationService.begin(player: Player, suspectId: string): (boolean,
 	if data.caseState.activeConversation then
 		return false, "conversation-in-progress"
 	end
-	-- Phase 5.1: a scene is playing (CutsceneService owns activeCutscene).
+	-- A scene is playing (CutsceneService owns activeCutscene).
 	if data.caseState.activeCutscene then
 		return false, "cutscene-in-progress"
 	end
@@ -595,7 +595,7 @@ function ConversationService.choose(player: Player, choiceId: string): (boolean,
 end
 
 --[[
-	M9: the investigator shows a piece of evidence (or, with nil, backs out
+	The investigator shows a piece of evidence (or, with nil, backs out
 	of showing anything and returns to the questions). Only evidence this
 	player has discovered can be shown, and only while a presenting choice
 	is waiting.
@@ -741,7 +741,7 @@ function ConversationService.isTalking(player: Player): boolean
 	return data ~= nil and data.caseState.activeConversation ~= nil
 end
 
--- Phase 5.1: the condition check dialogue uses for choices and entries,
+-- The condition check dialogue uses for choices and entries,
 -- against this player's own state, so other systems (RevealService's
 -- propPlacement.revealWhen) speak the same condition language rather than a
 -- second copy of it. Every condition must hold; nil or empty holds.
@@ -801,7 +801,7 @@ function ConversationService.validate(caseDef: Types.CaseDefinition): { string }
 		known.Deduction[deduction.id] = true
 	end
 
-	-- Phase 5.4: evidence that hands over other evidence must name real,
+	-- Evidence that hands over other evidence must name real,
 	-- other items, and never loop back on itself.
 	local handsOver: { [string]: { string } } = {}
 	for _, evidence in ipairs(caseDef.evidence) do

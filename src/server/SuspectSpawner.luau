@@ -4,10 +4,9 @@
 	Runtime placement of physical NPC representations for suspects that
 	author an `npcPlacement` (Types.SuspectDefinition). Purely staging: no
 	suspect id is hardcoded here -- every suspect with npcPlacement gets an
-	NPC; a suspect without it simply has none (Phase 2G shipped SUS-001;
-	Phase 2I adds SUS-002 -- no code change was needed for the second one).
+	NPC; a suspect without it simply has none.
 
-	M6: each NPC is a real R15 avatar generated from a HumanoidDescription
+	Each NPC is a real R15 avatar generated from a HumanoidDescription
 	(the suspect's authored `appearance`: body package, hair, outfit
 	colours), breathing through Roblox's default idle animation, and turning
 	to face whoever starts a conversation with them.
@@ -458,7 +457,7 @@ local function findBakedNpc(folder: Instance, suspect: Types.SuspectDefinition):
 end
 
 --[[
-	Phase 5.2: bring baked NPCs' identities in line with case data after a
+	Bring baked NPCs' identities in line with case data after a
 	rename or a change of skin tone, without rebuilding them: the model name,
 	display name, "Talk to" prompt, floating name tag and skin-coloured parts.
 	Position, pose, hair and clothes are left alone, and so are any author

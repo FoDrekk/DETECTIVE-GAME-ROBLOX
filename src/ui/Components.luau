@@ -110,7 +110,7 @@ function Components.padding(parent: Instance, px: number): UIPadding
 	return padding(parent, px)
 end
 
--- Phase 3 (R1): shrink a fixed-size panel to fit short or narrow screens
+-- Shrink a fixed-size panel to fit short or narrow screens
 -- (a phone in landscape), never growing it past its authored size. `margin`
 -- is the room left around the panel on each axis, in screen pixels.
 function Components.fitToViewport(panel: GuiObject, designSize: Vector2, margin: Vector2?, minScale: number?): UIScale

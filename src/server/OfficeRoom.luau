@@ -144,7 +144,7 @@ local function validateInteractables()
 		return
 	end
 
-	-- Phase 5.1: evidence a conversation hands over needs no object in the
+	-- Evidence a conversation hands over needs no object in the
 	-- world (DialogueNodeDefinition.grantsEvidence).
 	local grantedByDialogue: { [string]: boolean } = {}
 	for _, conversation in ipairs(caseDef.conversations) do
@@ -156,7 +156,7 @@ local function validateInteractables()
 	end
 
 	for _, evidence in ipairs(caseDef.evidence) do
-		-- Phase 5.3: bound evidence is present once its named object carries
+		-- Bound evidence is present once its named object carries
 		-- the id (applyEvidenceBindings ran before this).
 		if not presentEvidence[evidence.id] and not grantedByDialogue[evidence.id] then
 			log:warn("missing authored interactable for case evidence", {
@@ -250,7 +250,7 @@ end
 
 --[[
 	Builds a small wall plaque naming a location, for any location that
-	authors `signPlacement` (M3). Mirrors buildEvidenceProp's
+	authors `signPlacement`. Mirrors buildEvidenceProp's
 	placement-driven pattern exactly. Not an Interactable -- purely
 	wayfinding, not a clue -- and not tagged, so it never competes with a
 	real interaction prompt.
@@ -328,7 +328,7 @@ local function buildLocationSigns()
 end
 
 --[[
-	Phase 5.3: promote flavour objects to clues. Evidence that authors
+	Promote flavour objects to clues. Evidence that authors
 	bindTo names an existing interactable (a Studio-authored or baked object);
 	that instance is given the evidence id (and its prompt label, if the case
 	authors one), so examining it discovers the evidence. Runtime-only and
@@ -372,7 +372,7 @@ local function applyEvidenceBindings()
 end
 
 --[[
-	Apply authored flavour text (Phase 2O) to no-evidence interactables by
+	Apply authored flavour text to no-evidence interactables by
 	instance name. Additive and runtime-only: an entry whose instance is
 	absent is skipped, and any interactable that carries evidence is never
 	touched (so a real clue can never be given flavour text). No case id is
@@ -392,7 +392,7 @@ local function applyObservations()
 				if descriptor and not descriptor.evidenceId then
 					instance:SetAttribute(Interactable.AttributeName.ObservationText, observation.text)
 					if observation.label then
-						-- Phase 2P: an authored asset's own prompt label can
+						-- An authored asset's own prompt label can
 						-- read as real evidence next to the actual clue (e.g.
 						-- "Examine Coffee Cup" beside the visitor's cup); let
 						-- the case override it without touching the asset.
@@ -410,7 +410,7 @@ local function applyObservations()
 end
 
 --[[
-	Phase 5.3: bring a baked place's evidence props in line with case data
+	Bring a baked place's evidence props in line with case data
 	without a re-bake (Edit mode). Builds any prop the case authors that the
 	place lacks; ids in `rebuild` are destroyed and built again first (for a
 	prop whose look changed). Everything else, and any author edits to it, is

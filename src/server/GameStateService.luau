@@ -47,7 +47,7 @@ function GameStateService.onCaseClosed(): BindableEvent
 	return caseClosedEvent
 end
 
--- Phase 5.4: a Solved close that plays a scene first (an outro) holds the
+-- A Solved close that plays a scene first (an outro) holds the
 -- summary back until that scene is over -- finished, skipped or timed out --
 -- and only then announces the close. Keyed by UserId, not by the player
 -- table: a BindableEvent hands its listeners a copy of a table, so a mock
@@ -67,7 +67,7 @@ function GameStateService.isClosingScenePlaying(player: Player): boolean
 	return pendingClose[player.UserId] ~= nil
 end
 
--- Fired with (player) once a replay is accepted (M4). The bootstrap bridge
+-- Fired with (player) once a replay is accepted. The bootstrap bridge
 -- respawns the character and re-pushes the fresh state -- both need a real
 -- Player, so neither happens here (same reasoning as caseClosedEvent).
 local replayEvent: BindableEvent = Instance.new("BindableEvent")
@@ -81,8 +81,8 @@ local function broadcast(phase: Types.GamePhase)
 end
 
 --[[
-	Phase 2L gameplay authorization for the Investigation -> CaseClosed edge,
-	extended in Phase 2N to require a formal accusation.
+	Gameplay authorization for the Investigation -> CaseClosed edge: the player
+	must have made a formal accusation.
 
 	The state machine (GameStateMachine) only ever validates graph legality --
 	whether this edge exists at all -- never whether a specific player is
@@ -94,8 +94,8 @@ end
 	it).
 
 	Two conditions, both server-side:
-	  1. accusing is open for this player (every objective complete, or,
-	     M9, the case's `accusationRules.opensAfter` objective), and
+	  1. accusing is open for this player (every objective complete, or
+	     the case's `accusationRules.opensAfter` objective), and
 	  2. the player has made a formal accusation (AccusationService).
 ]]
 local function canConclude(player: Player): boolean
@@ -106,20 +106,20 @@ local function canConclude(player: Player): boolean
 	if not PlayerDataService.get(player) then
 		return false
 	end
-	-- M9: accusing may open before every objective is done
+	-- Accusing may open before every objective is done
 	-- (accusationRules.opensAfter); without rules this is still "no
 	-- objective left".
 	if not AccusationService.isOpen(player) then
 		return false
 	end
-	-- Phase 2N: an investigation is only concluded on the player's own
+	-- An investigation is only concluded on the player's own
 	-- accusation, never automatically and never on the mere absence of work.
 	return AccusationService.hasAccusation(player)
 end
 
 -- A summary of this player's own case progress, computed entirely from
 -- server-side state at the moment their conclusion is accepted, plus the
--- case's verdict on their accusation (M2). Every count is a real total.
+-- case's verdict on their accusation. Every count is a real total.
 --
 -- Public (matching ObjectiveService.getActiveObjectiveId's pattern) so the
 -- exact summary shown at the close is directly, synchronously testable --
@@ -133,7 +133,7 @@ function GameStateService.getClosingSummary(player: Player): Types.CaseClosedSum
 	if not caseDef then
 		return nil
 	end
-	-- Phase 2O: restate the case at the close. Both lists are built from
+	-- Restate the case at the close. Both lists are built from
 	-- already-authorized state: only discovered timeline events, and only the
 	-- player's own unlocked contradiction.
 	local reasoning = ReasoningService.getPayload(player)
@@ -143,11 +143,11 @@ function GameStateService.getClosingSummary(player: Player): Types.CaseClosedSum
 		evidenceExamined = Util.count(data.caseState.discovered),
 		evidenceTotal = #caseDef.evidence,
 		contradictionsIdentified = Util.count(data.caseState.unlockedContradictions),
-		-- Phase 2N: the player's own accusation and whether the evidence they
+		-- The player's own accusation and whether the evidence they
 		-- actually unlocked is consistent with it.
 		accusation = AccusationService.getResolution(player),
-		-- Phase 2P: always chronological here, even if the accusation opened
-		-- (M9) before OBJ-006 reconstructed the puzzle order -- the closing
+		-- Always chronological here, even if the accusation opened
+		-- before OBJ-006 reconstructed the puzzle order -- the closing
 		-- record restates what happened, not the shuffled presentation.
 		timeline = TimelineService.getChronological(player),
 		contradiction = if #reasoning.contradictions > 0 then reasoning.contradictions[1] else nil,
@@ -167,7 +167,7 @@ function GameStateService.setPhase(phase: Types.GamePhase): boolean
 end
 
 --[[
-	Phase 5.4: announce a close that has been accepted. A Solved case may play a
+	Announce a close that has been accepted. A Solved case may play a
 	scene first (its outro); the closing summary then follows when that scene
 	is over. If no scene is authored, or it can't play (another is on), the
 	summary comes at once, as it always did. Public so the hand-off can be
@@ -187,7 +187,7 @@ function GameStateService.announceClose(player: Player)
 end
 
 --[[
-	Phase 2L: attempt to conclude this player's investigation
+	Attempt to conclude this player's investigation
 	(Investigation -> CaseClosed). Public and directly callable/testable,
 	matching this codebase's established pattern (e.g. ObjectiveService.
 	recordInteraction, ConversationService.begin): business logic lives in a
@@ -213,7 +213,7 @@ function GameStateService.requestConclude(player: Player): boolean
 end
 
 --[[
-	M4: start the case over from the closing screen. Only valid from
+	Start the case over from the closing screen. Only valid from
 	CaseClosed, and only for a player with case data. Wipes this player's case
 	state (evidence, statements, reasoning, objectives, accusation) and returns
 	to the briefing via the graph's own edges (CaseClosed -> MainMenu ->
@@ -244,7 +244,7 @@ function GameStateService.requestReplay(player: Player): boolean
 end
 
 --[[
-	Phase 5.5: the investigation has begun for this player. A case that names an
+	The investigation has begun for this player. A case that names an
 	opening scene (CaseDefinition.intro) starts it here, after the phase has been
 	broadcast, so the client already knows it is in the investigation when the
 	scene arrives. A case without one opens straight onto the investigation, as it
@@ -313,7 +313,7 @@ function GameStateService.start()
 	requestPhaseChange.OnServerEvent:Connect(function(player: Player, phase: Types.GamePhase)
 		-- A client asks for exactly three moves, each checked by the function that
 		-- owns it: begin the investigation, conclude it (which also needs an
-		-- accusation, Phase 2L), and start again from the closing screen (M4).
+		-- accusation), and start again from the closing screen.
 		-- Any other phase it names is ignored.
 		if phase == "Investigation" then
 			GameStateService.requestBegin(player)

@@ -25,7 +25,7 @@
 	  Whether the investigator is gentle or accusing with her changes what
 	  she does next.
 
-	M9: nothing is concluded for the investigator. Every contradiction is
+	Nothing is concluded for the investigator. Every contradiction is
 	claimed (set side by side in the case file, or shown to the person who
 	said it), every deduction is a question they answer, and the accusation
 	names a motive and a proof as well as a suspect. It opens once both the
@@ -38,7 +38,7 @@
 ]]
 
 local Types = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Types"))
--- Phase 5.5: the opening scene lives in its own file (it is long, and it is a
+-- The opening scene lives in its own file (it is long, and it is a
 -- screenplay, not an investigation).
 local Case001Intro = require(script.Parent:WaitForChild("Case001Intro"))
 
@@ -65,7 +65,7 @@ local function ask(
 	return { id = id, text = text, next = nextNode, requires = requires, once = once }
 end
 
--- "Show them something" (M9): the evidence that lands with this character,
+-- "Show them something": the evidence that lands with this character,
 -- in order, and where anything else leads.
 local function show(
 	id: string,
@@ -77,7 +77,7 @@ local function show(
 	return { id = id, text = text, next = nothing, present = { prompt = prompt, outcomes = outcomes } }
 end
 
--- The dawn outro (Phase 5.4): Daniel's office at first light, Meera at the window
+-- The dawn outro: Daniel's office at first light, Meera at the window
 -- at the end of the corridor, and a held frame on it. The scenes differ only by
 -- the caption on the window shot.
 local function dawnScene(id: string, windowCaption: string): Types.CutsceneDefinition
@@ -236,7 +236,7 @@ local Case001: Types.CaseDefinition = {
 		{
 			instanceName = "CoffeeCup",
 			text = "Daniel's mug. Chamomile -- the tag still hangs over the rim. Stone cold.",
-			-- Phase 2P: the authored asset's own prompt read as "Examine
+			-- The authored asset's own prompt read as "Examine
 			-- Coffee Cup", indistinguishable from EV-006 (the visitor's
 			-- espresso cup) a few studs away. Named for what it actually is.
 			label = "Examine Daniel's Mug",
@@ -265,7 +265,7 @@ local Case001: Types.CaseDefinition = {
 			id = "EV-001",
 			name = "Phone",
 			description = "Daniel's phone, face up beside the keyboard.",
-			-- Phase 5.4: the contact name is fixed (v1's "MARA"), and the screen is
+			-- The contact name is fixed (v1's "MARA"), and the screen is
 			-- locked beyond the call log, which is what makes the code a question.
 			details = "Last call: 11:47 PM, to MEERA ♥. Rang for 31 seconds. Declined. "
 				.. "The screen is locked beyond the call log.",
@@ -324,7 +324,7 @@ local Case001: Types.CaseDefinition = {
 				position = Vector3.new(16.2, 3.27, 14.4),
 				lookAt = Vector3.new(16.2, 3.27, 8),
 				style = "Printout",
-				-- Phase 5.3: the printout only exists once Sam has offered to print it.
+				-- The printout only exists once Sam has offered to print it.
 				revealWhen = { knows("Statement", "STMT-SUS-003-BADGE") },
 			},
 		},
@@ -415,7 +415,7 @@ local Case001: Types.CaseDefinition = {
 			bindTo = { instanceName = "FileCabinet_1" },
 		},
 		{
-			-- Phase 5.4: the phone, open. Reached two ways (Meera opens it, or the
+			-- The phone, open. Reached two ways (Meera opens it, or the
 			-- code is worked out from the photo); both give this and EV-012.
 			id = "EV-011",
 			name = "Unsent Message",
@@ -604,12 +604,10 @@ local Case001: Types.CaseDefinition = {
 		{
 			id = "OBJ-005",
 			title = "The Last Ten Minutes",
-			-- Reworded (Phase 2P): the previous text asserted Victor had
-			-- already revised his story, but this objective becomes active
-			-- as soon as his "half ten" alibi is contradicted (OBJ-003/004)
-			-- -- before he has said anything about the badge log directly.
-			-- This must read true whether he is confronted with it in
-			-- conversation or via the case file first.
+			-- Becomes active as soon as his "half ten" alibi is contradicted,
+			-- possibly before he has said anything about the badge log, so this
+			-- has to read true whether he is confronted in conversation or via
+			-- the case file first.
 			description = "His badge places him in the building until 11:52. Take that to him, "
 				.. "and find out what he says happened in the ten minutes he hasn't explained.",
 			requiredEvidence = {},
@@ -784,8 +782,8 @@ local Case001: Types.CaseDefinition = {
 					id = "SAM-BADGE-3",
 					speaker = "Sam Gurung",
 					text = "Okay, it's printing. ...There. On the reception counter.",
-					-- Phase 2P: the case's most load-bearing lead is recorded, so it is easy
-					-- to revisit. Phase 5.3: recording it is also what puts the printout on
+					-- The case's most load-bearing lead is recorded, so it is easy
+					-- to revisit. Recording it is also what puts the printout on
 					-- the counter (the evidence prop's revealWhen). It still says only where
 					-- the log is, not what it proves.
 					statementId = "STMT-SUS-003-BADGE",
@@ -979,7 +977,7 @@ local Case001: Types.CaseDefinition = {
 								requires = { knows("Statement", "STMT-SUS-001-VICTOR") },
 							},
 							{
-								-- Phase 5.4: his unsent message, read to her (the other way
+								-- His unsent message, read to her (the other way
 								-- into it: the phone was opened by working out its code).
 								evidence = "EV-011",
 								next = "MARA-MSG-0",
@@ -1198,7 +1196,7 @@ local Case001: Types.CaseDefinition = {
 					choices = {
 						ask("apologise", "I'm sorry. I need to understand that call.", "MARA-COLD-THAW"),
 						ask("insist", "I need the truth, Puan Meera.", "MARA-COLD-NO"),
-						-- Phase 5.4: the other way back to her, for whoever worked out the
+						-- The other way back to her, for whoever worked out the
 						-- phone's code without ever thawing her.
 						ask("message", "He left a message for you. I found it.", "MARA-MSG-COLD-1", {
 							knows("Evidence", "EV-011"),
@@ -1405,7 +1403,7 @@ local Case001: Types.CaseDefinition = {
 								claims = "CONTRA-004",
 							},
 							{
-								-- Phase 5.4: "he was alive when I left" against the watch.
+								-- "he was alive when I left" against the watch.
 								evidence = "EV-012",
 								next = "VIC-WATCH-0",
 								requires = { knows("Statement", "STMT-SUS-002-REVISED") },
@@ -1529,7 +1527,7 @@ local Case001: Types.CaseDefinition = {
 				["VIC-CAM-2"] = {
 					id = "VIC-CAM-2",
 					speaker = "Victor Lim",
-					text = "I sign forty things a week, detective. I don't memorise them.",
+					text = "I sign forty things a week, Detective. I don't memorise them.",
 					choicesFrom = "VIC-HUB",
 				},
 				["VIC-BADGE-0"] = {
@@ -1710,7 +1708,7 @@ local Case001: Types.CaseDefinition = {
 			text = "Victor said goodnight around half ten. Sam never saw him actually leave.",
 		},
 		{
-			-- Phase 2P: a lead, not an answer -- only where the log is.
+			-- A lead, not an answer -- only where the log is.
 			id = "STMT-SUS-003-BADGE",
 			suspectId = "SUS-003",
 			label = "The Badge Log",
@@ -1748,7 +1746,7 @@ local Case001: Types.CaseDefinition = {
 			text = '"I haven\'t said a word to Victor tonight. I won\'t."',
 		},
 		{
-			-- Phase 5.4: what the ending keys on. Neutral about how she came to
+			-- What the ending keys on. Neutral about how she came to
 			-- read it: she opened the phone, or she was shown the message.
 			id = "STMT-SUS-001-HOME",
 			suspectId = "SUS-001",
@@ -1806,7 +1804,7 @@ local Case001: Types.CaseDefinition = {
 				.. "arrived, and all he was told was that Daniel had passed. He knew because he was in the room.",
 		},
 		{
-			-- Phase 5.4: his revised story against the watch.
+			-- His revised story against the watch.
 			id = "CONTRA-006",
 			claim = true,
 			label = "Still in the Building",
@@ -1929,7 +1927,7 @@ local Case001: Types.CaseDefinition = {
 			},
 		},
 		{
-			-- Phase 5.4: the phone's code, worked out from the room. Answering it
+			-- The phone's code, worked out from the room. Answering it
 			-- rightly wakes the desk phone's screen (EV-011's revealWhen). The
 			-- wedding outfit and the date on the back of the photo are the only clue.
 			id = "DEDUCT-007",
@@ -1952,7 +1950,7 @@ local Case001: Types.CaseDefinition = {
 	},
 
 	-- Who may be formally accused. `supportedBy` names the reasoning that
-	-- points at a suspect; `motives`/`proofs` (M9) are the motive and proof
+	-- points at a suspect; `motives`/`proofs` are the motive and proof
 	-- that make the case hold. The verdict itself comes from `solution`.
 	-- Sam is not accusable. Accusing opens once the partner and the wife
 	-- have both been spoken to (OBJ-002), with the rest still to find.
@@ -1987,12 +1985,12 @@ local Case001: Types.CaseDefinition = {
 		},
 	} :: { Types.AccusationDefinition },
 
-	-- Phase 5.5: the case opens on a scene, not the briefing screen. The
+	-- The case opens on a scene, not the briefing screen. The
 	-- briefing shot showed the second cup on the desk, which the intro
 	-- deliberately withholds (screenplay, "Hard rule").
 	intro = { cutsceneId = "CUT-INTRO", replacesBriefing = true },
 
-	-- The intro (Phase 5.5) and the dawn outro (Phase 5.4), played after a Solved
+	-- The intro and the dawn outro, played after a Solved
 	-- verdict and before the Case Closed screen: two scenes that differ by one
 	-- caption; the second is for an investigator who has read Daniel's message
 	-- with Meera (STMT-SUS-001-HOME), see solution.solvedCutscenes.
@@ -2014,7 +2012,7 @@ local Case001: Types.CaseDefinition = {
 			.. "for that, for the nights he spent emptying that drawer.",
 		solvedEpilogue = "Victor Lim is charged before sunrise. The folder is in the boot of his car. "
 			.. "The papers are still on Daniel's desk, unsigned.",
-		-- P7: the case holds either way; the ending says how it was closed. The
+		-- The case holds either way; the ending says how it was closed. The
 		-- first variant whose facts are all known wins, so the fullest is first.
 		solvedVariants = {
 			{
@@ -2038,7 +2036,7 @@ local Case001: Types.CaseDefinition = {
 					.. "the boot of his car. The papers are still on Daniel's desk, unsigned.",
 			},
 		},
-		-- Phase 5.4: the dawn outro, chosen like the epilogue: the first entry whose
+		-- The dawn outro, chosen like the epilogue: the first entry whose
 		-- facts are all known. The phone ending keys on HOME, not on who opened it.
 		solvedCutscenes = {
 			{ cutsceneId = "CUT-DAWN-HOME", requiredFacts = { { kind = "Statement", id = "STMT-SUS-001-HOME" } } },

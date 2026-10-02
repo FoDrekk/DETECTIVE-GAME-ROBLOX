@@ -1,7 +1,7 @@
 --!strict
 --[[
 	AccusationService
-	Server-authoritative, data-driven player accusation (Phase 2N).
+	Server-authoritative, data-driven player accusation.
 
 	Once every objective in the active case is complete, the player may
 	formally accuse a suspect. An accusation is a commitment: it is recorded
@@ -23,7 +23,7 @@
 	the truth, only that the evidence this player gathered is consistent with
 	it, exactly as the case data defines.
 
-	M9: a case may set `accusationRules`. `opensAfter` lets the investigator
+	A case may set `accusationRules`. `opensAfter` lets the investigator
 	accuse once a given objective is done, with the rest of the case still
 	open, which is the risk of accusing early. `requiresCase` means an
 	accusation also names a motive (a deduction the player established) and
@@ -143,7 +143,7 @@ local function labelFor(list: { any }, id: string?): string?
 	return nil
 end
 
--- M9: does the named motive and proof hold for this accusation?
+-- Does the named motive and proof hold for this accusation?
 local function caseHolds(data: Types.PlayerData, accusation: Types.AccusationDefinition): boolean
 	local motive = data.caseState.accusationMotive
 	local proof = data.caseState.accusationProof
@@ -154,7 +154,7 @@ local function caseHolds(data: Types.PlayerData, accusation: Types.AccusationDef
 end
 
 --[[
-	Phase 2P: why an Unproven or Wrong verdict didn't hold, in one sentence,
+	Why an Unproven or Wrong verdict didn't hold, in one sentence,
 	derived only from data already authored on the accusation (its `motives`/
 	`proofs`) and the labels of what the player actually named. Never states
 	the true motive/proof for this suspect (that would be the solution,
@@ -192,7 +192,7 @@ local function explainShortfall(
 	return `"{proofLabel}" doesn't put {suspectName} there.`
 end
 
--- P7: the Solved epilogue for how far this player actually pushed -- the
+-- The Solved epilogue for how far this player actually pushed -- the
 -- first authored variant whose facts they have all established, else the
 -- plain `solvedEpilogue`. Reads only this player's own evidence/statements.
 local function solvedEpilogueFor(data: Types.PlayerData, solution: Types.CaseSolution): string?
@@ -214,7 +214,7 @@ local function solvedEpilogueFor(data: Types.PlayerData, solution: Types.CaseSol
 	return solution.solvedEpilogue
 end
 
--- Phase 5.4: the scene to play at a Solved close, chosen the same way as the
+-- The scene to play at a Solved close, chosen the same way as the
 -- epilogue: the first authored entry whose facts this player has all
 -- established (one with none always matches), else no scene.
 local function outroCutsceneFor(data: Types.PlayerData, solution: Types.CaseSolution): string?
@@ -251,8 +251,8 @@ end
 -- Public API
 ----------------------------------------------------------------------
 
--- M9: may this player accuse right now? Before M9 (and for any case without
--- `accusationRules.opensAfter`) only once every objective is complete.
+-- May this player accuse right now? Only once every objective is complete,
+-- unless the case sets `accusationRules.opensAfter`.
 function AccusationService.isOpen(player: Player): boolean
 	local data = PlayerDataService.get(player)
 	if not data then
@@ -293,7 +293,7 @@ function AccusationService.getPayload(player: Player): Types.AccusationPayload
 	end
 	payload.open = AccusationService.isOpen(player)
 
-	-- M9: the motives and proofs on offer are exactly what this player has
+	-- The motives and proofs on offer are exactly what this player has
 	-- established, in case order; nothing says which fits whom.
 	if caseRules(data.caseState.caseId).requiresCase then
 		payload.requiresCase = true
@@ -343,7 +343,7 @@ function AccusationService.getResolution(player: Player): Types.AccusationResolu
 	local option = buildOption(data.caseState.caseId, accusation)
 	local supported, basedOn = isSupported(data, accusation)
 	if caseRules(data.caseState.caseId).requiresCase then
-		-- M9: the case the player actually made, not everything they found.
+		-- The case the player actually made, not everything they found.
 		local caseDef = CaseService.getCase(data.caseState.caseId)
 		supported = caseHolds(data, accusation)
 		basedOn = {}
@@ -368,7 +368,7 @@ function AccusationService.getResolution(player: Player): Types.AccusationResolu
 	}
 end
 
--- Phase 5.4: the scene (a cutscene id) to play at this player's close, or nil.
+-- The scene (a cutscene id) to play at this player's close, or nil.
 -- Only a Solved verdict ever has one: a case that didn't hold, or one that
 -- authors no `solvedCutscenes`, closes straight onto the summary.
 function AccusationService.getOutroCutsceneId(player: Player): string?
@@ -386,7 +386,7 @@ function AccusationService.getOutroCutsceneId(player: Player): string?
 end
 
 -- The case's true answer measured against this player's committed
--- accusation (M2). Nil until they have accused, or if the case authors no
+-- accusation. Nil until they have accused, or if the case authors no
 -- solution -- the answer never leaves the server before the player commits.
 function AccusationService.getVerdict(player: Player): Types.CaseVerdict?
 	local data = PlayerDataService.get(player)
@@ -416,7 +416,7 @@ function AccusationService.getVerdict(player: Player): Types.CaseVerdict?
 			epilogue = solvedEpilogueFor(data, solution)
 		end
 	end
-	-- Phase 2P: only Unproven/Wrong ever need explaining; a Solved case has
+	-- Only Unproven/Wrong ever need explaining; a Solved case has
 	-- nothing left to account for.
 	local shortfall: string? = nil
 	if grade ~= "Solved" and caseRules(data.caseState.caseId).requiresCase then
@@ -437,8 +437,8 @@ end
 
 	  * rejects unless the player exists, the accusation id is authored, and
 	    accusing is open (every objective complete, or the case's
-	    `opensAfter` objective, M9);
-	  * when the case requires it (M9), rejects unless `motiveId` names a
+	    `opensAfter` objective);
+	  * when the case requires it, rejects unless `motiveId` names a
 	    deduction and `proofId` a contradiction this player has established
 	    (which ones fit is judged only in the verdict);
 	  * an already-recorded accusation is permanent -- repeating the same
@@ -499,7 +499,7 @@ function AccusationService.sendCurrent(player: Player)
 end
 
 function AccusationService.start()
-	-- M9: whether accusing is open, and the motives and proofs on offer,
+	-- Whether accusing is open, and the motives and proofs on offer,
 	-- change as the investigation moves; keep the client's picker current.
 	local function resend(player: Player, _data: { [string]: any })
 		if PlayerDataService.get(player) then

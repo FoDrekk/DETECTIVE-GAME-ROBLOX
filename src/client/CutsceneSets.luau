@@ -1,6 +1,6 @@
 --!strict
 --[[
-	CutsceneSets (Phase 5.5)
+	CutsceneSets
 	The places a scripted scene is framed in. A shot names its set
 	(Types.CutsceneShot.set); the client builds it here, for the length of the
 	scene, and takes it down again when the scene is over.
@@ -113,10 +113,6 @@ local function getContainer(): Folder
 	folder.Parent = workspace
 	container = folder
 	return folder
-end
-
-function CutsceneSets.isBuilt(name: string): boolean
-	return built[name] ~= nil
 end
 
 --[[

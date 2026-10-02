@@ -22,11 +22,11 @@
 	    what the investigator has learned visibly opens new lines of
 	    questioning.
 
-	  * M9: when the investigator chooses to show something, the same list
+	  * When the investigator chooses to show something, the same list
 	    becomes the evidence they have found (marked EVIDENCE) plus "Never
 	    mind."; the reaction line echoes what was shown.
 
-	  * Phase 5.1: a line that hands evidence over says so in a notice under
+	  * A line that hands evidence over says so in a notice under
 	    the top bar ("EVIDENCE ADDED"), beside the statement notice; the
 	    conversation isn't interrupted by the evidence readout.
 
@@ -79,7 +79,7 @@ local promptLabel: TextLabel? = nil
 local bodyLabel: TextLabel? = nil
 local hintLabel: TextLabel? = nil
 local toast: TextLabel? = nil
--- Phase 5.1: evidence a line hands over gets its own notice, so the
+-- Evidence a line hands over gets its own notice, so the
 -- statement notice behaves exactly as before; it drops to a second row
 -- while a statement notice is still up.
 local evidenceToast: TextLabel? = nil
@@ -93,7 +93,7 @@ local isOpen = false
 local typing = false
 local typeToken = 0
 local current: Types.DialoguePayload? = nil
--- M9: true while `current.choices` is the evidence picker (built from
+-- True while `current.choices` is the evidence picker (built from
 -- `current.present`) rather than questions.
 local presenting = false
 local CANCEL_PRESENT = "__never_mind"
@@ -110,7 +110,7 @@ function DialogueView.onChoiceSelected(): BindableEvent
 	return choiceSelectedEvent
 end
 
--- M9: fired with the evidence id to show, or "" to back out.
+-- Fired with the evidence id to show, or "" to back out.
 function DialogueView.onPresentSelected(): BindableEvent
 	return presentSelectedEvent
 end
@@ -295,7 +295,7 @@ local function panelY(extra: number): UDim2
 	return UDim2.new(0.5, 0, 1, -Style.PanelBottomOffset * scale + extra * scale + inset)
 end
 
--- Phase 3 (R4): on a short landscape phone there isn't room for the panel
+-- On a short landscape phone there isn't room for the panel
 -- plus a full page of choices below the letterbox bars -- the choices were
 -- found to run off the top of the screen, unreachable by touch. Shrink the
 -- panel and the choices as a unit (each keeps its own UIScale, since a
@@ -659,7 +659,7 @@ function DialogueView.update(payload: Types.DialoguePayload)
 		return
 	end
 
-	-- M9: showing evidence. The picker is the same choice list: the
+	-- Showing evidence. The picker is the same choice list: the
 	-- evidence found so far, then a way to back out. The line becomes the
 	-- investigator's own "Show Victor…".
 	local present = payload.present
@@ -807,7 +807,7 @@ function DialogueView.start()
 	})
 	root.Visible = false
 	panel = root
-	-- Phase 3 (R4): shrinks the panel to fit a short viewport; see `rescale`.
+	-- Shrinks the panel to fit a short viewport; see `rescale`.
 	-- Kept off `root`'s own Position -- `rescale` sets that explicitly each
 	-- time, scaled and inset-compensated, rather than relying on how a self-
 	-- scaled object's own offset happens to resolve.
@@ -925,7 +925,7 @@ function DialogueView.start()
 	list.Visible = false
 	list.Parent = screen
 	choicesFrame = list
-	-- Phase 3 (R4): its own UIScale, kept in sync with the panel's by
+	-- Its own UIScale, kept in sync with the panel's by
 	-- `rescale`, rather than one shared wrapper (see the comment on `rescale`).
 	choicesScale = Instance.new("UIScale")
 	choicesScale.Parent = list

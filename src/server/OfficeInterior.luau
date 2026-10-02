@@ -50,7 +50,6 @@ local log = Logger.scoped("OfficeInterior")
 
 local OfficeInterior = {}
 
-local P = PropKit.Palette
 local M = Enum.Material
 local FOLDER_NAME = "Interior"
 local CEILING_Y = OfficePlan.CeilingY
@@ -80,7 +79,7 @@ local function finishes(folder: Instance)
 		Floors.
 
 		One clear physical surface, layered so nothing fights in the depth
-		buffer (see the note this replaced in the M10 floor fix):
+		buffer:
 
 		  * Shell.Floor is sunk well below and left only as a backstop.
 		  * The base Carpet is the real floor, its top at Y = 0.00, so every

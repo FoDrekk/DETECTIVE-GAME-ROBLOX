@@ -50,24 +50,24 @@ export type EvidenceDefinition = {
 		-- Which PropKit model to build for it (e.g. "Printout",
 		-- "EspressoCup"); absent builds a plain panel.
 		style: string?,
-		-- Phase 5.1: the prop stays out of the world until every condition
+		-- The prop stays out of the world until every condition
 		-- holds for the investigator (same condition language as dialogue),
 		-- then appears and stays for the rest of the case (RevealService).
 		-- Only the prop is gated: the evidence itself can still be reached
 		-- another way (e.g. a line of dialogue that grants it). Absent means
 		-- the prop is there from the start, as before.
 		revealWhen: { DialogueCondition }?,
-		-- Phase 5.4: the prompt the prop shows ("Read Unlocked Phone"); absent
+		-- The prompt the prop shows ("Read Unlocked Phone"); absent
 		-- derives it from the evidence's name, as before.
 		label: string?,
 	}?,
-	-- Phase 5.4: examining (or being handed) this evidence also hands over
+	-- Examining (or being handed) this evidence also hands over
 	-- these others, through EvidenceService.grant, in the same moment: one
 	-- object, one action, several clues (an unlocked phone gives the message
 	-- and the watch data). Already-known ones are skipped. The readout names
 	-- the ones newly added (EvidencePayload.alsoAdded).
 	grantsEvidence: { string }?,
-	-- Phase 5.3: this evidence is a Studio-authored (or baked) interactable
+	-- This evidence is a Studio-authored (or baked) interactable
 	-- that already exists in the office and is named `instanceName` -- a
 	-- flavour object promoted to a clue. At runtime OfficeRoom gives that
 	-- instance this evidence's id (and `label` as its prompt, if given),
@@ -91,7 +91,7 @@ export type SuspectDefinition = {
 		position: Vector3,
 		lookAt: Vector3?,
 	}?,
-	-- Optional (M6): how the NPC looks. Absent falls back to a plain default
+	-- Optional: how the NPC looks. Absent falls back to a plain default
 	-- avatar. `body` names a package in Config.Characters.Bodies; `hair` is a
 	-- verified Roblox catalog asset id, recoloured to `hairColor`. The face is
 	-- the avatar's default head. Purely presentation.
@@ -120,7 +120,7 @@ export type LocationDefinition = {
 	name: string,
 	description: string,
 	-- Optional: where to place a physical nameplate/sign for this location in
-	-- the current office environment (M3). Absent means no sign is spawned.
+	-- the current office environment. Absent means no sign is spawned.
 	-- Mirrors SuspectDefinition.npcPlacement -- purely technical staging.
 	-- `text` is the sign's own text -- deliberately separate from `name`
 	-- (the location's identity, e.g. "Office") since a door nameplate reads
@@ -132,13 +132,13 @@ export type LocationDefinition = {
 	}?,
 }
 
--- Authored flavour text for a non-evidence interactable (Phase 2O). Keyed by
+-- Authored flavour text for a non-evidence interactable. Keyed by
 -- the interactable instance's Name in the authored environment (e.g.
 -- "CoffeeCup"), since that is what the environment exposes. Applying one
 -- sets the object's `ObservationText` attribute at runtime; it creates no
 -- evidence, timeline, objective or reasoning state. An entry whose instance
 -- is not present is simply skipped -- purely additive.
--- `label` (Phase 2P) optionally overrides the interaction prompt itself
+-- `label` optionally overrides the interaction prompt itself
 -- (e.g. an authored "Examine Coffee Cup" that reads as real evidence next to
 -- the actual clue): applying one sets `PromptLabel` alongside `ObservationText`.
 -- Absent leaves the authored asset's own prompt label untouched.
@@ -174,15 +174,15 @@ export type TimelineEventDefinition = {
 --                  are not evidence-specific (e.g. "talk to the named
 --                  interactable").
 --   contradiction: the objective advances once this contradiction id is
---                  unlocked in the player's own authoritative state (Phase
---                  2J) -- checked live, not against a one-shot event, so it
+--                  unlocked in the player's own authoritative state.
+--                  Checked live, not against a one-shot event, so it
 --                  is satisfied correctly however the contradiction and this
 --                  objective's own unlock happen to be ordered.
 --   deduction    : same as `contradiction`, for a deduction id. CASE-001's
---                  OBJ-004 uses this (Phase 2M) via DEDUCT-001; the gate is
+--                  OBJ-004 uses this via DEDUCT-001; the gate is
 --                  generic and hardcodes no case id.
 --   timelineEstablished : the objective advances once this player has
---                  successfully reconstructed the case timeline (M5). Checked
+--                  successfully reconstructed the case timeline. Checked
 --                  live against the player's own state, like the reasoning
 --                  gates above, so ordering never matters.
 export type ObjectiveRequirement = {
@@ -236,14 +236,14 @@ export type DialogueChoiceDefinition = {
 	next: string,
 	requires: { DialogueCondition }?,
 	once: boolean?,
-	-- M9: choosing this asks the investigator to show a piece of evidence
+	-- Choosing this asks the investigator to show a piece of evidence
 	-- instead of moving on at once. See DialoguePresentDefinition; for a
 	-- presenting choice `next` is where evidence that means nothing to this
 	-- character leads.
 	present: DialoguePresentDefinition?,
 }
 
--- M9: one piece of evidence that lands with this character. Showing
+-- One piece of evidence that lands with this character. Showing
 -- `evidence` while `requires` holds moves the conversation to `next`, and,
 -- if `claims` names a contradiction, the investigator has just made that
 -- connection themselves (ReasoningService unlocks it).
@@ -254,7 +254,7 @@ export type DialoguePresentOutcome = {
 	claims: string?,
 }
 
--- M9: "show them something". `prompt` heads the evidence picker. Outcomes
+-- "show them something". `prompt` heads the evidence picker. Outcomes
 -- are checked in order; evidence that matches none leads to the choice's
 -- own `next`.
 export type DialoguePresentDefinition = {
@@ -275,7 +275,7 @@ export type DialoguePresentDefinition = {
 -- pressed too hard) for later entries, choices and lines. `isPlayer` marks
 -- a line spoken by the investigator.
 --
--- `grantsEvidence` (Phase 5.1) lists evidence ids discovered, server-side
+-- `grantsEvidence` lists evidence ids discovered, server-side
 -- through EvidenceService, the moment this node is reached -- evidence a
 -- character hands over or shows the investigator. Discovery is idempotent,
 -- so the same evidence can also be reachable by other routes (an object to
@@ -342,7 +342,7 @@ export type ContradictionDefinition = {
 	left: FactReference,
 	right: FactReference,
 	reason: string?,
-	-- M9: the investigator has to make this connection themselves -- by
+	-- The investigator has to make this connection themselves -- by
 	-- pairing the two facts in the case file, or by showing the evidence to
 	-- the person who said it -- instead of it unlocking the moment both
 	-- facts are known.
@@ -356,13 +356,13 @@ export type DeductionDefinition = {
 	id: string,
 	label: string,
 	requiredFacts: { FactReference },
-	-- M9: instead of unlocking the moment its facts are known, the
+	-- Instead of unlocking the moment its facts are known, the
 	-- deduction becomes an open question in the case file that the
 	-- investigator has to answer.
 	question: DeductionQuestion?,
 }
 
--- M9: an open question in the case file. Offered once every required fact
+-- An open question in the case file. Offered once every required fact
 -- is known; `answer` is the id of the right option and never leaves the
 -- server.
 export type DeductionQuestion = {
@@ -386,21 +386,21 @@ export type AccusationDefinition = {
 		contradictions: { string }?,
 		deductions: { string }?,
 	}?,
-	-- M9 (cases with accusationRules.requiresCase): the deductions that
+	-- (Cases with accusationRules.requiresCase) the deductions that
 	-- stand up as this suspect's motive, and the contradictions that prove
 	-- it. The investigator picks one of each from what they have
 	-- established; both must be listed here for the case to hold.
 	motives: { string }?,
 	proofs: { string }?,
-	-- M9: what happens after accusing this suspect when they are not the
+	-- What happens after accusing this suspect when they are not the
 	-- culprit.
 	wrongEpilogue: string?,
 }
 
--- M9: when an accusation may be made and what it needs.
+-- When an accusation may be made and what it needs.
 --   opensAfter   : objective id; once it is complete the investigator may
 --                  accuse, even with objectives left (absent: only once
---                  every objective is complete, as before M9).
+--                  every objective is complete).
 --   requiresCase : an accusation names a motive (an established deduction)
 --                  and a proof (an established contradiction) as well as a
 --                  suspect, and the verdict is graded on them.
@@ -427,8 +427,8 @@ export type ObjectiveProgress = {
 export type ObjectivePayload = {
 	objective: ObjectiveProgress,
 	-- True only when the player has no active objective left after this
-	-- update -- every currently-authored objective in the case is complete
-	-- (Phase 2K). Distinct from `objective.completed`, which is about this
+	-- update -- every currently-authored objective in the case is complete.
+	-- Distinct from `objective.completed`, which is about this
 	-- one objective only.
 	allComplete: boolean,
 }
@@ -440,7 +440,7 @@ export type CaseBriefing = {
 	id: string,
 	title: string,
 	description: string,
-	-- M8: the briefing's time/place line ("12:40 AM", "Rozario & Lim ·
+	-- The briefing's time/place line ("12:40 AM", "Rozario & Lim ·
 	-- Tingkat 9"). Optional: absent means the line is not shown.
 	time: string?,
 	place: string?,
@@ -448,7 +448,7 @@ export type CaseBriefing = {
 
 export type CasePayload = {
 	briefing: CaseBriefing,
-	-- Phase 5.5: this case opens on a scene instead of the static briefing
+	-- This case opens on a scene instead of the static briefing
 	-- screen, so the client goes straight from the title screen to the
 	-- investigation and lets the intro play. Says nothing about the scene
 	-- itself: its shots only ever travel when the server starts it.
@@ -460,16 +460,16 @@ export type CaseDefinition = {
 	title: string,
 	-- The briefing's story hook: a sentence or two, not a summary.
 	description: string,
-	-- M8: when and where the case opens, shown under the hook.
+	-- When and where the case opens, shown under the hook.
 	setting: { time: string, place: string }?,
 	suspects: { SuspectDefinition },
 	locations: { LocationDefinition },
 	-- Authored flavour text for non-evidence interactables, applied at
-	-- runtime by instance name (Phase 2O). Optional and additive.
+	-- runtime by instance name. Optional and additive.
 	observations: { ObservationDefinition }?,
 	evidence: { EvidenceDefinition },
 	timeline: { TimelineEventDefinition },
-	-- M5: the order in which a not-yet-reconstructed timeline presents its
+	-- The order in which a not-yet-reconstructed timeline presents its
 	-- events to the player (a list of timeline event ids). Deliberately
 	-- different from chronological order so reconstructing it is a real
 	-- puzzle. Optional: absent means the authored `timeline` array order is
@@ -483,23 +483,23 @@ export type CaseDefinition = {
 	deductions: { DeductionDefinition },
 	-- Suspects the player may formally accuse once the investigation is
 	-- complete. Optional: a case without any accusation data simply cannot be
-	-- concluded by accusation (Phase 2N).
+	-- concluded by accusation.
 	accusations: { AccusationDefinition }?,
 	accusationRules: AccusationRules?,
-	-- The true answer (M2). Server-only: case definitions live in
+	-- The true answer. Server-only: case definitions live in
 	-- ServerStorage and this is only ever sent inside the closing summary,
 	-- after the player has committed to an accusation.
 	solution: CaseSolution?,
-	-- Phase 5.1: scripted scenes (shots, subtitles), played on the server's
+	-- Scripted scenes (shots, subtitles), played on the server's
 	-- word by CutsceneService. Optional: a case without any has none.
 	cutscenes: { CutsceneDefinition }?,
-	-- Phase 5.5: the scene this case opens with. Optional: a case without one
+	-- The scene this case opens with. Optional: a case without one
 	-- opens on its briefing, exactly as before.
 	intro: CaseIntro?,
 }
 
 --[[
-	Phase 5.5: the scene a case opens with. Data, so a case says "this is my
+	The scene a case opens with. Data, so a case says "this is my
 	intro" and the engine plays it: the server starts `cutsceneId` when the
 	investigation begins, and the static briefing screen is skipped for a case
 	whose intro replaces it (`replacesBriefing`).
@@ -512,7 +512,7 @@ export type CaseIntro = {
 }
 
 --[[
-	Phase 5.1: a scripted scene. The server decides when one plays
+	A scripted scene. The server decides when one plays
 	(CutsceneService.play) and when it is over; the client only presents
 	the shots it is sent and reports reaching the end (or a skip).
 	`skippable` defaults to true. `replayFrom` names the shot a replay
@@ -537,42 +537,42 @@ export type CutsceneShot = {
 		to: CutsceneCameraPoint?,
 		-- Degrees; absent keeps the player's own field of view.
 		fieldOfView: number?,
-		-- Phase 5.5: the field of view the move ends on (a slow push-in or pull-out).
+		-- The field of view the move ends on (a slow push-in or pull-out).
 		fieldOfViewTo: number?,
-		-- Phase 5.5: how the move eases. "InOut" (the default), "Out", "In", "Linear".
+		-- How the move eases. "InOut" (the default), "Out", "In", "Linear".
 		ease: string?,
-		-- Phase 5.5: a hand-held sway, 0 (locked off) to 1 (a running camera).
+		-- A hand-held sway, 0 (locked off) to 1 (a running camera).
 		handheld: number?,
 	},
 	fadeIn: number?,
 	fadeOut: number?,
 	lines: { CutsceneLine }?,
-	-- Phase 5.5: the set the shot is framed in. Its camera points are the set's
+	-- The set the shot is framed in. Its camera points are the set's
 	-- own coordinates; the client builds the set and offsets them. Absent: the
 	-- points are world coordinates (the office).
 	set: string?,
-	-- Phase 5.5: the look of the shot, a named preset of
+	-- The look of the shot, a named preset of
 	-- Config.Cutscene.LightingPresets (sky, ambient, grade, bloom). Client-side
 	-- only. Absent: the world's own lighting.
 	lighting: string?,
-	-- Phase 5.5: the shot's depth of field.
+	-- The shot's depth of field.
 	focus: CutsceneFocus?,
-	-- Phase 5.5: sounds fired at their own moments in the shot (named cues of
+	-- Sounds fired at their own moments in the shot (named cues of
 	-- Config.Audio.Cutscene: a scene never carries an asset id).
 	sounds: { CutsceneSoundCue }?,
-	-- Phase 5.5: things that happen in the set at their own moments (a phone
+	-- Things that happen in the set at their own moments (a phone
 	-- buzzing, a door sliding, a floor number changing): named actions the set
 	-- knows how to perform.
 	actions: { CutsceneAction }?,
-	-- Phase 5.5: a card over the shot (the title card).
+	-- A card over the shot (the title card).
 	titleCard: CutsceneTitleCard?,
-	-- Phase 5.5: the shot hands the look to the player: the camera stays at
+	-- The shot hands the look to the player: the camera stays at
 	-- `camera.from.position` (it cannot also move) and they turn it. Presence,
 	-- not control: they still can't move (the lift).
 	mouseLook: boolean?,
 }
 
--- Phase 5.5: what is sharp in a shot. `distance` studs from the camera stays in
+-- What is sharp in a shot. `distance` studs from the camera stays in
 -- focus (with `radius` studs of depth either side); `toDistance` racks the
 -- focus there over the shot. `blur` is how strongly the rest softens (0..1).
 export type CutsceneFocus = {
@@ -583,7 +583,7 @@ export type CutsceneFocus = {
 }
 
 --[[
-	Phase 5.5: a named cue of Config.Audio.Cutscene, played `at` seconds into its
+	A named cue of Config.Audio.Cutscene, played `at` seconds into its
 	shot. `volume` overrides the cue's own for this shot.
 
 	A cue whose config says `loops` is a bed (rain, traffic, the music). A bed
@@ -604,7 +604,7 @@ export type CutsceneSoundCue = {
 	from: number?,
 }
 
--- Phase 5.5: `name` is one of the actions the shot's set defines
+-- `name` is one of the actions the shot's set defines
 -- (CutsceneSets); `args` are its parameters.
 export type CutsceneAction = {
 	at: number,
@@ -612,7 +612,7 @@ export type CutsceneAction = {
 	args: { [string]: any }?,
 }
 
--- Phase 5.5: a card over the shot: `title`, with an optional second line and a
+-- A card over the shot: `title`, with an optional second line and a
 -- small line over it, shown from `at` seconds into the shot for `duration`.
 export type CutsceneTitleCard = {
 	at: number,
@@ -640,16 +640,16 @@ export type CaseSolution = {
 	culpritSuspectId: string,
 	-- What actually happened, told to the player at the close.
 	reveal: string,
-	-- M9: what happened next, when the culprit was named with a case that
+	-- What happened next, when the culprit was named with a case that
 	-- holds (solvedEpilogue) or one that doesn't (unprovenEpilogue).
 	solvedEpilogue: string?,
 	unprovenEpilogue: string?,
-	-- P7: a Solved ending that reflects how far the investigation went. The
+	-- A Solved ending that reflects how far the investigation went. The
 	-- first variant whose facts this player has all established replaces
 	-- `solvedEpilogue`. Never changes the grade -- only what a case that
 	-- already held says happened next.
 	solvedVariants: { SolvedEpilogueVariant }?,
-	-- Phase 5.4: a scene played once a Solved verdict is accepted, before the
+	-- A scene played once a Solved verdict is accepted, before the
 	-- Case Closed screen (a dawn outro). The first entry whose facts this
 	-- player has all established plays; an entry with no `requiredFacts`
 	-- always matches, so put it last. Never for a case that didn't hold.
@@ -687,7 +687,7 @@ export type TimelinePayload = {
 	events: { TimelineEventProgress },
 	-- Total number of events that exist for the case (not hidden content).
 	totalEvents: number,
-	-- Whether this player has reconstructed the timeline (M5). While false the
+	-- Whether this player has reconstructed the timeline. While false the
 	-- events are delivered in the authored challenge order for the player to
 	-- arrange; once true they are delivered in canonical chronological order.
 	established: boolean,
@@ -711,7 +711,7 @@ export type PlayerCaseState = {
 	-- The player's current conversation, if any. Authoritative; the client
 	-- never supplies or infers this.
 	-- `presenting` is the id of a presenting choice waiting for the
-	-- investigator to pick the evidence to show (M9).
+	-- investigator to pick the evidence to show.
 	activeConversation: { suspectId: string, nodeId: string, presenting: string? }?,
 	-- Conversation memory: flags set by dialogue nodes, and the `once`
 	-- choices already used (keyed "<suspectId>/<choiceId>"). Owned by
@@ -732,27 +732,27 @@ export type PlayerCaseState = {
 	unlockedContradictions: { [string]: boolean },
 	unlockedDeductions: { [string]: boolean },
 	-- The accusation id this player has formally made, if any. Owned by
-	-- AccusationService (Phase 2N); never set directly by any other system.
+	-- AccusationService; never set directly by any other system.
 	-- Once set it is permanent (an accusation is a commitment).
 	accusationId: string?,
-	-- M9: the motive (deduction id) and proof (contradiction id) named with
+	-- The motive (deduction id) and proof (contradiction id) named with
 	-- the accusation, when the case requires them. Owned by
 	-- AccusationService.
 	accusationMotive: string?,
 	accusationProof: string?,
-	-- M9: connections that didn't hold in the case file -- pairings that
+	-- Connections that didn't hold in the case file -- pairings that
 	-- don't conflict, wrong answers. Owned by ReasoningService; reported at
 	-- the close.
 	reasoningMistakes: number,
-	-- Whether this player has successfully reconstructed the case timeline
-	-- (M5). Owned by TimelineService; never set directly by any other system.
+	-- Whether this player has successfully reconstructed the case timeline.
+	-- Owned by TimelineService; never set directly by any other system.
 	-- Once true it stays true (a solved ordering is not un-solved).
 	timelineEstablished: boolean?,
-	-- Phase 5.1: evidence ids whose gated prop (propPlacement.revealWhen) has
+	-- Evidence ids whose gated prop (propPlacement.revealWhen) has
 	-- been revealed this case. Owned by RevealService; a reveal is never
 	-- undone within a case (a replay starts a new case state).
 	revealedProps: { [string]: boolean },
-	-- Phase 5.1: the scene this player is watching, if any. Owned by
+	-- The scene this player is watching, if any. Owned by
 	-- CutsceneService. `startedAt` is the server clock when it was sent,
 	-- `duration` the seconds it runs from the shot it started at, and `grace`
 	-- how long after that the server stops waiting for the client.
@@ -794,19 +794,19 @@ export type EvidencePayload = {
 	-- True when this is an already-discovered clue being looked at again
 	-- (not a new discovery).
 	revisited: boolean?,
-	-- Phase 5.1: true when the evidence was handed over in a conversation
+	-- True when the evidence was handed over in a conversation
 	-- (DialogueNodeDefinition.grantsEvidence) rather than found by examining
 	-- an object: there is nothing to frame, and the conversation announces
 	-- it (DialoguePayload.grantedEvidence).
 	granted: boolean?,
-	-- Phase 5.4: display names of the evidence this one handed over with it
+	-- Display names of the evidence this one handed over with it
 	-- (EvidenceDefinition.grantsEvidence), for an "also added" line under the
 	-- readout. Only ones newly added; never anything already known.
 	alsoAdded: { string }?,
 }
 
 -- Authored, non-evidence description shown when the player examines a
--- flavour object that carries no evidence (Phase 2O). Purely presentational:
+-- flavour object that carries no evidence. Purely presentational:
 -- it creates no evidence, timeline, objective, or reasoning state, and never
 -- comes from hidden case data.
 export type ObservationPayload = {
@@ -821,7 +821,7 @@ export type StatementPayload = {
 	suspectId: string,
 	-- Resolved live from the source suspect's own authored `name`, same as
 	-- `text` is resolved from `alibi` -- never a second copy of it. Lets a
-	-- client with more than one unlocked statement (Phase 2I) show which
+	-- client with more than one unlocked statement show which
 	-- suspect each one belongs to.
 	suspectName: string,
 	label: string,
@@ -846,7 +846,7 @@ export type DialoguePayload = {
 	completed: boolean,
 	-- Present only on the turn a statement is newly unlocked.
 	unlockedStatement: StatementPayload?,
-	-- Phase 5.1: display names of evidence this line just handed over,
+	-- Display names of evidence this line just handed over,
 	-- present only on the turn it was newly discovered.
 	grantedEvidence: { string }?,
 	-- The questions the investigator may ask now (ids + words only; never
@@ -855,15 +855,15 @@ export type DialoguePayload = {
 	-- What the investigator just said to get this line, if it followed a
 	-- choice -- shown above the reply so the exchange reads as dialogue.
 	prompt: string?,
-	-- M9: the name of the evidence the investigator just showed, if this
+	-- The name of the evidence the investigator just showed, if this
 	-- line is the reaction to it.
 	presented: string?,
-	-- M9: present while the investigator is choosing what to show: the
+	-- Present while the investigator is choosing what to show: the
 	-- picker's heading and the evidence they have (ids and names only).
 	present: DialoguePresentPayload?,
 }
 
--- Phase 5.1: a scene for the client to play, or (active = false) the
+-- A scene for the client to play, or (active = false) the
 -- server saying the current one is over. `shots` are only those from the
 -- shot the scene starts at (a replay may start part-way through).
 export type CutscenePayload = {
@@ -871,7 +871,7 @@ export type CutscenePayload = {
 	id: string?,
 	shots: { CutsceneShot }?,
 	skippable: boolean?,
-	-- Phase 5.5: this scene is the case's intro, so it is skipped by holding
+	-- This scene is the case's intro, so it is skipped by holding
 	-- (a hold can't happen by accident) and hands over to the investigation
 	-- rather than returning to whatever was on screen before it.
 	isIntro: boolean?,
@@ -926,20 +926,20 @@ export type ReasoningPayload = {
 	-- Discovered evidence that authors `relatedEvidenceIds`, with the names of
 	-- the related items already discovered. Cross-reference only.
 	relatedEvidence: { RelatedEvidencePayload },
-	-- M9: the evidence this player has found (for pairing against a
+	-- The evidence this player has found (for pairing against a
 	-- statement), and the questions they can answer now.
 	evidence: { EvidenceFactPayload },
 	openQuestions: { DeductionQuestionPayload },
 }
 
--- M9: a discovered piece of evidence as a fact the case file can pair.
+-- A discovered piece of evidence as a fact the case file can pair.
 export type EvidenceFactPayload = {
 	id: string,
 	name: string,
 	details: string,
 }
 
--- M9: an open question, without its answer.
+-- An open question, without its answer.
 export type DeductionQuestionPayload = {
 	id: string,
 	prompt: string,
@@ -947,7 +947,7 @@ export type DeductionQuestionPayload = {
 	basedOn: { string },
 }
 
--- M9: what the server made of a pairing or an answer.
+-- What the server made of a pairing or an answer.
 --   claimed / correct   : the connection holds (a new contradiction or
 --                         deduction; `label` names it)
 --   already             : it was already established
@@ -960,7 +960,7 @@ export type ReasoningFeedbackPayload = {
 	label: string?,
 }
 
--- A single suspect option in the accusation picker (Phase 2N). `suspectId`/
+-- A single suspect option in the accusation picker. `suspectId`/
 -- `suspectName`/`label` are all presentation data the player already knows
 -- (the suspects are visible in the world and their names are on their
 -- nametags); nothing here reveals which accusation is supported by the
@@ -980,9 +980,9 @@ export type AccusationOption = {
 export type AccusationPayload = {
 	options: { AccusationOption },
 	selected: AccusationOption?,
-	-- M9: whether this player may accuse now (server-decided).
+	-- Whether this player may accuse now (server-decided).
 	open: boolean,
-	-- M9: when true the accusation also needs a motive and a proof, chosen
+	-- When true the accusation also needs a motive and a proof, chosen
 	-- from what the player has established (the lists below). Neither list
 	-- says which entry fits which suspect.
 	requiresCase: boolean,
@@ -1005,10 +1005,10 @@ export type AccusationResolution = {
 }
 
 -- The summary sent once the server accepts the player's conclusion of the
--- investigation (Phase 2L). Every count is a real total, not a hardcoded
--- CASE-001 number. `accusation` (2N) is the suspect this player accused and
+-- investigation. Every count is a real total, not a hardcoded
+-- CASE-001 number. `accusation` is the suspect this player accused and
 -- whether the evidence they unlocked supports it; `timeline`/`contradiction`
--- (2O) restate only facts the player actually discovered; `verdict` (M2) is
+-- restate only facts the player actually discovered; `verdict` is
 -- the case's true answer, revealed only now that the player has committed.
 export type CaseClosedSummary = {
 	objectivesCompleted: number,
@@ -1021,9 +1021,9 @@ export type CaseClosedSummary = {
 	contradiction: ContradictionPayload?,
 	-- Present once the player has accused and the case authors a solution.
 	verdict: CaseVerdict?,
-	-- M9: connections that didn't hold along the way.
+	-- Connections that didn't hold along the way.
 	mistakes: number,
-	-- Phase 3 (R7): whether this player put the night in its real order
+	-- Whether this player put the night in its real order
 	-- (TimelineService.isEstablished), which never changes the grade but
 	-- is worth showing since it's easy to skip.
 	timelineReconstructed: boolean,
@@ -1034,7 +1034,7 @@ export type CaseVerdict = {
 	correct: boolean,
 	culpritName: string,
 	reveal: string,
-	-- M9: how the case stood up.
+	-- How the case stood up.
 	--   Solved   : the culprit, with a motive and a proof that hold
 	--   Unproven : the culprit, but the case named doesn't hold
 	--   Wrong    : someone else
@@ -1042,7 +1042,7 @@ export type CaseVerdict = {
 	grade: "Solved" | "Unproven" | "Wrong",
 	-- What happened next, for this grade (authored; may be absent).
 	epilogue: string?,
-	-- Phase 2P: for Unproven/Wrong only -- one sentence on which of the named
+	-- For Unproven/Wrong only -- one sentence on which of the named
 	-- motive/proof didn't hold, computed only from data already authored on
 	-- the accusation. Never the true motive/proof; nil for Solved, and nil
 	-- for a case that doesn't grade on motive/proof at all.

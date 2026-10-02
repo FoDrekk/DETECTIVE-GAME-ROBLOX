@@ -1,7 +1,7 @@
 --!strict
 --[[
 	SessionGuard
-	Phase 3 (R2): the game is single-player. The phase machine (briefing,
+	The game is single-player. The phase machine (briefing,
 	investigation, case closed) is server-wide, so a second investigator in
 	the same server would share -- and break -- the first one's session.
 

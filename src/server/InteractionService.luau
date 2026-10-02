@@ -11,16 +11,16 @@
 	  * it is a well-formed, enabled interactable
 	  * the requested kind matches the authored kind
 	  * the player is within the configured prompt range
-	  * no scripted scene is playing for the player (Phase 5.1)
+	  * no scripted scene is playing for the player
 
 	Each interaction kind has a handler with the shared contract:
 	    handler(player, descriptor) -> boolean   -- true if accepted
 
-	Phase 2A enablement:
+	What each kind does:
 	  * Examine — fully implemented (discovers evidence)
 	  * Read    — implemented (discovers evidence, presents readable content)
 	  * PickUp  — foundation only (validated, acknowledged, no inventory)
-	  * Talk    — implemented (Phase 2G): starts a ConversationService
+	  * Talk    — implemented: starts a ConversationService
 	              conversation with the interactable's suspect
 ]]
 
@@ -64,7 +64,7 @@ function InteractionService.emitObservation(player: Player, payload: Types.Obser
 end
 
 --[[
-	Present authored flavour text for a non-evidence interactable (Phase 2O).
+	Present authored flavour text for a non-evidence interactable.
 	Purely a client notification: it discovers nothing, advances no objective,
 	and touches no reasoning/evidence/timeline state. It only ever runs for an
 	interactable that authored `ObservationText` and carries no `EvidenceId`,
@@ -116,7 +116,7 @@ local function readHandler(player: Player, descriptor: Descriptor): boolean
 	return true
 end
 
--- Phase 2A foundation: validate and acknowledge, no inventory yet.
+-- Validated and acknowledged only; there is no inventory yet.
 local function pickUpHandler(_player: Player, _descriptor: Descriptor): boolean
 	return true
 end
@@ -146,10 +146,6 @@ local HANDLERS: { [Types.InteractionKind]: InteractionHandler } = {
 -- Describe an interactable using the shared contract.
 function InteractionService.describe(instance: Instance): Descriptor?
 	return Interactable.describe(instance)
-end
-
-function InteractionService.getInteractables(): { Instance }
-	return Interactable.getAll()
 end
 
 -- Handle an interaction request from a client.
@@ -184,7 +180,7 @@ function InteractionService.handleRequest(player: Player, instance: Instance, ki
 	if not PlayerDataService.get(player) then
 		return
 	end
-	-- Phase 5.1: nothing in the world can be used while a scene plays.
+	-- Nothing in the world can be used while a scene plays.
 	if CutsceneService.isPlaying(player) then
 		return
 	end

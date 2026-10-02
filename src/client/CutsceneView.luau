@@ -1,12 +1,12 @@
 --!strict
 --[[
-	CutsceneView (Phase 5.1, 5.5)
+	CutsceneView
 	Plays a scripted scene the server sends (Types.CutscenePayload): the
 	camera moves through each shot (CameraController.playShot), letterbox
 	bars frame it, subtitles come and go on their cues, and a shot can dip
 	in from or out to black.
 
-	Phase 5.5 adds what an opening needs: a shot can be framed in a SET
+	A shot can also be framed in a SET
 	(CutsceneSets: a dressed place built far from the office for the length of
 	the scene, or the office itself with something added), lit by a named
 	LOOK (CutsceneLighting), hold a FOCUS, fire named SOUND cues
@@ -78,10 +78,10 @@ local token = 0
 local lineToken = 0
 local cardToken = 0
 local armedUntil = 0
--- Phase 5.5: the hold that skips an intro (nil when nothing is held).
+-- The hold that skips an intro (nil when nothing is held).
 local holdStart: number? = nil
 local holdToken = 0
--- Phase 5.5: an intro's skip has begun (the dip to black), and can't begin twice.
+-- An intro's skip has begun (the dip to black), and can't begin twice.
 local skipping = false
 -- Which hint the skip label is showing, so a change of input scheme redraws it.
 local hintMode: "none" | "press" | "hold" = "none"

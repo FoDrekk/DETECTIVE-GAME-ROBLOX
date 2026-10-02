@@ -33,7 +33,7 @@ export type Providers = {
 	primaryLabel: () -> string?,
 	showInvestigationButtons: () -> boolean,
 	showAccuse: () -> boolean,
-	-- Phase 5.5: true while the primary button should act on press and release
+	-- True while the primary button should act on press and release
 	-- (the intro's hold to skip) rather than on a tap. Optional.
 	primaryHold: (() -> boolean)?,
 }

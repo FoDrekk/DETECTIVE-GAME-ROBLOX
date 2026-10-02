@@ -1,6 +1,6 @@
 --!strict
 --[[
-	LiftCar (Phase 5.5): a world set. The lift car behind reception's east wall is
+	LiftCar: a world set. The lift car behind reception's east wall is
 	built in the office (OfficeShell) with its doors open, and stays that way
 	for everyone: this set adds what the intro's ride needs, on this client only,
 	and takes every bit of it away again.

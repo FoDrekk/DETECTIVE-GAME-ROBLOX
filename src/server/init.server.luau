@@ -79,7 +79,7 @@ local function bootstrap()
 	ConversationService.start()
 	ReasoningService.start()
 	AccusationService.start()
-	-- Phase 5.1: scripted scenes, and evidence props held back until the
+	-- Scripted scenes, and evidence props held back until the
 	-- story reveals them (after the environment built them, step 0).
 	CutsceneService.start()
 	RevealService.start()
@@ -117,7 +117,7 @@ local function bootstrap()
 		accusationEvent:FireClient(player, payload)
 	end)
 
-	-- Phase 2O: flavour observation for a non-evidence interactable. Purely
+	-- Flavour observation for a non-evidence interactable. Purely
 	-- presentational; carries no story state.
 	InteractionService.onObservation().Event:Connect(function(player: Player, payload)
 		observationEvent:FireClient(player, payload)
@@ -127,15 +127,15 @@ local function bootstrap()
 		caseClosedSummaryEvent:FireClient(player, summary)
 	end)
 
-	-- Phase 5.1: a scene to play, or the server ending the current one.
+	-- A scene to play, or the server ending the current one.
 	CutsceneService.onUpdated().Event:Connect(function(player: Player, payload)
 		cutsceneEvent:FireClient(player, payload)
 	end)
 
-	-- M4: a replay starts the investigator back in the lobby with a clean
+	-- A replay starts the investigator back in the lobby with a clean
 	-- case, pushing the same fresh state a newly joined player receives.
 	GameStateService.onReplay().Event:Connect(function(player: Player)
-		-- Phase 5.1: props the last run revealed go back out of the world.
+		-- Props the last run revealed go back out of the world.
 		RevealService.refresh(player)
 		-- The unit harness replays with mock player tables; only a real
 		-- Player can be respawned or sent remotes.
@@ -154,7 +154,7 @@ local function bootstrap()
 
 	-- 5. Player lifecycle. Initialise data, then let the phase machine
 	--    grant the case and broadcast the phase.
-	--    Phase 3 (R2): one investigator per server (see SessionGuard); the
+	--    One investigator per server (see SessionGuard); the
 	--    guard also absorbs the PlayerAdded/startup-sweep double report.
 	local guard = SessionGuard.new(Config.Game.MaxInvestigators)
 	local function onPlayerAdded(player: Player)
@@ -203,7 +203,7 @@ local function bootstrap()
 		end
 	end)
 
-	-- 8b. Timeline reconstruction (M5). The client sends only an ordered list
+	-- 8b. Timeline reconstruction. The client sends only an ordered list
 	-- of discovered event ids; TimelineService validates it against the
 	-- canonical chronological order it computes server-side. Never trusts a
 	-- client claim that the order is correct.
@@ -239,7 +239,7 @@ local function bootstrap()
 		ConversationService.choose(player, choiceId)
 	end)
 
-	-- M9: showing evidence in a conversation. Only the evidence id travels
+	-- Showing evidence in a conversation. Only the evidence id travels
 	-- (or nothing, to back out); the server checks the player has found it
 	-- and that a presenting choice is waiting.
 	local requestDialoguePresent = Signals.get(Signals.Names.DialoguePresent)
@@ -250,7 +250,7 @@ local function bootstrap()
 		ConversationService.present(player, evidenceId)
 	end)
 
-	-- M9: the investigator pairs two facts in the case file, or answers an
+	-- The investigator pairs two facts in the case file, or answers an
 	-- open question. ReasoningService checks the facts are the player's own
 	-- and judges the connection against case data.
 	local requestClaim = Signals.get(Signals.Names.ClaimContradiction)
@@ -271,7 +271,7 @@ local function bootstrap()
 		end
 	end)
 
-	-- 11. Accusation (Phase 2N). `RequestAccusation` is the join-race sync
+	-- 11. Accusation. `RequestAccusation` is the join-race sync
 	-- guard, mirroring RequestReasoning; `SubmitAccusation` carries only the
 	-- accusation id the player chose. AccusationService re-validates
 	-- eligibility (all objectives complete) and the id server-side. A
@@ -290,7 +290,7 @@ local function bootstrap()
 		if type(accusationId) ~= "string" then
 			return
 		end
-		-- M9: the motive and proof, when the case asks for them. Anything
+		-- The motive and proof, when the case asks for them. Anything
 		-- that isn't a string is treated as not given.
 		local motive = if type(motiveId) == "string" then motiveId else nil
 		local proof = if type(proofId) == "string" then proofId else nil
@@ -301,7 +301,7 @@ local function bootstrap()
 		end
 	end)
 
-	-- 12. Phase 5.1: the client reached the end of a scene, or the
+	-- 12. The client reached the end of a scene, or the
 	-- investigator skipped it. Only the id and the skip flag travel;
 	-- CutsceneService checks it is the scene playing, that it may be
 	-- skipped, and that it has actually had time to finish.

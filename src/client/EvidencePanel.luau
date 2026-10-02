@@ -34,7 +34,6 @@ local headerLabel: TextLabel? = nil
 local isOpen = false
 
 local openedEvent: BindableEvent = Instance.new("BindableEvent")
-local closedEvent: BindableEvent = Instance.new("BindableEvent")
 local continueRequested: BindableEvent = Instance.new("BindableEvent")
 
 function EvidencePanel.onOpened(): BindableEvent
@@ -44,10 +43,6 @@ end
 -- Fired when the player clicks the panel's continue control.
 function EvidencePanel.onContinueRequested(): BindableEvent
 	return continueRequested
-end
-
-function EvidencePanel.onClosed(): BindableEvent
-	return closedEvent
 end
 
 local function setVisible(visible: boolean)
@@ -106,8 +101,8 @@ function EvidencePanel.show(payload: Types.EvidencePayload)
 		detailsLabel.Visible = ev.details ~= nil
 	end
 
-	-- Phase 2O: authored cross-references to already-discovered evidence.
-	-- Phase 5.4: evidence handed over with this one gets a line of its own
+	-- Authored cross-references to already-discovered evidence.
+	-- Evidence handed over with this one gets a line of its own
 	-- above the cross-references; its full readout lives in the Case File.
 	if relatedLabel then
 		local lines = {}
@@ -130,7 +125,6 @@ function EvidencePanel.close()
 		return
 	end
 	setVisible(false)
-	closedEvent:Fire()
 end
 
 function EvidencePanel.start()

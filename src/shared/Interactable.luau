@@ -13,7 +13,7 @@
 	  PromptLabel     : string  (e.g. "Examine Phone")
 	  EvidenceId      : string  (optional, e.g. "EV-001")
 	  ReadableText    : string  (optional, reserved for Read presentation)
-	  ObservationText : string  (optional, Phase 2O; authored flavour text
+	  ObservationText : string  (optional; authored flavour text
 	                    shown when a non-evidence object is examined. Purely
 	                    presentational -- it never creates evidence, timeline,
 	                    objective or reasoning state.)
@@ -58,8 +58,8 @@ export type Descriptor = {
 	label: string,
 	evidenceId: string?,
 	suspectId: string?,
-	-- Authored flavour text for a non-evidence interactable, if any (Phase
-	-- 2O). Optional; nil means the object carries no authored observation.
+	-- Authored flavour text for a non-evidence interactable, if any.
+	-- Optional; nil means the object carries no authored observation.
 	observation: string?,
 }
 
