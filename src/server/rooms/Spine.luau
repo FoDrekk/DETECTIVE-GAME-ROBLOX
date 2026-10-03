@@ -46,8 +46,9 @@ function Spine.build(interior: Instance)
 	PropKit.plant(room, at(rect.x0 + 0.9, z - 0.9, NORTH), 0.9, "tree")
 	PropKit.umbrellaStand(room, at(rect.x1 - 0.9, z - 0.9, NORTH), { Color3.fromRGB(28, 30, 36), Color3.fromRGB(90, 24, 30) })
 
-	-- The wayfinding above the pantry's pass-through.
-	PropKit.sign(room, at(rect.x0 - 0.05, -13, EAST, 10.2), "PANTRY", Vector2.new(1.8, 0.45))
+	-- The wayfinding above the pantry's pass-through. Anchored on the wall's
+	-- corridor face (x0 + 0.15), facing back into the spine.
+	PropKit.sign(room, at(rect.x0 + 0.15, -13, EAST, 10.2), "PANTRY", Vector2.new(1.8, 0.45))
 end
 
 -- Small Malaysian office signage: environment only, no gameplay, nothing
@@ -58,13 +59,14 @@ function Spine.signage(interior: Instance)
 	local rect = OfficePlan.rect("Spine")
 	local z = rect.z1
 
-	-- "Tap access card" beside the suite entrance. The quiet-room directory
-	-- is beside the lift call button in Reception, so the entry itself cannot
+	-- "Tap access card" beside the suite entrance, flat on the east wall
+	-- (facing west, into the entrance hall). The quiet-room directory is
+	-- beside the lift call button in Reception, so the entry itself cannot
 	-- be mistaken for a prayer-room door.
-	PropKit.sign(room, at(rect.x1 - 0.55, z - 0.05, NORTH, 4.5), "Tap access card", Vector2.new(1.3, 0.34))
+	PropKit.sign(room, at(rect.x1 - 0.15, z - 2.2, WEST, 4.5), "Tap access card", Vector2.new(1.3, 0.34))
 
-	-- "NO SMOKING" by the extinguisher.
-	PropKit.sign(room, at(rect.x0 - 0.05, -20.6, EAST, 4.4), "NO SMOKING", Vector2.new(2.0, 0.42), {
+	-- "NO SMOKING" by the extinguisher, on the west wall's corridor face.
+	PropKit.sign(room, at(rect.x0 + 0.15, -20.6, EAST, 4.4), "NO SMOKING", Vector2.new(2.0, 0.42), {
 		plate = Color3.fromRGB(232, 232, 226),
 		color = Color3.fromRGB(170, 30, 30),
 	})

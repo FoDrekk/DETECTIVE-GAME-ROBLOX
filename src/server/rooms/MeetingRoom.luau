@@ -107,11 +107,13 @@ function MeetingRoom.build(interior: Instance)
 		local marker = PropKit.newPart(room, "Marker", Vector3.new(0.6, 0.12, 0.12), CFrame.new(19.8 + i * 0.7, 3.73, wallZ - 0.4), color, M.SmoothPlastic)
 		marker.Shape = Enum.PartType.Cylinder
 	end
-	-- Three small reminders at the edge, each carrying one useful note.
+	-- Three small reminders at the edge of the board, each carrying one useful
+	-- note. Kept inside the 9-stud board (x 16.5..25.5), clear of the marker
+	-- text block, which occupies roughly x 17.2..19.7 down the left side.
 	local noteSpecs: { { x: number, y: number, text: string } } = {
-		{ x = 16.2, y = 7.6, text = "FRI 10" },
-		{ x = 26.0, y = 5.2, text = "DRAFT V3" },
-		{ x = 26.9, y = 7.4, text = "ROOM 9B" },
+		{ x = 21.4, y = 7.6, text = "FRI 10" },
+		{ x = 24.6, y = 5.2, text = "DRAFT V3" },
+		{ x = 24.4, y = 7.4, text = "ROOM 9B" },
 	}
 	for i, spec in ipairs(noteSpecs) do
 		local note = PropKit.newPart(room, `Sticky_{i}`, Vector3.new(0.9, 0.9, 0.05), CFrame.new(spec.x, spec.y, wallZ - 0.235) * CFrame.Angles(0, 0, math.rad(i * 4 - 6)), Color3.fromRGB(240, 224, 130), M.SmoothPlastic)
