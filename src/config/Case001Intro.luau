@@ -247,10 +247,13 @@ local function lobby(): { Shot }
 		},
 		{
 			id = "LOBBY-ACCESS", duration = 8, set = "Lobby", lighting = "Lobby",
+			-- Tracks the crossing: the beep and the arm at the gates, then the
+			-- walk carries on to the lift bank, and the shot settles under the
+			-- bay's "9" -- the same doors the next cut opens.
 			camera = {
-				from = point(Vector3.new(-4, 5.4, 10), Vector3.new(8, 3.6, -2)),
-				to = point(Vector3.new(2, 4.9, 5), Vector3.new(8, 3.5, -2)),
-				fieldOfView = 48, fieldOfViewTo = 42, ease = "InOut",
+				from = point(Vector3.new(1, 5.6, 6), Vector3.new(8.5, 4.2, -6)),
+				to = point(Vector3.new(6.5, 5.0, -12), Vector3.new(8.5, 6.4, -24)),
+				fieldOfView = 48, fieldOfViewTo = 44, ease = "InOut",
 			},
 			actions = { { at = 0.6, name = "TapCard" }, { at = 1.15, name = "ReaderAccepts" } },
 			sounds = { { at = 0, cue = "RoomTone" }, { at = 0.7, cue = "BadgeBeep", volume = 0.5 }, { at = 0, cue = "Motif", volume = 0.1, fade = 1.3 } },

@@ -96,7 +96,7 @@ access caption and Nora's message (`Case001Intro.luau`) and the ROSAK dome
 
 | # | Time | Shot | Action | Sound | On screen |
 |---|---|---|---|---|---|
-| 1 | 0:00–0:06 | Black, then a slow fade to a dark bedroom, locked-off wide | Rain streaks a window; the city glows orange through it. A bedside clock: **11:47**. | Rain on glass; air-conditioning hum | — |
+| 1 | 0:00–0:06 | Black, then a slow fade to a dark bedroom, locked-off wide | Rain streaks a window; the city glows cool blue through it. A bedside clock: **11:47**. | Rain on glass; air-conditioning hum | — |
 | 2 | 0:06–0:14 | Close-up, top-down on the bedside table | A phone buzzes face up: **Daniel ♥**. Beside it, a strip of migraine tablets, **none pressed out**. | Vibration on wood, loud in the quiet | — |
 | 3 | 0:14–0:20 | Insert, same angle | A hand with a thin gold wedding band comes in, hovers, and **turns the phone face down**. The buzzing stops. | Buzz, then stop. Rain. | — |
 | 4 | 0:20–0:22 | Hold on the face-down phone | Nothing moves | Rain | Cut to black |
@@ -110,7 +110,7 @@ We never see a face, a room detail that names her, or a lanyard.
 
 | # | Time | Shot | Action | Sound | On screen |
 |---|---|---|---|---|---|
-| 5 | 0:22–0:30 | Aerial wide, slow push over the city at night in rain | The towers of Dataran Arwana; the dark curve of the Sungai Arwana; the old town's low roofs lit orange | Rain; distant traffic. The **motif** enters: low keys and a single plucked-string line. | — |
+| 5 | 0:22–0:30 | Aerial wide, slow push over the city at night in rain | The towers of Dataran Arwana; the dark curve of the Sungai Arwana; the old town's low roofs under sodium lamps | Rain; distant traffic. The **motif** enters: low keys and a single plucked-string line. | — |
 | 6 | 0:30–0:36 | Low wide, under an LRT viaduct | A two-car LRT crosses overhead; the rails' light washes the wet road | The train's rising whine and rattle | — |
 | 7 | 0:36–0:42 | Street level, across the road | A 24-hour mamak, full at half twelve. Football on a wall TV, a teh tarik pulled high. A delivery rider in a rain poncho waits by his bike. A sign on the lamppost: *DILARANG MELETAK KENDERAAN*. | Mamak chatter, a TV cheer, rain on awnings | — |
 | 8 | 0:42–0:50 | Tracking alongside an unmarked sedan at a red light | Wipers. The police radio crackles. | **Radio:** "Control to all units. Sudden death. Wisma Delima, level nine." / "Reported by the security guard at 12:14 AM." | - | |

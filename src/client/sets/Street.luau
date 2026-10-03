@@ -59,6 +59,11 @@ function Street.build(origin: Vector3, parent: Folder)
 	for _, z in ipairs({ -19.5, -14.5 }) do
 		SetKit.cylinder(parent, "BikeWheel", 0.32, 1.45, CFrame.new(at(8, 0.9, z)), C(20, 22, 26), M.Rubber)
 	end
+	-- The bike's headlamp, left on while the rider waits: a small pool on the
+	-- wet road in front of it.
+	local bikeLamp = SetKit.neon(parent, "BikeHeadlamp", Vector3.new(0.7, 0.35, 0.12), CFrame.new(at(8, 1.55, -19.7)), C(235, 240, 250))
+	SetKit.light(bikeLamp, "SpotLight", 1.2, 14, C(235, 240, 250), { face = Enum.NormalId.Front, angle = 55 })
+	SetKit.glint(parent, "BikeGlint", CFrame.new(at(8, 0.22, -24)), 2.6, 7, C(210, 220, 240), 0.5)
 	local riderSeat = CFrame.lookAt(at(8, 2.1, -17), at(8, 2.1, -18))
 	local rider = SetKit.figureDouble(parent, riderSeat, {
 		shirt = C(30, 76, 78),
@@ -96,7 +101,10 @@ function Street.build(origin: Vector3, parent: Folder)
 		part("LampPost", Vector3.new(0.4, 13, 0.4), at(spot[1], 6.5, spot[2]), C(58, 60, 64), M.Metal)
 		local head = SetKit.neon(parent, "LampHead", Vector3.new(1.6, 0.35, 0.8), CFrame.new(at(spot[1], 13, spot[2])), C(255, 170, 84))
 		SetKit.light(head, "SpotLight", 2.2, 30, C(255, 160, 80), { face = Enum.NormalId.Bottom, angle = 110 })
+		SetKit.glint(parent, `Glint_{spot[1]}`, CFrame.new(at(spot[1], 0.21, spot[2])), 2.2, 11, C(255, 150, 70), 0.42)
 	end
+	-- The lamppost notice from the screenplay: no parking, hand-painted.
+	SetKit.sign(parent, "NoParking", CFrame.new(at(0, 7.5, 8.7)) * CFrame.Angles(0, math.rad(180), 0), Vector3.new(2.2, 1.1, 0.06), "NO PARKING", C(236, 236, 230), { panel = C(206, 60, 44), font = Enum.Font.GothamBlack, pixelsPerStud = 55 })
 	-- The unmarked car rolls in along the street from the east and pulls up past
 	-- the mamak. The whole model moves (a driver value, as the bedroom's hand does).
 	local sedan = Instance.new("Model")
@@ -126,6 +134,8 @@ function Street.build(origin: Vector3, parent: Folder)
 		SetKit.light(lamp, "SpotLight", 1.6, 26, C(255, 240, 210), { face = Enum.NormalId.Front, angle = 50 })
 	end
 	SetKit.neon(sedan, "TailBar", Vector3.new(5.6, 0.32, 0.16), CFrame.new(at(0, 2.0, 7.55)), C(200, 30, 30))
+	local plateF = SetKit.part(sedan, "Plate_F", Vector3.new(1.7, 0.42, 0.06), CFrame.new(at(0, 1.3, -7.58)), C(240, 240, 236), M.SmoothPlastic, { castShadow = false })
+	SetKit.label(plateF, Enum.NormalId.Front, "W 144 SCU", { color = C(16, 18, 22), size = 26, font = Enum.Font.GothamBold, lightInfluence = 0.4 })
 	sedan.PrimaryPart = body
 	-- Facing west (-X), driving along the near kerb.
 	local function onStreet(x: number): CFrame

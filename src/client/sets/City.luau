@@ -100,12 +100,12 @@ function City.build(origin: Vector3, parent: Folder)
 	--------------------------------------------------------------------
 	SetKit.part(parent, "Ground", Vector3.new(2000, 1, 2000), CFrame.new(at(0, -0.5, 0)), C3(22, 20, 26), M.SmoothPlastic, { castShadow = false })
 	SetKit.gradientSky(parent, "Sky", CFrame.lookAt(at(0, 260, -1250), at(0, 260, 0)), 3600, 900, {
-		{ at = 0, color = C3(26, 16, 26) },
-		{ at = 0.3, color = C3(64, 30, 36) },
-		{ at = 0.5, color = C3(150, 62, 40) },
-		{ at = 0.58, color = C3(255, 128, 52) },
-		{ at = 0.62, color = C3(255, 160, 84) },
-		{ at = 1, color = C3(110, 58, 40) },
+		{ at = 0, color = C3(8, 10, 18) },
+		{ at = 0.34, color = C3(14, 18, 30) },
+		{ at = 0.5, color = C3(28, 36, 54) },
+		{ at = 0.56, color = C3(56, 70, 98) },
+		{ at = 0.6, color = C3(44, 58, 86) },
+		{ at = 1, color = C3(10, 14, 24) },
 	})
 
 	--------------------------------------------------------------------

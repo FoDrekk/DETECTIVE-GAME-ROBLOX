@@ -14,6 +14,33 @@ function Lobby.build(origin: Vector3, parent: Folder)
 	end
 	part("MarbleFloor", Vector3.new(72, 0.5, 58), at(0, -0.25, 0), C(101, 105, 112), M.Marble)
 	part("BackWall", Vector3.new(72, 24, 1), at(0, 12, -27), C(48, 54, 64), M.Concrete)
+	-- The lift bank the walk arrives at: three bays of brushed steel, a floor
+	-- arrow over each, the centre bay the one that serves this arrival.
+	for bay, x in ipairs({ 0.5, 8.5, 16.5 }) do
+		part(`LiftFrame_{bay}`, Vector3.new(6.4, 12.4, 0.7), at(x, 6.2, -26.6), C(64, 70, 80), M.Metal)
+		local isCentre = bay == 2
+		local doorColor = if isCentre then C(96, 104, 118) else C(52, 58, 68)
+		local left = part(`LiftDoorL_{bay}`, Vector3.new(2.9, 11.4, 0.18), at(x - 1.5, 5.7, -26.2), doorColor, M.Metal)
+		local right = part(`LiftDoorR_{bay}`, Vector3.new(2.9, 11.4, 0.18), at(x + 1.5, 5.7, -26.2), doorColor, M.Metal)
+		left.Reflectance, right.Reflectance = 0.18, 0.18
+		if isCentre then
+			-- The bay's floor indicator: a soft "9" over the doors that are
+			-- about to take the investigator up.
+			local arrow = SetKit.neon(parent, "LiftArrow", Vector3.new(1.1, 1.1, 0.1), CFrame.new(at(x, 13.1, -26.2)), C(120, 208, 190))
+			SetKit.label(arrow, Enum.NormalId.Front, "9", { color = C(224, 250, 245), size = 42, font = Enum.Font.GothamBold, lightInfluence = 0 })
+		end
+	end
+	-- The entrance doors behind the arrival: tall dark glass in a steel frame,
+	-- the wet night faintly in them.
+	local entranceDoors = part("EntranceDoors", Vector3.new(14, 11, 0.25), at(1, 5.5, 28.5), C(18, 26, 38), M.Glass)
+	entranceDoors.Transparency = 0.45
+	part("EntranceFrame", Vector3.new(15, 11.6, 0.5), at(1, 5.8, 28.5), C(64, 70, 80), M.Metal)
+	for _, x in ipairs({ -2.4, 1, 4.4 }) do
+		part("EntranceMullion", Vector3.new(0.22, 10.8, 0.4), at(x, 5.5, 28.4), C(58, 64, 74), M.Metal)
+	end
+	-- Entrance matting, wet footprints on the marble's shine.
+	local matting = part("Matting", Vector3.new(13, 0.06, 4), at(1, 0.03, 25), C(30, 32, 36), M.Fabric)
+	matting.CastShadow = false
 	for x = -31, 31, 8 do
 		part("WallPilaster", Vector3.new(1.1, 23, 1.4), at(x, 11.5, -26.1), C(75, 81, 92), M.Marble)
 	end
@@ -23,8 +50,8 @@ function Lobby.build(origin: Vector3, parent: Folder)
 	end
 	-- A ceiling: indoors, so the look's Ambient (not the night's OutdoorAmbient) lights it.
 	part("Ceiling", Vector3.new(72, 1, 58), at(0, 16.5, 0), C(70, 74, 82), M.Concrete)
-	-- Cold overhead light on the gates and the security desk.
-	for _, spot in ipairs({ { 8.5, -2 }, { -23, -12 }, { 8.5, -14 } }) do
+	-- Cold overhead light on the gates, the security desk and the lift bank.
+	for _, spot in ipairs({ { 8.5, -2 }, { -23, -12 }, { 8.5, -14 }, { 8.5, -22 } }) do
 		local panel = SetKit.neon(parent, "CeilingPanel", Vector3.new(6, 0.12, 2.4), CFrame.new(at(spot[1], 15, spot[2])), C(226, 236, 248))
 		SetKit.light(panel, "SpotLight", 1.8, 24, C(224, 234, 248), { face = Enum.NormalId.Bottom, angle = 90 })
 	end
@@ -80,7 +107,9 @@ function Lobby.build(origin: Vector3, parent: Folder)
 	if detective then
 		detective.animate(SetKit.WalkAnimation, true)
 		approach = SetKit.newTween(detective.root, 1.8, { CFrame = detective.rootAt(CFrame.lookAt(at(5.8, 0, 1.2), at(8, 0, -2))) }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-		passGate = SetKit.newTween(detective.root, 2.2, { CFrame = detective.rootAt(CFrame.lookAt(at(8.5, 0, -9), at(8.5, 0, -15))) }, Enum.EasingStyle.Linear)
+		-- The walk ends under the centre lift bay, at the doors that will take
+		-- the investigator up: the cut to the lift car is the same door.
+		passGate = SetKit.newTween(detective.root, 2.6, { CFrame = detective.rootAt(CFrame.lookAt(at(8.5, 0, -21), at(8.5, 0, -26))) }, Enum.EasingStyle.Linear)
 		scope.add(function() detective.destroy() end)
 	end
 	local nod: Tween? = nil

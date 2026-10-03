@@ -1,8 +1,8 @@
 --!strict
 --[[
 	Bedroom: the cold open's set. A condo bedroom in Bukit Pelangi at
-	11:47 at night: rain on a big window, the city orange behind it, a bedside
-	table with a clock, a phone and a strip of tablets, and a hand.
+	11:47 at night: rain on a big window, the city cool and blue behind it,
+	a bedside table with a clock, a phone and a strip of tablets, and a hand.
 
 	Nothing here names her: no face, no lanyard, no photograph. There is a hand
 	with a thin gold band, and a strip of migraine tablets none of which has been
@@ -110,15 +110,16 @@ function Bedroom.build(origin: Vector3, parent: Folder)
 	local outside = Instance.new("Folder")
 	outside.Name = "Outside"
 	outside.Parent = parent
-	-- The glow at the horizon: light pollution under low cloud, brightest at the
-	-- skyline and dying upward, in three stacked bands.
+	-- The glow at the horizon: the city's light pollution under low cloud at
+	-- midnight -- cool, faintly blue-white where the town core sits, dying to
+	-- near-black overhead. No warm band: this is hours past sunset.
 	SetKit.gradientSky(outside, "Sky", CFrame.lookAt(origin + Vector3.new(0, 110, -560), origin + Vector3.new(0, 110, 0)), 2040, 420, {
-		{ at = 0, color = C3(30, 16, 22) },
-		{ at = 0.35, color = C3(88, 34, 34) },
-		{ at = 0.62, color = C3(190, 74, 38) },
-		{ at = 0.74, color = C3(255, 130, 54) },
-		{ at = 0.79, color = C3(255, 156, 78) },
-		{ at = 1, color = C3(120, 60, 40) },
+		{ at = 0, color = C3(7, 9, 16) },
+		{ at = 0.45, color = C3(12, 16, 28) },
+		{ at = 0.66, color = C3(30, 42, 64) },
+		{ at = 0.74, color = C3(66, 88, 122) },
+		{ at = 0.79, color = C3(52, 70, 102) },
+		{ at = 1, color = C3(16, 22, 34) },
 	})
 	-- A block across the street, close enough to have windows you can count,
 	-- covering the left of the view; a lower one at the right.
@@ -153,17 +154,17 @@ function Bedroom.build(origin: Vector3, parent: Folder)
 		beads.EmissionDirection = Enum.NormalId.Bottom
 		beads.Size = NumberSequence.new(0.09, 0.05)
 		beads.Transparency = NumberSequence.new(0.2, 0.8)
-		beads.Color = ColorSequence.new(C3(255, 178, 110))
+		beads.Color = ColorSequence.new(C3(170, 200, 235))
 		beads.LightEmission = 0.8
 		beads.Acceleration = Vector3.new(0, -0.6, 0)
 		beads.Parent = pane
 	end
 
-	-- The city's light coming in: orange from the window, over everything.
+	-- The city's light coming in: a cool wash from the window, over everything.
 	local glow = SetKit.part(outside, "GlowSource", Vector3.new(9, 5, 0.2), at(0, 5, -9), Color3.new(1, 1, 1), M.SmoothPlastic, { transparency = 1, castShadow = false })
-	SetKit.light(glow, "SurfaceLight", 0.28, 22, C3(255, 158, 96), { face = Enum.NormalId.Back, angle = 120 })
+	SetKit.light(glow, "SurfaceLight", 0.3, 22, C3(150, 178, 225), { face = Enum.NormalId.Back, angle = 120 })
 	local haze = SetKit.part(outside, "GlowHaze", Vector3.new(1, 1, 1), at(0, 8, -12), Color3.new(1, 1, 1), M.SmoothPlastic, { transparency = 1, castShadow = false })
-	SetKit.light(haze, "PointLight", 0.25, 26, C3(255, 132, 64))
+	SetKit.light(haze, "PointLight", 0.22, 26, C3(96, 122, 176))
 
 	--------------------------------------------------------------------
 	-- The bed (she is turned away, under the blanket)

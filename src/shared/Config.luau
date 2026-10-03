@@ -295,20 +295,20 @@ Config.Cutscene = {
 		keeps thick and blue and which a city in the rain wants thin and warm.
 	]]
 	LightingPresets = {
-		-- The cold open: a dark bedroom, the city orange through the rain.
+		-- The cold open: a dark bedroom, the city blue through the rain.
 		Bedroom = {
-			ClockTime = 0.4,
+			ClockTime = 0.1,
 			Brightness = 0.1,
-			Ambient = Color3.fromRGB(14, 12, 14),
-			OutdoorAmbient = Color3.fromRGB(40, 30, 26),
-			ExposureCompensation = 0.28,
-			FogColor = Color3.fromRGB(96, 46, 30),
+			Ambient = Color3.fromRGB(10, 12, 16),
+			OutdoorAmbient = Color3.fromRGB(22, 28, 40),
+			ExposureCompensation = 0.22,
+			FogColor = Color3.fromRGB(14, 18, 28),
 			FogStart = 110,
 			FogEnd = 1000,
-			Atmosphere = { Density = 0.1, Offset = 0.1, Color = Color3.fromRGB(70, 46, 42), Decay = Color3.fromRGB(120, 70, 44), Glare = 0, Haze = 0.6 },
+			Atmosphere = { Density = 0.1, Offset = 0.1, Color = Color3.fromRGB(16, 22, 34), Decay = Color3.fromRGB(34, 46, 72), Glare = 0, Haze = 0.6 },
 			Stars = 0,
 			Bloom = { intensity = 0.36, size = 24, threshold = 1.05 },
-			Grade = { contrast = 0.11, saturation = -0.1, tint = Color3.fromRGB(246, 235, 224), brightness = 0 },
+			Grade = { contrast = 0.12, saturation = -0.14, tint = Color3.fromRGB(230, 238, 252), brightness = 0 },
 			Vignette = 0.5,
 		},
 		-- Kota Arwana after midnight in the rain: deep blue dark, practical lights only.

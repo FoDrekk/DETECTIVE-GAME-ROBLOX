@@ -41,6 +41,20 @@ function Forecourt.build(origin: Vector3, parent: Folder)
 	part("PatrolRoof", Vector3.new(6.5, 1.4, 7), at(-24, 3.4, 8), C(37, 44, 54), M.Metal)
 	local red = SetKit.neon(parent, "LightRed", Vector3.new(1.7, 0.4, 0.6), CFrame.new(at(-25, 4.15, 8)), C(255, 34, 42))
 	local blue = SetKit.neon(parent, "LightBlue", Vector3.new(1.7, 0.4, 0.6), CFrame.new(at(-23, 4.15, 8)), C(52, 123, 255))
+	-- The bar breathes: alternating red and blue, the classic night-call cadence.
+	local strobes: { Tween } = {}
+	local function strobe(lamp: BasePart, offset: number)
+		local blink = game:GetService("TweenService"):Create(
+			lamp,
+			TweenInfo.new(0.9, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true, offset),
+			{ Transparency = 0.88 }
+		)
+		blink:Play()
+		scope.add(blink)
+		table.insert(strobes, blink)
+	end
+	strobe(red, 0)
+	strobe(blue, 0.45)
 	SetKit.label(part("DoorMarking", Vector3.new(4, 0.12, 2), at(-24, 2.88, 8), C(242, 240, 231), M.SmoothPlastic), Enum.NormalId.Top, "POLIS", { color = C(31, 45, 60), size = 20, font = Enum.Font.GothamBold })
 	-- The investigator's car, which turns into the drive and stops by the canopy.
 	-- Built facing -Z; the whole model moves with its driver value.
@@ -68,6 +82,11 @@ function Forecourt.build(origin: Vector3, parent: Folder)
 		SetKit.light(lamp, "SpotLight", 1.8, 30, C(255, 240, 210), { face = Enum.NormalId.Front, angle = 50 })
 	end
 	SetKit.neon(sedan, "TailBar", Vector3.new(5.6, 0.32, 0.16), CFrame.new(at(0, 2.05, 7.55)), C(200, 30, 30))
+	-- Malaysian plates: white, black type, front and rear.
+	local plateF = SetKit.part(sedan, "Plate_F", Vector3.new(1.7, 0.42, 0.06), CFrame.new(at(0, 1.35, -7.58)), C(240, 240, 236), M.SmoothPlastic, { castShadow = false })
+	SetKit.label(plateF, Enum.NormalId.Front, "W 144 SCU", { color = C(16, 18, 22), size = 26, font = Enum.Font.GothamBold, lightInfluence = 0.4 })
+	local plateR = SetKit.part(sedan, "Plate_R", Vector3.new(1.7, 0.42, 0.06), CFrame.new(at(0, 1.35, 7.58)), C(240, 240, 236), M.SmoothPlastic, { castShadow = false })
+	SetKit.label(plateR, Enum.NormalId.Back, "W 144 SCU", { color = C(16, 18, 22), size = 26, font = Enum.Font.GothamBold, lightInfluence = 0.4 })
 	sedan.PrimaryPart = body
 	local driver = Instance.new("CFrameValue")
 	driver.Value = CFrame.lookAt(at(34, 1.8, 30), at(14, 1.8, -2))
@@ -109,6 +128,11 @@ function Forecourt.build(origin: Vector3, parent: Folder)
 		LightsOff = function()
 			redLight.Enabled = false
 			blueLight.Enabled = false
+			for _, blink in ipairs(strobes) do
+				blink:Cancel()
+			end
+			red.Transparency = 1
+			blue.Transparency = 1
 		end,
 	}
 	return {
