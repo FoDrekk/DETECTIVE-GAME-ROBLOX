@@ -28,10 +28,10 @@ function Forecourt.build(origin: Vector3, parent: Folder)
 	SetKit.light(lobby, "SurfaceLight", 1.4, 34, C(255, 220, 180), { face = Enum.NormalId.Front, angle = 120 })
 	-- The city's glow behind the tower, so it stands against the sky.
 	SetKit.gradientSky(parent, "CityGlow", CFrame.lookAt(at(0, 70, -170), at(0, 70, 0)), 520, 220, {
-		{ at = 0, color = C(12, 14, 24) },
-		{ at = 0.55, color = C(40, 34, 52) },
-		{ at = 0.85, color = C(150, 82, 52) },
-		{ at = 1, color = C(200, 110, 60) },
+		{ at = 0, color = C(8, 11, 22) },
+		{ at = 0.55, color = C(12, 18, 34) },
+		{ at = 0.85, color = C(22, 32, 56) },
+		{ at = 1, color = C(36, 50, 82) },
 	})
 	-- A single warm window at floor nine, framed against the dark grid.
 	local ninth = SetKit.neon(parent, "NinthFloor", Vector3.new(3.5, 4.8, 0.18), CFrame.new(at(0, 92, -42.55)), C(255, 191, 108))
@@ -47,13 +47,27 @@ function Forecourt.build(origin: Vector3, parent: Folder)
 	local sedan = Instance.new("Model")
 	sedan.Name = "ArrivingSedan"
 	sedan.Parent = parent
-	local body = SetKit.part(sedan, "Body", Vector3.new(7.6, 2.2, 15), CFrame.new(at(0, 1.8, 0)), C(35, 43, 54), M.SmoothPlastic)
-	SetKit.part(sedan, "Roof", Vector3.new(6.5, 1.7, 7), CFrame.new(at(0, 3.7, 0.6)), C(29, 35, 44), M.SmoothPlastic)
-	for _, x in ipairs({ -3, 3 }) do
-		local lamp = SetKit.neon(sedan, "Headlamp", Vector3.new(1.15, 0.4, 0.18), CFrame.new(at(x, 2.05, -7.55)), C(255, 235, 191))
-		SetKit.light(lamp, "SpotLight", 1.8, 30, C(255, 240, 210), { face = Enum.NormalId.Front, angle = 50 })
-		SetKit.neon(sedan, "TailLamp", Vector3.new(1.15, 0.35, 0.18), CFrame.new(at(x, 2.05, 7.55)), C(200, 30, 30))
+	-- Contemporary executive sedan to match the street unit: low metallic body,
+	-- glasshouse cabin, grille and full-width rear lamp bar. Faces -Z.
+	local body = SetKit.part(sedan, "Body", Vector3.new(7.4, 1.5, 15), CFrame.new(at(0, 1.65, 0)), C(26, 32, 42), M.Metal)
+	body.Reflectance = 0.12
+	SetKit.part(sedan, "Hood", Vector3.new(7.0, 0.35, 3.4), CFrame.new(at(0, 2.5, -5.6)), C(32, 39, 51), M.Metal)
+	SetKit.part(sedan, "Trunk", Vector3.new(7.0, 0.35, 2.6), CFrame.new(at(0, 2.5, 6.0)), C(32, 39, 51), M.Metal)
+	local cabin = SetKit.part(sedan, "Cabin", Vector3.new(6.2, 1.7, 6.4), CFrame.new(at(0, 3.3, 0.4)), C(16, 26, 38), M.Glass)
+	cabin.Transparency = 0.25
+	cabin.Reflectance = 0.15
+	SetKit.part(sedan, "Grille", Vector3.new(3.6, 0.6, 0.15), CFrame.new(at(0, 1.7, -7.55)), C(120, 130, 142), M.Metal)
+	for _, x in ipairs({ -3.9, 3.9 }) do
+		for _, z in ipairs({ -5.6, 5.6 }) do
+			SetKit.cylinder(sedan, "Wheel", 0.75, 2.3, CFrame.new(at(x, 1.0, z)), C(12, 13, 15), M.Rubber)
+			SetKit.cylinder(sedan, "Rim", 0.4, 2.36, CFrame.new(at(x, 1.0, z)), C(150, 156, 164), M.Metal)
+		end
 	end
+	for _, x in ipairs({ -2.6, 2.6 }) do
+		local lamp = SetKit.neon(sedan, "Headlamp", Vector3.new(1.5, 0.42, 0.18), CFrame.new(at(x, 2.05, -7.55)), C(214, 232, 255))
+		SetKit.light(lamp, "SpotLight", 1.8, 30, C(255, 240, 210), { face = Enum.NormalId.Front, angle = 50 })
+	end
+	SetKit.neon(sedan, "TailBar", Vector3.new(5.6, 0.32, 0.16), CFrame.new(at(0, 2.05, 7.55)), C(200, 30, 30))
 	sedan.PrimaryPart = body
 	local driver = Instance.new("CFrameValue")
 	driver.Value = CFrame.lookAt(at(34, 1.8, 30), at(14, 1.8, -2))
@@ -62,6 +76,10 @@ function Forecourt.build(origin: Vector3, parent: Folder)
 	scope.add(driver.Changed:Connect(function(value: CFrame)
 		sedan:PivotTo(value)
 	end))
+	-- A night-access reader on a bollard by the doors: the beep in TOWER-DOOR.
+	local post = part("ReaderPost", Vector3.new(0.35, 3.2, 0.35), at(3.5, 1.6, -40), C(52, 56, 62), M.Metal)
+	local eye = SetKit.neon(parent, "ReaderEye", Vector3.new(0.4, 0.5, 0.12), CFrame.new(at(3.5, 3.1, -39.8)), C(38, 146, 161))
+	SetKit.light(eye, "PointLight", 0.5, 6, C(60, 170, 190))
 	part("EntryCanopy", Vector3.new(36, 1, 16), at(0, 12, -29), C(41, 48, 58), M.Metal)
 	SetKit.neon(parent, "CanopyEdge", Vector3.new(33, 0.12, 0.25), CFrame.new(at(0, 11.4, -20.9)), C(186, 197, 209))
 	for _, x in ipairs({ -11, 0, 11 }) do

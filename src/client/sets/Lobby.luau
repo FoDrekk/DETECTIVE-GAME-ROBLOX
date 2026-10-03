@@ -31,7 +31,15 @@ function Lobby.build(origin: Vector3, parent: Folder)
 	-- Reception podium and the raised brass turnstile lane.
 	part("SecurityDesk", Vector3.new(15, 3.3, 5), at(-23, 1.65, -12), C(43, 50, 60), M.Marble)
 	part("DeskTop", Vector3.new(15.5, 0.3, 5.4), at(-23, 3.45, -12), C(176, 157, 125), M.Marble)
-	SetKit.sign(parent, "DeskName", CFrame.new(at(-23, 4.15, -9.22)), Vector3.new(9, 1.1, 0.1), "SECURITY  ·  LOBI", C(229, 218, 195), { panel = C(32, 39, 48), pixelsPerStud = 25 })
+	SetKit.sign(parent, "DeskName", CFrame.new(at(-23, 4.15, -9.22)), Vector3.new(9, 1.1, 0.1), "SECURITY  ·  LOBBY", C(229, 218, 195), { panel = C(32, 39, 48), pixelsPerStud = 25 })
+	-- Wet-night arrival: an umbrella stand by the doors, and a directory
+	-- naming the destination floor.
+	local stand = part("UmbrellaStand", Vector3.new(1.2, 2.2, 1.2), at(-33, 1.1, 8), C(52, 56, 62), M.Metal)
+	stand.CastShadow = false
+	for i, shade in ipairs({ C(120, 30, 32), C(30, 60, 90) }) do
+		part("Umbrella", Vector3.new(0.18, 2.6, 0.18), at(-33.3 + i * 0.5, 2.6, 8), shade, M.Fabric).CastShadow = false
+	end
+	SetKit.sign(parent, "Directory", CFrame.new(at(-8, 5.5, -26.4)), Vector3.new(10, 3, 0.2), "LEVEL 9\nROZARIO & LIM", C(229, 218, 195), { panel = C(32, 39, 48), pixelsPerStud = 25 })
 	local gates: { BasePart } = {}
 	for x = 4, 13, 4.5 do
 		local pedestal = part("Turnstile", Vector3.new(1.1, 3.5, 1.1), at(x, 1.75, -2), C(100, 106, 113), M.Metal)
@@ -41,15 +49,30 @@ function Lobby.build(origin: Vector3, parent: Folder)
 		local reader = SetKit.neon(parent, "CardReader", Vector3.new(0.26, 0.65, 0.45), CFrame.new(at(x - 0.5, 3.15, -2)), C(38, 146, 161))
 		SetKit.label(reader, Enum.NormalId.Front, "TAP", { color = C(224, 250, 255), size = 13, font = Enum.Font.GothamBold })
 	end
-	-- Security constable, shown in profile at the desk rather than as a mannequin
-	-- in the center of the frame.
-	part("ConstableUniform", Vector3.new(2.4, 3.3, 1.25), at(-23, 5.2, -16), C(30, 45, 62), M.Fabric)
-	local head = SetKit.ball(parent, "ConstableHead", 1.7, at(-23, 7.75, -16), C(187, 146, 117), M.SmoothPlastic)
-	SetKit.ball(parent, "ConstableCap", 2.0, at(-23, 8.6, -16), C(23, 35, 49), M.Fabric)
-	part("ConstableArm", Vector3.new(0.75, 2.7, 0.8), at(-24.5, 4.9, -16), C(30, 45, 62), M.Fabric)
-	part("Badge", Vector3.new(0.42, 0.52, 0.1), at(-21.75, 5.7, -15.32), C(221, 181, 83), M.Metal)
+	-- Security constable: a dressed R15 figure at the desk, falling back to the
+	-- block figure when the client cannot build one.
+	local constable = SetKit.figureDouble(parent, CFrame.lookAt(at(-23, 0, -16), at(-18, 0, -16)), {
+		shirt = C(30, 45, 62),
+		pants = C(26, 30, 40),
+		skin = C(187, 146, 117),
+		headgear = "cap",
+		headgearColor = C(23, 35, 49),
+		patch = "badge",
+		patchColor = C(221, 181, 83),
+	})
+	if constable then
+		scope.add(function() constable.destroy() end)
+	end
+	local head: BasePart? = nil
+	if not constable then
+		part("ConstableUniform", Vector3.new(2.4, 3.3, 1.25), at(-23, 5.2, -16), C(30, 45, 62), M.Fabric)
+		head = SetKit.ball(parent, "ConstableHead", 1.7, at(-23, 7.75, -16), C(187, 146, 117), M.SmoothPlastic)
+		SetKit.ball(parent, "ConstableCap", 2.0, at(-23, 8.6, -16), C(23, 35, 49), M.Fabric)
+		part("ConstableArm", Vector3.new(0.75, 2.7, 0.8), at(-24.5, 4.9, -16), C(30, 45, 62), M.Fabric)
+		part("Badge", Vector3.new(0.42, 0.52, 0.1), at(-21.75, 5.7, -15.32), C(221, 181, 83), M.Metal)
+	end
 	-- The printed wording is literal and legible in the close shot.
-	local tap = SetKit.sign(parent, "ReaderInstruction", CFrame.new(at(8.5, 5.2, -2)), Vector3.new(8, 2.3, 0.2), "SILA IMBAS KAD\nTAP ACCESS CARD", C(177, 225, 232), { panel = C(13, 25, 34), pixelsPerStud = 26 })
+	local tap = SetKit.sign(parent, "ReaderInstruction", CFrame.new(at(8.5, 5.2, -2)), Vector3.new(8, 2.3, 0.2), "TAP ACCESS CARD", C(177, 225, 232), { panel = C(13, 25, 34), pixelsPerStud = 26 })
 	-- The floor's top is y = 0.
 	local detective = SetKit.avatarDouble(parent, CFrame.lookAt(at(1, 0, 7), at(8, 0, -2)))
 	local approach: Tween? = nil
@@ -60,24 +83,35 @@ function Lobby.build(origin: Vector3, parent: Folder)
 		passGate = SetKit.newTween(detective.root, 2.2, { CFrame = detective.rootAt(CFrame.lookAt(at(8.5, 0, -9), at(8.5, 0, -15))) }, Enum.EasingStyle.Linear)
 		scope.add(function() detective.destroy() end)
 	end
-	local nod = SetKit.newTween(head, 0.32, { CFrame = head.CFrame * CFrame.Angles(math.rad(14), 0, 0) }, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+	local nod: Tween? = nil
+	if head then
+		nod = SetKit.newTween(head, 0.32, { CFrame = head.CFrame * CFrame.Angles(math.rad(14), 0, 0) }, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+	end
 	local tapGlow = SetKit.newTween(tap, 0.25, { Color = C(122, 235, 200) }, Enum.EasingStyle.Sine)
 	local readerGui = tap:FindFirstChildWhichIsA("SurfaceGui")
 	local readerLabel = readerGui and readerGui:FindFirstChildWhichIsA("TextLabel")
 	local gateTween = SetKit.newTween(gates[2], 0.6, { CFrame = gates[2].CFrame * CFrame.Angles(0, math.rad(82), 0) }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 	local actions = {
-		ConstableNods = function() nod:Play() end,
+		ConstableNods = function()
+			if constable then
+				constable.pose({ Neck = CFrame.Angles(math.rad(16), 0, 0) })
+			elseif nod then
+				nod:Play()
+			end
+		end,
 		TapCard = function()
 			tapGlow:Play()
 			if approach then approach:Play() end
 		end,
 		ReaderAccepts = function()
-			if readerLabel then readerLabel.Text = "DITERIMA  ·  00:38\nACCESS LOGGED" end
+			if readerLabel then readerLabel.Text = "ACCESS GRANTED  ·  12:38 AM" end
 			gateTween:Play()
 			if passGate then passGate:Play() end
 		end,
 	}
-	scope.add(nod)
+	if nod then
+		scope.add(nod)
+	end
 	scope.add(tapGlow)
 	scope.add(gateTween)
 	if approach then scope.add(approach) end

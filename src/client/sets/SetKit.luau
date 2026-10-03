@@ -443,7 +443,7 @@ function SetKit.rain(parent: Instance, cframe: CFrame, size: Vector3, depth: num
 end
 
 --------------------------------------------------------------------------
--- The investigator's double
+-- Figures: the investigator's double, and dressed R15 extras
 --------------------------------------------------------------------------
 
 export type Double = {
@@ -477,27 +477,18 @@ SetKit.WalkAnimation = "rbxassetid://507777826"
 	It stands with its feet at `feet`, however tall the player's avatar is.
 	Nil when the player has no character yet (a scene then simply goes without).
 ]]
-function SetKit.avatarDouble(parent: Instance, feet: CFrame): Double?
-	local player = Players.LocalPlayer
-	local character = player and player.Character
-	if not character then
-		return nil
-	end
-	local wasArchivable = character.Archivable
-	character.Archivable = true
-	local clone = character:Clone()
-	character.Archivable = wasArchivable
-	if not clone then
-		return nil
-	end
-	clone.Name = "Double"
-	local root = clone:FindFirstChild("HumanoidRootPart")
-	local humanoid = clone:FindFirstChildOfClass("Humanoid")
+-- Shared finish for a scene figure: anchor the root, make it inert scenery,
+-- hide its nameplate, and wrap it in the Double handle. Nil when the model
+-- has no usable rig.
+local function finishDouble(model: Model, parent: Instance, feet: CFrame, name: string): Double?
+	model.Name = name
+	local root = model:FindFirstChild("HumanoidRootPart")
+	local humanoid = model:FindFirstChildOfClass("Humanoid")
 	if not root or not root:IsA("BasePart") or not humanoid then
-		clone:Destroy()
+		model:Destroy()
 		return nil
 	end
-	for _, descendant in ipairs(clone:GetDescendants()) do
+	for _, descendant in ipairs(model:GetDescendants()) do
 		if descendant:IsA("BaseScript") or descendant:IsA("Sound") then
 			descendant:Destroy()
 		elseif descendant:IsA("BasePart") then
@@ -511,12 +502,12 @@ function SetKit.avatarDouble(parent: Instance, feet: CFrame): Double?
 	end
 	humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
 	humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
-	clone.Parent = parent
+	model.Parent = parent
 	-- An R15 root stands its legs' length (HipHeight) plus half its own height
 	-- above the ground, and sits half its height above the seat.
 	local standHeight = humanoid.HipHeight + root.Size.Y / 2
 	local sitHeight = root.Size.Y / 2
-	clone:PivotTo(feet * CFrame.new(0, standHeight, 0))
+	model:PivotTo(feet * CFrame.new(0, standHeight, 0))
 
 	local animator = humanoid:FindFirstChildOfClass("Animator")
 	if not animator then
@@ -550,7 +541,7 @@ function SetKit.avatarDouble(parent: Instance, feet: CFrame): Double?
 				track:Stop(0)
 			end
 			table.clear(tracks)
-			for _, descendant in ipairs(clone:GetDescendants()) do
+			for _, descendant in ipairs(model:GetDescendants()) do
 				if descendant:IsA("Motor6D") then
 					local transform = joints[descendant.Name]
 					if transform then
@@ -560,13 +551,13 @@ function SetKit.avatarDouble(parent: Instance, feet: CFrame): Double?
 			end
 		end,
 		place = function(cf: CFrame)
-			clone:PivotTo(cf)
+			model:PivotTo(cf)
 		end,
 		rootAt = function(at: CFrame): CFrame
 			return at * CFrame.new(0, standHeight, 0)
 		end,
 		sitOn = function(seat: CFrame)
-			clone:PivotTo(seat * CFrame.new(0, sitHeight, 0))
+			model:PivotTo(seat * CFrame.new(0, sitHeight, 0))
 			double.animate(SetKit.SitAnimation, true)
 		end,
 		destroy = function()
@@ -575,9 +566,111 @@ function SetKit.avatarDouble(parent: Instance, feet: CFrame): Double?
 					track:Stop(0)
 				end)
 			end
-			clone:Destroy()
+			model:Destroy()
 		end,
 	}
+	return double
+end
+
+function SetKit.avatarDouble(parent: Instance, feet: CFrame): Double?
+	local player = Players.LocalPlayer
+	local character = player and player.Character
+	if not character then
+		return nil
+	end
+	local wasArchivable = character.Archivable
+	character.Archivable = true
+	local clone = character:Clone()
+	character.Archivable = wasArchivable
+	if not clone then
+		return nil
+	end
+	return finishDouble(clone, parent, feet, "Double")
+end
+
+export type FigureSpec = {
+	shirt: Color3,
+	pants: Color3,
+	skin: Color3,
+	-- "cap" (constable) or "helmet" (rider): a plain attached part, no catalog id.
+	headgear: string?,
+	headgearColor: Color3?,
+	-- A small chest patch, like the guard's SECURITY badge.
+	patch: string?,
+	patchColor: Color3?,
+}
+
+--[[
+	A dressed R15 extra (the lobby constable, the mamak rider): a
+	HumanoidDescription figure in scene colours with small attached parts,
+	driven through the same Double handle as the investigator. Nil when the
+	client cannot build one -- callers keep their block figure instead, so a
+	scene is never empty.
+]]
+function SetKit.figureDouble(parent: Instance, feet: CFrame, spec: FigureSpec): Double?
+	local ok, model = pcall(function()
+		local desc = Instance.new("HumanoidDescription")
+		desc.Shirt = 0
+		desc.Pants = 0
+		desc.HeadColor3 = spec.skin
+		desc.TorsoColor3 = spec.shirt
+		desc.LeftArmColor3 = spec.shirt
+		desc.RightArmColor3 = spec.shirt
+		desc.LeftLegColor3 = spec.pants
+		desc.RightLegColor3 = spec.pants
+		return Players:CreateHumanoidModelFromDescription(desc, Enum.HumanoidRigType.R15)
+	end)
+	if not ok or not model then
+		return nil
+	end
+	local body = model :: Model
+	local double = finishDouble(body, parent, feet, "Extra")
+	if not double then
+		return nil
+	end
+	local head = body:FindFirstChild("Head")
+	local torso = body:FindFirstChild("UpperTorso") or body:FindFirstChild("Torso")
+	if spec.headgear and head and head:IsA("BasePart") then
+		local gear = Instance.new("Part")
+		gear.Name = "Headgear"
+		if spec.headgear == "helmet" then
+			gear.Shape = Enum.PartType.Ball
+			gear.Size = Vector3.new(1.5, 1.5, 1.5)
+		else
+			gear.Size = Vector3.new(1.3, 0.5, 1.4)
+		end
+		gear.Color = spec.headgearColor or Color3.fromRGB(23, 35, 49)
+		gear.Material = Enum.Material.SmoothPlastic
+		gear.CFrame = (head :: BasePart).CFrame * CFrame.new(0, 0.75, 0)
+		gear.Anchored = false
+		gear.CanCollide = false
+		gear.CanTouch = false
+		gear.CanQuery = false
+		gear.Massless = true
+		gear.Parent = body
+		local weld = Instance.new("WeldConstraint")
+		weld.Part0 = head :: BasePart
+		weld.Part1 = gear
+		weld.Parent = gear
+	end
+	if spec.patch and torso and torso:IsA("BasePart") then
+		local badge = Instance.new("Part")
+		badge.Name = "Patch"
+		badge.Size = Vector3.new(0.6, 0.5, 0.1)
+		badge.Color = spec.patchColor or Color3.fromRGB(221, 181, 83)
+		badge.Material = Enum.Material.Metal
+		badge.CFrame = (torso :: BasePart).CFrame * CFrame.new(-0.5, 0.4, -0.65)
+		badge.Anchored = false
+		badge.CanCollide = false
+		badge.CanTouch = false
+		badge.CanQuery = false
+		badge.Massless = true
+		badge.Parent = body
+		local weld = Instance.new("WeldConstraint")
+		weld.Part0 = torso :: BasePart
+		weld.Part1 = badge
+		weld.Parent = badge
+	end
 	return double
 end
 

@@ -464,6 +464,9 @@ export type DeskOptions = {
 	clutter: number?, -- seed for the small things people leave behind
 	lamp: boolean?,
 	lampOn: boolean?,
+	-- Glow-only lamp: neon bulb with no real light, for lamp rows that must
+	-- not raise the shadow-casting light count (see the R5 GPU budget).
+	lampGlowOnly: boolean?,
 }
 
 -- A workstation: desktop on panel legs, modesty panel, monitor(s),
@@ -494,7 +497,7 @@ function PropKit.desk(parent: Instance, at: CFrame, options: DeskOptions?): Mode
 	box(b, "Mouse", Vector3.new(0.2, 0.07, 0.32), 0.85, topY + 0.035, -0.15, P.Graphite, M.SmoothPlastic)
 
 	if o.lamp then
-		PropKit.deskLamp(b.model, b.at * CFrame.new(-w / 2 + 0.55, topY, d / 2 - 0.45), o.lampOn == true)
+		PropKit.deskLamp(b.model, b.at * CFrame.new(-w / 2 + 0.55, topY, d / 2 - 0.45), o.lampOn == true, o.lampGlowOnly == true)
 	end
 	if o.clutter then
 		local r = rng(o.clutter)
@@ -502,8 +505,15 @@ function PropKit.desk(parent: Instance, at: CFrame, options: DeskOptions?): Mode
 		if r:NextNumber() < 0.75 then
 			PropKit.mug(b.model, b.at * CFrame.new(w / 2 - 0.6, topY, -0.35 + r:NextNumber(-0.2, 0.3)), nil)
 		end
+		if r:NextNumber() < 0.35 then
+			PropKit.mug(b.model, b.at * CFrame.new(-w / 2 + 1.1, topY, 0.15 + r:NextNumber(-0.2, 0.2)), nil)
+		end
 		if r:NextNumber() < 0.8 then
 			PropKit.paperStack(b.model, b.at * CFrame.new(-w / 2 + 0.8, topY, -0.2) * rotY(r:NextNumber(-15, 15)), r:NextInteger(2, 7))
+		end
+		if r:NextNumber() < 0.45 then
+			local loose = box(b, "LooseSheet", Vector3.new(0.85, 0.015, 1.1), -w / 2 + 1.6 + r:NextNumber(-0.3, 0.3), topY + 0.01, 0.35, P.Paper, M.SmoothPlastic, rotY(r:NextNumber(-30, 30)))
+			loose.CastShadow = false
 		end
 		if r:NextNumber() < 0.4 then
 			PropKit.plant(b.model, b.at * CFrame.new(w / 2 - 0.45, topY, d / 2 - 0.4), 0.35, "bush")
@@ -700,14 +710,14 @@ function PropKit.paperStack(parent: Instance, at: CFrame, sheets: number): Model
 	return finish(b)
 end
 
-function PropKit.deskLamp(parent: Instance, at: CFrame, on: boolean): Model
+function PropKit.deskLamp(parent: Instance, at: CFrame, on: boolean, glowOnly: boolean?): Model
 	local b = begin(parent, "DeskLamp", at)
 	post(b, "Base", 0.08, 0.6, 0, 0.04, 0, P.Charcoal, M.Metal)
 	box(b, "Arm1", Vector3.new(0.08, 1.1, 0.08), 0, 0.55, -0.1, P.Charcoal, M.Metal, rotX(-18))
 	box(b, "Arm2", Vector3.new(0.08, 0.9, 0.08), 0, 1.2, -0.45, P.Charcoal, M.Metal, rotX(-70))
 	local head = box(b, "Head", Vector3.new(0.4, 0.26, 0.5), 0, 1.3, -0.85, P.Charcoal, M.Metal, rotX(18))
 	local bulb = box(b, "Bulb", Vector3.new(0.28, 0.02, 0.36), 0, 1.16, -0.87, if on then P.WarmLight else P.Ceramic, if on then M.Neon else M.SmoothPlastic, rotX(18))
-	if on then
+	if on and not glowOnly then
 		light(head, "SpotLight", 1.6, 12, P.WarmLight, { face = Enum.NormalId.Bottom, angle = 95, shadows = true })
 	end
 	bulb.CastShadow = false
@@ -923,7 +933,7 @@ function PropKit.exitSign(parent: Instance, at: CFrame): Model
 	local b = begin(parent, "ExitSign", at)
 	local body = box(b, "Body", Vector3.new(1.3, 0.5, 0.12), 0, 0, -0.06, P.Charcoal, M.SmoothPlastic)
 	local face = box(b, "Face", Vector3.new(1.2, 0.4, 0.02), 0, 0, -0.13, P.ExitGreen, M.Neon)
-	label(face, Enum.NormalId.Front, "KELUAR", { color = Color3.fromRGB(235, 255, 240), font = Enum.Font.GothamBlack, lightInfluence = 0 })
+	label(face, Enum.NormalId.Front, "EXIT", { color = Color3.fromRGB(235, 255, 240), font = Enum.Font.GothamBlack, lightInfluence = 0 })
 	light(body, "PointLight", 0.35, 5, P.ExitGreen, nil)
 	face.CastShadow = false
 	return finish(b)
@@ -1095,9 +1105,9 @@ function PropKit.fridge(parent: Instance, at: CFrame): Model
 	for _, y in ipairs({ 2.6, 4.6 }) do
 		box(b, "Handle", Vector3.new(0.08, 1.0, 0.12), 0.9, y, -1.12, P.SteelDark, M.Metal)
 	end
-	-- A note stuck on the door ("Label susu anda. TQ.": label your milk, thanks).
+	-- A note stuck on the door ("Label your milk. Thanks.").
 	local note = box(b, "Note", Vector3.new(0.5, 0.5, 0.01), -0.4, 4.8, -1.07, Color3.fromRGB(236, 224, 128), M.SmoothPlastic, rotZ(4))
-	label(note, Enum.NormalId.Front, "Label susu anda. TQ.", { color = Color3.fromRGB(40, 40, 60), font = Enum.Font.PermanentMarker })
+	label(note, Enum.NormalId.Front, "Label your milk. Thanks.", { color = Color3.fromRGB(40, 40, 60), font = Enum.Font.PermanentMarker })
 	collider(b, Vector3.new(2.3, 6, 2.1), 0, 3, 0)
 	return finish(b)
 end
@@ -1144,7 +1154,7 @@ local EVIDENCE_BUILDERS: { [string]: (b: Builder) -> BasePart } = {
 	Printout = function(b)
 		local sheet = box(b, "Sheet", Vector3.new(0.95, 0.03, 1.25), 0, 0.015, 0, P.Paper, M.SmoothPlastic, rotY(-6))
 		sheet.CastShadow = false
-		label(sheet, Enum.NormalId.Top, "AFTER-HOURS ACCESS · TINGKAT 9\n\n21:00  SECURITY  S. GURUNG\n22:28  LIM, V.    OUT\n23:04  LIM, V.    IN\n23:52  LIM, V.    OUT", {
+		label(sheet, Enum.NormalId.Top, "AFTER-HOURS ACCESS · LEVEL 9\n\n21:00  SECURITY  A. RAHMAN\n22:28  LIM, V.    OUT\n23:04  LIM, V.    IN\n23:52  LIM, V.    OUT", {
 			color = Color3.fromRGB(40, 40, 46),
 			font = Enum.Font.Code,
 			pixelsPerStud = 120,

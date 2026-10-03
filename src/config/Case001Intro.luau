@@ -129,8 +129,8 @@ local function city(): { Shot }
 			actions = { { at = 0.15, name = "SedanRolls" }, { at = 4.2, name = "SedanStops" } },
 			sounds = { { at = 0, cue = "RadioStatic", volume = 0.3 }, { at = 0.1, cue = "TrafficWet" }, { at = 0.1, cue = "RainStreet" }, { at = 0, cue = "Motif", volume = 0.1, fade = 1 } },
 			lines = {
-				{ at = 0.35, duration = 4.6, speaker = "Radio", text = "Kawalan kepada semua unit. Kes mati mengejut. Wisma Delima, tingkat sembilan.\n(Control to all units. Sudden death. Wisma Delima, level nine.)" },
-				{ at = 5.05, duration = 4.1, speaker = "Radio", text = "Dilaporkan pengawal keselamatan, dua belas empat belas pagi.\n(Reported by the security guard at 12:14 AM.)" },
+				{ at = 0.35, duration = 4.2, speaker = "Radio", text = "Control to all units. Sudden death. Wisma Delima, level nine." },
+				{ at = 4.75, duration = 4.0, speaker = "Radio", text = "Reported by the security guard at 12:14 AM." },
 			},
 		},
 	}
@@ -159,7 +159,7 @@ local function carAndCall(): { Shot }
 			actions = { { at = 0.4, name = "PhoneRing" }, { at = 1.1, name = "Answer" }, { at = 1.5, name = "Notify" } },
 			sounds = { { at = 0, cue = "RainInterior", fade = 0.5 }, { at = 0.5, cue = "PhoneBuzz" }, { at = 1.1, cue = "PhoneBuzz", stop = true, fade = 0.08 }, { at = 1, cue = "Wipers" }, { at = 1.3, cue = "Notification" }, { at = 0, cue = "Motif", volume = 0.14, fade = 0.7 } },
 			lines = {
-				{ at = 1.7, duration = 2.2, speaker = "Nora", text = "Dah sampai?" },
+				{ at = 1.7, duration = 2.2, speaker = "Nora", text = "There yet?" },
 				{ at = 4.0, duration = 1.5, speaker = "You", text = "Five minutes." },
 				{ at = 5.7, duration = 6.8, speaker = "Nora", text = "Daniel Rozario. Forty-one. Half of Rozario & Lim, the design firm on nine." },
 			},
@@ -226,7 +226,8 @@ local function arrival(): { Shot }
 				fieldOfView = 46, fieldOfViewTo = 40, ease = "InOut",
 			},
 			actions = { { at = 0.2, name = "LightsOff" } },
-			sounds = { { at = 0, cue = "RainStreet" }, { at = 0.3, cue = "BadgeBeep", volume = 0.35 }, { at = 0, cue = "Motif", volume = 0.18, fade = 0.8 } },
+			-- The beep lands as the investigator reaches the entrance reader.
+			sounds = { { at = 0, cue = "RainStreet" }, { at = 4.5, cue = "BadgeBeep", volume = 0.35 }, { at = 0, cue = "Motif", volume = 0.18, fade = 0.8 } },
 		},
 	}
 end
@@ -242,7 +243,7 @@ local function lobby(): { Shot }
 			},
 			actions = { { at = 0.7, name = "ConstableNods" } },
 			sounds = { { at = 0, cue = "RoomTone", fade = 0.7 }, { at = 0, cue = "Motif", volume = 0.12, fade = 1.2 } },
-			lines = { { at = 1.0, duration = 3, speaker = "Constable", text = "Tingkat sembilan, Inspektor." } },
+			lines = { { at = 1.0, duration = 3, speaker = "Constable", text = "Level nine, Inspector." } },
 		},
 		{
 			id = "LOBBY-ACCESS", duration = 8, set = "Lobby", lighting = "Lobby",
@@ -253,7 +254,7 @@ local function lobby(): { Shot }
 			},
 			actions = { { at = 0.6, name = "TapCard" }, { at = 1.15, name = "ReaderAccepts" } },
 			sounds = { { at = 0, cue = "RoomTone" }, { at = 0.7, cue = "BadgeBeep", volume = 0.5 }, { at = 0, cue = "Motif", volume = 0.1, fade = 1.3 } },
-			lines = { { at = 2.0, duration = 3.4, speaker = "System", text = "DITERIMA  ·  00:38\nAccess logged 12:38 AM." } },
+			lines = { { at = 2.0, duration = 3.4, speaker = "System", text = "ACCESS GRANTED  ·  12:38 AM" } },
 		},
 	}
 end
@@ -287,11 +288,13 @@ local function lift(): { Shot }
 				{ at = 19.3, cue = "Notification" },
 				{ at = 19.4, cue = "LiftHumB", stop = true, fade = 0.5 },
 			},
-			lines = { { at = 12.2, duration = 4.4, speaker = "Nora", text = "Jangan lupa makan.\n(Don't forget to eat.)" } },
+			lines = { { at = 12.2, duration = 4.4, speaker = "Nora", text = "Don't forget to eat." } },
 		},
 		{
 			id = "LIFT-PAUSE", duration = 5, set = "LiftCar", mouseLook = true, lighting = "Lift",
 			camera = { from = point(LIFT_EYE, LIFT_DOORS), fieldOfView = 66, fieldOfViewTo = 62, ease = "Out", handheld = 0.015 },
+			-- The car settles on its brakes: one small shudder, then stillness.
+			actions = { { at = 0.2, name = "Shudder", args = { amount = 0.04, time = 0.6 } } },
 			sounds = { { at = 0, cue = "RoomTone", fade = 0.8 } },
 		},
 		{
@@ -299,7 +302,7 @@ local function lift(): { Shot }
 			camera = { from = point(LIFT_EYE, LIFT_DOORS), fieldOfView = 62, fieldOfViewTo = 58, ease = "InOut", handheld = 0.012 },
 			actions = { { at = 0.5, name = "DoorsOpen", args = { time = 2.2 } } },
 			sounds = { { at = 0.5, cue = "LiftBell", from = 8.6 }, { at = 0.5, cue = "Motif", stop = true, fade = 1.5 }, { at = 1.4, cue = "RoomTone", fade = 0.8 } },
-			titleCard = { at = 1.4, duration = 4.2, kicker = "CASE 001", title = "THE LAST CALL", subtitle = "Rozario & Lim  ·  Tingkat 9  ·  12:40 AM" },
+			titleCard = { at = 1.4, duration = 4.2, kicker = "CASE 001", title = "THE LAST CALL", subtitle = "Rozario & Lim  ·  Level 9  ·  12:40 AM" },
 		},
 	}
 end

@@ -58,9 +58,18 @@ function OpenPlan.build(interior: Instance)
 		divider.CastShadow = true
 	end
 
-	-- The bench of four, with one bank of lights left on over it, and a pair.
-	bench(-21, 3.5, 4.6, 3, 4, { [2] = { lamp = true, lampOn = true, monitors = 2 } })
-	bench(-12.5, 14, 4.6, 7, 2, { [1] = { monitors = 2 } })
+	-- The bench of four, with one real lamp over it and glow-only lamps on the
+	-- other desks (the shadow-casting light count stays flat), and a pair.
+	bench(-21, 3.5, 4.6, 3, 4, {
+		[1] = { lamp = true, lampOn = true, lampGlowOnly = true },
+		[2] = { lamp = true, lampOn = true, monitors = 2 },
+		[3] = { lamp = true, lampOn = true, lampGlowOnly = true },
+		[4] = { lamp = true, lampOn = true, lampGlowOnly = true },
+	})
+	bench(-12.5, 14, 4.6, 7, 2, {
+		[1] = { monitors = 2, lamp = true, lampOn = true, lampGlowOnly = true },
+		[2] = { lamp = true, lampOn = true, lampGlowOnly = true },
+	})
 
 	-- Sample shelving along the west wall.
 	PropKit.shelving(room, at(rect.x0 + 0.55, 10, EAST), 10, 7, 4, 41, { sparse = true, depth = 1.1 })

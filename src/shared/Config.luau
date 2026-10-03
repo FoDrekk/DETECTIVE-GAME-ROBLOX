@@ -34,7 +34,7 @@ Config.Environment = {
 	-- saved. See `815064d` for the incident this exists to catch: a floor fix
 	-- landed in the builders, but the already-baked `.rbxl` was never
 	-- re-baked, so the fix never reached the saved place.
-	BuilderVersion = 12,
+	BuilderVersion = 13,
 	-- 12:40 AM, after hours (OfficeRoom). Readability first: the local lights
 	-- carry the mood, ambient and exposure keep every room playable.
 	Night = {
@@ -311,45 +311,45 @@ Config.Cutscene = {
 			Grade = { contrast = 0.11, saturation = -0.1, tint = Color3.fromRGB(246, 235, 224), brightness = 0 },
 			Vignette = 0.5,
 		},
-		-- Kota Arwana at night in the rain: sodium orange, wet, alive.
+		-- Kota Arwana after midnight in the rain: deep blue dark, practical lights only.
 		CityNight = {
-			ClockTime = 0.6,
-			Brightness = 0.8,
-			Ambient = Color3.fromRGB(62, 60, 74),
-			OutdoorAmbient = Color3.fromRGB(110, 92, 86),
-			ExposureCompensation = 0.9,
-			FogColor = Color3.fromRGB(46, 34, 34),
+			ClockTime = 0.1,
+			Brightness = 0.32,
+			Ambient = Color3.fromRGB(8, 12, 22),
+			OutdoorAmbient = Color3.fromRGB(18, 24, 38),
+			ExposureCompensation = -0.35,
+			FogColor = Color3.fromRGB(7, 11, 20),
 			FogStart = 40,
 			FogEnd = 900,
-			Atmosphere = { Density = 0.1, Offset = 0.1, Color = Color3.fromRGB(80, 62, 60), Decay = Color3.fromRGB(150, 90, 60), Glare = 0, Haze = 1.6 },
+			Atmosphere = { Density = 0.1, Offset = 0.1, Color = Color3.fromRGB(10, 16, 30), Decay = Color3.fromRGB(24, 34, 58), Glare = 0, Haze = 0.7 },
 			Stars = 0,
-			Bloom = { intensity = 0.5, size = 24, threshold = 1.1 },
-			Grade = { contrast = 0.14, saturation = -0.06, tint = Color3.fromRGB(255, 236, 222), brightness = 0 },
-			Vignette = 0.35,
+			Bloom = { intensity = 0.25, size = 18, threshold = 1.4 },
+			Grade = { contrast = 0.2, saturation = -0.16, tint = Color3.fromRGB(232, 240, 252), brightness = 0 },
+			Vignette = 0.4,
 		},
 		-- Inside the car, lit by the dashboard and the streetlights going past.
 		CarInterior = {
-			ClockTime = 0.6,
-			Brightness = 0.22,
-			Ambient = Color3.fromRGB(63, 67, 78),
-			OutdoorAmbient = Color3.fromRGB(82, 76, 77),
-			ExposureCompensation = 1.2,
-			FogColor = Color3.fromRGB(46, 34, 34),
+			ClockTime = 0.1,
+			Brightness = 0.28,
+			Ambient = Color3.fromRGB(10, 14, 24),
+			OutdoorAmbient = Color3.fromRGB(20, 26, 40),
+			ExposureCompensation = -0.25,
+			FogColor = Color3.fromRGB(7, 11, 20),
 			FogStart = 40,
 			FogEnd = 900,
-			Atmosphere = { Density = 0.08, Offset = 0.05, Color = Color3.fromRGB(80, 62, 60), Decay = Color3.fromRGB(150, 90, 60), Glare = 0, Haze = 1.0 },
+			Atmosphere = { Density = 0.08, Offset = 0.05, Color = Color3.fromRGB(10, 16, 30), Decay = Color3.fromRGB(24, 34, 58), Glare = 0, Haze = 0.6 },
 			Stars = 0,
-			Bloom = { intensity = 0.35, size = 20, threshold = 1.1 },
-			Grade = { contrast = 0.14, saturation = -0.1, tint = Color3.fromRGB(230, 240, 255), brightness = 0 },
+			Bloom = { intensity = 0.22, size = 20, threshold = 1.3 },
+			Grade = { contrast = 0.18, saturation = -0.12, tint = Color3.fromRGB(230, 240, 255), brightness = 0 },
 			Vignette = 0.5,
 		},
-		-- The tower's forecourt, cold and wet.
+		-- The tower's forecourt, cold and wet after midnight.
 		Forecourt = {
-			ClockTime = 0.65,
-			Brightness = 0.6,
-			Ambient = Color3.fromRGB(48, 54, 72),
-			OutdoorAmbient = Color3.fromRGB(80, 86, 110),
-			ExposureCompensation = 0.8,
+			ClockTime = 0.1,
+			Brightness = 0.42,
+			Ambient = Color3.fromRGB(16, 22, 36),
+			OutdoorAmbient = Color3.fromRGB(24, 32, 50),
+			ExposureCompensation = -0.2,
 			FogColor = Color3.fromRGB(30, 34, 46),
 			FogStart = 50,
 			FogEnd = 700,
@@ -361,11 +361,11 @@ Config.Cutscene = {
 		},
 		-- The tower lobby: marble and cold overhead light.
 		Lobby = {
-			ClockTime = 0.67,
-			Brightness = 0.35,
-			Ambient = Color3.fromRGB(68, 72, 84),
-			OutdoorAmbient = Color3.fromRGB(56, 60, 74),
-			ExposureCompensation = 0.8,
+			ClockTime = 0.1,
+			Brightness = 0.52,
+			Ambient = Color3.fromRGB(24, 30, 42),
+			OutdoorAmbient = Color3.fromRGB(14, 20, 34),
+			ExposureCompensation = -0.18,
 			FogColor = Color3.fromRGB(30, 34, 46),
 			FogStart = 200,
 			FogEnd = 2000,
@@ -377,11 +377,11 @@ Config.Cutscene = {
 		},
 		-- The lift car: a small steel box under one hard ceiling light.
 		Lift = {
-			ClockTime = 0.67,
-			Brightness = 0.35,
-			Ambient = Color3.fromRGB(40, 42, 48),
-			OutdoorAmbient = Color3.fromRGB(48, 52, 65),
-			ExposureCompensation = 0.1,
+			ClockTime = 0.1,
+			Brightness = 0.42,
+			Ambient = Color3.fromRGB(32, 36, 46),
+			OutdoorAmbient = Color3.fromRGB(8, 12, 20),
+			ExposureCompensation = -0.12,
 			FogColor = Color3.fromRGB(30, 34, 46),
 			FogStart = 200,
 			FogEnd = 2000,
@@ -391,23 +391,23 @@ Config.Cutscene = {
 			Grade = { contrast = 0.12, saturation = -0.15, tint = Color3.fromRGB(236, 240, 248), brightness = 0 },
 			Vignette = 0.3,
 		},
-		-- The city from the air: warm haze and a long view.
+		-- The city from the air after midnight: sparse lights under a dark sky.
 		CityAerial = {
-			ClockTime = 0.5,
+			ClockTime = 0.1,
 			Brightness = 0.3,
-			Ambient = Color3.fromRGB(30, 30, 42),
-			OutdoorAmbient = Color3.fromRGB(64, 50, 48),
-			ExposureCompensation = 0.4,
-			FogColor = Color3.fromRGB(70, 44, 36),
+			Ambient = Color3.fromRGB(8, 12, 22),
+			OutdoorAmbient = Color3.fromRGB(16, 22, 36),
+			ExposureCompensation = -0.3,
+			FogColor = Color3.fromRGB(7, 11, 20),
 			FogStart = 260,
 			FogEnd = 2600,
 			-- Thin: the city is hundreds of studs away, and any real density drowns it.
-			-- The haze and decay carry the sodium glow along the horizon instead.
-			Atmosphere = { Density = 0.08, Offset = 0.25, Color = Color3.fromRGB(110, 70, 58), Decay = Color3.fromRGB(220, 112, 58), Glare = 0, Haze = 2.6 },
+			-- A cool haze carries the scattered window lights instead of a sunset glow.
+			Atmosphere = { Density = 0.08, Offset = 0.25, Color = Color3.fromRGB(12, 18, 34), Decay = Color3.fromRGB(30, 42, 70), Glare = 0, Haze = 1.2 },
 			Stars = 0,
-			Bloom = { intensity = 0.45, size = 20, threshold = 1.2 },
-			Grade = { contrast = 0.14, saturation = -0.04, tint = Color3.fromRGB(255, 236, 222), brightness = 0 },
-			Vignette = 0.35,
+			Bloom = { intensity = 0.3, size = 20, threshold = 1.3 },
+			Grade = { contrast = 0.18, saturation = -0.12, tint = Color3.fromRGB(232, 240, 252), brightness = 0 },
+			Vignette = 0.4,
 		},
 		-- Dawn over Kota Arwana: the deadline the case is played against
 		-- ("forensics can't get there till six").

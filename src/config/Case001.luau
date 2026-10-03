@@ -14,7 +14,7 @@
 	  to leave. Victor had known since Tuesday the reception cameras were dark.
 
 	How the player gets there (no step is handed over):
-	  Sam, the night guard, is the ordinary person who found him: he points at
+	  Arif, the night guard, is the ordinary person who found him: he points at
 	  the badge log and the dead cameras without knowing what they mean.
 	  Daniel's desk holds a phone, a draft, an agenda -- and a second cup on
 	  the visitor's side. Victor's alibi breaks against the badge log, so he
@@ -123,7 +123,7 @@ local Case001: Types.CaseDefinition = {
 	title = "THE LAST CALL",
 	description = "Daniel Rozario never went home. The night guard found him on his office floor. "
 		.. "His phone shows one last call, minutes before he died. It was never answered.",
-	setting = { time = "12:40 AM", place = "Rozario & Lim · Tingkat 9" },
+	setting = { time = "12:40 AM", place = "Rozario & Lim · Level 9" },
 
 	suspects = {
 		{
@@ -180,7 +180,7 @@ local Case001: Types.CaseDefinition = {
 			-- Not a suspect: the ordinary person who found him. Speakable, never
 			-- accusable (no AccusationDefinition names him).
 			id = "SUS-003",
-			name = "Sam Gurung",
+			name = "Arif Rahman",
 			role = "Night Security",
 			alibi = '"Ten past twelve, on my rounds. His light was on. It\'s always on."',
 			-- Beside the reception desk, a few steps from the lift where the
@@ -247,7 +247,7 @@ local Case001: Types.CaseDefinition = {
 		},
 		{
 			instanceName = "GuardFlask",
-			text = "A dented steel flask of tea, strong enough to stand a spoon in. Sam doesn't trust the office machine.",
+			text = "A dented steel flask of tea, strong enough to stand a spoon in. Arif doesn't trust the office machine.",
 		},
 		{
 			instanceName = "MeetingWater",
@@ -319,12 +319,12 @@ local Case001: Types.CaseDefinition = {
 			category = "Security",
 			timestamp = "11:52 PM",
 			timelineEventId = "TIMELINE-004",
-			-- On the reception counter, where Sam left it.
+			-- On the reception counter, where Arif left it.
 			propPlacement = {
 				position = Vector3.new(16.2, 3.27, 14.4),
 				lookAt = Vector3.new(16.2, 3.27, 8),
 				style = "Printout",
-				-- The printout only exists once Sam has offered to print it.
+				-- The printout only exists once Arif has offered to print it.
 				revealWhen = { knows("Statement", "STMT-SUS-003-BADGE") },
 			},
 		},
@@ -642,7 +642,7 @@ local Case001: Types.CaseDefinition = {
 	--------------------------------------------------------------------
 	conversations = {
 		----------------------------------------------------------------
-		-- Sam Gurung: casual, chatty, a little shaken, genuinely helpful.
+		-- Arif Rahman: casual, chatty, a little shaken, genuinely helpful.
 		-- Knows the building, not the case.
 		----------------------------------------------------------------
 		{
@@ -654,26 +654,26 @@ local Case001: Types.CaseDefinition = {
 			nodes = {
 				["SAM-OPEN"] = {
 					id = "SAM-OPEN",
-					speaker = "Sam Gurung",
+					speaker = "Arif Rahman",
 					text = "Detective? Hey. Over here.",
 					next = "SAM-OPEN-2",
 					setFlags = { "sam_met" },
 				},
 				["SAM-OPEN-2"] = {
 					id = "SAM-OPEN-2",
-					speaker = "Sam Gurung",
-					text = "Sorry ah. I've been standing here half an hour. Didn't know if I'm allowed to sit down.",
+					speaker = "Arif Rahman",
+					text = "Sorry. I've been standing here half an hour. Didn't know if I'm allowed to sit down.",
 					choicesFrom = "SAM-HUB",
 				},
 				["SAM-AGAIN"] = {
 					id = "SAM-AGAIN",
-					speaker = "Sam Gurung",
-					text = "Still here lah. Not going anywhere, apparently.",
+					speaker = "Arif Rahman",
+					text = "Still here. Not going anywhere, apparently.",
 					choicesFrom = "SAM-HUB",
 				},
 				["SAM-HUB"] = {
 					id = "SAM-HUB",
-					speaker = "Sam Gurung",
+					speaker = "Arif Rahman",
 					text = "What do you need?",
 					choices = {
 						ask("found", "You found him?", "SAM-FOUND-1", { lacks("Statement", "STMT-SUS-003-FOUND") }),
@@ -702,8 +702,8 @@ local Case001: Types.CaseDefinition = {
 							"SAM-COFFEE-1",
 							{ knows("Evidence", "EV-006"), lacks("Statement", "STMT-SUS-003-COFFEE") }
 						),
-						ask("mara", "Is Puan Meera here?", "SAM-MARA-1", nil, true),
-						show("show", "Does this mean anything to you?", "Show Sam…", "SAM-SHOW-NOTHING", {
+						ask("mara", "Is Meera here?", "SAM-MARA-1", nil, true),
+						show("show", "Does this mean anything to you?", "Show Arif…", "SAM-SHOW-NOTHING", {
 							{
 								evidence = "EV-006",
 								next = "SAM-COFFEE-1",
@@ -717,32 +717,32 @@ local Case001: Types.CaseDefinition = {
 				},
 				["SAM-FOUND-1"] = {
 					id = "SAM-FOUND-1",
-					speaker = "Sam Gurung",
+					speaker = "Arif Rahman",
 					text = "Ten past twelve. I do rounds on the hour. Well. Roughly on the hour.",
 					next = "SAM-FOUND-2",
 				},
 				["SAM-FOUND-2"] = {
 					id = "SAM-FOUND-2",
-					speaker = "Sam Gurung",
-					text = "His light was on. It's always on. I knocked, 'cause you knock, kan?",
+					speaker = "Arif Rahman",
+					text = "His light was on. It's always on. I knocked, 'cause you knock.",
 					next = "SAM-FOUND-3",
 				},
 				["SAM-FOUND-3"] = {
 					id = "SAM-FOUND-3",
-					speaker = "Sam Gurung",
+					speaker = "Arif Rahman",
 					text = "Nobody said anything. So I went in, and...",
 					next = "SAM-FOUND-4",
 				},
 				["SAM-FOUND-4"] = {
 					id = "SAM-FOUND-4",
-					speaker = "Sam Gurung",
+					speaker = "Arif Rahman",
 					text = "Yeah. I called it in from reception. Didn't touch anything. I watch the shows.",
 					statementId = "STMT-SUS-003-FOUND",
 					choicesFrom = "SAM-HUB",
 				},
 				["SAM-ANYONE-1"] = {
 					id = "SAM-ANYONE-1",
-					speaker = "Sam Gurung",
+					speaker = "Arif Rahman",
 					text = "Tonight? Just Mr. Lim. Earlier.",
 					next = "SAM-ANYONE-2",
 				},
@@ -755,32 +755,32 @@ local Case001: Types.CaseDefinition = {
 				},
 				["SAM-ANYONE-3"] = {
 					id = "SAM-ANYONE-3",
-					speaker = "Sam Gurung",
-					text = "He stuck his head in about half ten. \"Night, Sam. I'm off.\" He always tells me. Like I'm keeping a diary.",
+					speaker = "Arif Rahman",
+					text = "He stuck his head in about half ten. \"Night, Arif. I'm off.\" He always tells me. Like I'm keeping a diary.",
 					next = "SAM-ANYONE-4",
 				},
 				["SAM-ANYONE-4"] = {
 					id = "SAM-ANYONE-4",
-					speaker = "Sam Gurung",
+					speaker = "Arif Rahman",
 					text = "Did I actually see him go? ...No. I was up on eleven.",
 					statementId = "STMT-SUS-003-VICTOR",
 					choicesFrom = "SAM-HUB",
 				},
 				["SAM-BADGE-1"] = {
 					id = "SAM-BADGE-1",
-					speaker = "Sam Gurung",
+					speaker = "Arif Rahman",
 					text = "Badge. Every door locks at nine.",
 					next = "SAM-BADGE-2",
 				},
 				["SAM-BADGE-2"] = {
 					id = "SAM-BADGE-2",
-					speaker = "Sam Gurung",
-					text = "You nak tengok the log? I can print it now.",
+					speaker = "Arif Rahman",
+					text = "Want to see the log? I can print it now.",
 					next = "SAM-BADGE-3",
 				},
 				["SAM-BADGE-3"] = {
 					id = "SAM-BADGE-3",
-					speaker = "Sam Gurung",
+					speaker = "Arif Rahman",
 					text = "Okay, it's printing. ...There. On the reception counter.",
 					-- The case's most load-bearing lead is recorded, so it is easy
 					-- to revisit. Recording it is also what puts the printout on
@@ -791,106 +791,106 @@ local Case001: Types.CaseDefinition = {
 				},
 				["SAM-BADGE-4"] = {
 					id = "SAM-BADGE-4",
-					speaker = "Sam Gurung",
+					speaker = "Arif Rahman",
 					text = "Haven't read it. Figured that's your job.",
 					choicesFrom = "SAM-HUB",
 				},
 				["SAM-CAM-1"] = {
 					id = "SAM-CAM-1",
-					speaker = "Sam Gurung",
+					speaker = "Arif Rahman",
 					text = "Has. Past tense.",
 					next = "SAM-CAM-2",
 				},
 				["SAM-CAM-2"] = {
 					id = "SAM-CAM-2",
-					speaker = "Sam Gurung",
+					speaker = "Arif Rahman",
 					text = "All four went dark on Tuesday. I logged it.",
 					next = "SAM-CAM-3",
 				},
 				["SAM-CAM-3"] = {
 					id = "SAM-CAM-3",
-					speaker = "Sam Gurung",
+					speaker = "Arif Rahman",
 					text = "Mr. Lim said leave it till next week. Contractor's expensive. It's all on the monitor, if you want to see.",
 					statementId = "STMT-SUS-003-CAMERAS",
 					choicesFrom = "SAM-HUB",
 				},
 				["SAM-COFFEE-1"] = {
 					id = "SAM-COFFEE-1",
-					speaker = "Sam Gurung",
-					text = "From that machine? No chance lah. I bring a flask. That thing hates me.",
+					speaker = "Arif Rahman",
+					text = "From that machine? No chance. I bring a flask. That thing hates me.",
 					next = "SAM-COFFEE-2",
 				},
 				["SAM-COFFEE-2"] = {
 					id = "SAM-COFFEE-2",
-					speaker = "Sam Gurung",
+					speaker = "Arif Rahman",
 					text = "Mr. Rozario didn't drink it at night either. Said it kept him up.",
 					next = "SAM-COFFEE-3",
 				},
 				["SAM-COFFEE-3"] = {
 					id = "SAM-COFFEE-3",
-					speaker = "Sam Gurung",
+					speaker = "Arif Rahman",
 					text = "But he'd make one for whoever he was keeping late. Called it a bribe.",
 					statementId = "STMT-SUS-003-COFFEE",
 					choicesFrom = "SAM-HUB",
 				},
 				["SAM-TAPE-1"] = {
 					id = "SAM-TAPE-1",
-					speaker = "Sam Gurung",
+					speaker = "Arif Rahman",
 					text = "Nobody, since the ambulance crew.",
 					next = "SAM-TAPE-2",
 				},
 				["SAM-TAPE-2"] = {
 					id = "SAM-TAPE-2",
-					speaker = "Sam Gurung",
+					speaker = "Arif Rahman",
 					text = "Mr. Lim came up with the police at half twelve. Wanted to go in the office.",
 					next = "SAM-TAPE-3",
 				},
 				["SAM-TAPE-3"] = {
 					id = "SAM-TAPE-3",
-					speaker = "Sam Gurung",
+					speaker = "Arif Rahman",
 					text = "I said sorry boss, police tape. He wasn't happy.",
 					next = "SAM-TAPE-4",
 				},
 				["SAM-TAPE-4"] = {
 					id = "SAM-TAPE-4",
-					speaker = "Sam Gurung",
+					speaker = "Arif Rahman",
 					text = "I told him Mr. Rozario passed. That's all I know, what else I'm going to tell him?",
 					statementId = "STMT-SUS-003-TAPE",
 					choicesFrom = "SAM-HUB",
 				},
 				["SAM-MARA-1"] = {
 					id = "SAM-MARA-1",
-					speaker = "Sam Gurung",
+					speaker = "Arif Rahman",
 					text = "Came in about half twelve. Your lot called her.",
 					next = "SAM-MARA-2",
 				},
 				["SAM-MARA-2"] = {
 					id = "SAM-MARA-2",
-					speaker = "Sam Gurung",
-					text = "Puan Meera's by the window at the end of the corridor. Hasn't moved. Hasn't said a word to me. Kesian.",
+					speaker = "Arif Rahman",
+					text = "Meera is by the window at the end of the corridor. Hasn't moved. Hasn't said a word to me.",
 					choicesFrom = "SAM-HUB",
 				},
 				["SAM-SHOW-NOTHING"] = {
 					id = "SAM-SHOW-NOTHING",
-					speaker = "Sam Gurung",
+					speaker = "Arif Rahman",
 					text = "Sorry. Doesn't mean anything to me. I do the doors.",
 					choicesFrom = "SAM-HUB",
 				},
 				["SAM-SHOW-LOG"] = {
 					id = "SAM-SHOW-LOG",
-					speaker = "Sam Gurung",
+					speaker = "Arif Rahman",
 					text = "That's the log I printed you. Told you, I haven't read it. Didn't want to.",
 					choicesFrom = "SAM-HUB",
 				},
 				["SAM-SHOW-MONITOR"] = {
 					id = "SAM-SHOW-MONITOR",
-					speaker = "Sam Gurung",
+					speaker = "Arif Rahman",
 					text = "Yeah. That note's been there since Tuesday. I wasn't going to argue with it.",
 					choicesFrom = "SAM-HUB",
 				},
 				["SAM-BYE"] = {
 					id = "SAM-BYE",
-					speaker = "Sam Gurung",
+					speaker = "Arif Rahman",
 					text = "Okay, okay. I'll be... here. Obviously.",
 				},
 			},
@@ -1034,7 +1034,7 @@ local Case001: Types.CaseDefinition = {
 				["MARA-LAST-1"] = {
 					id = "MARA-LAST-1",
 					speaker = "Meera Rozario",
-					text = 'He rang at seven. "Sayang, sorry, I\'ll miss dinner." Again.',
+					text = 'He rang at seven to say he\'d miss dinner. Again.',
 					next = "MARA-LAST-2",
 				},
 				["MARA-LAST-2"] = {
@@ -1195,7 +1195,7 @@ local Case001: Types.CaseDefinition = {
 					text = "Come to call me a liar again?",
 					choices = {
 						ask("apologise", "I'm sorry. I need to understand that call.", "MARA-COLD-THAW"),
-						ask("insist", "I need the truth, Puan Meera.", "MARA-COLD-NO"),
+						ask("insist", "I need the truth, Meera.", "MARA-COLD-NO"),
 						-- The other way back to her, for whoever worked out the
 						-- phone's code without ever thawing her.
 						ask("message", "He left a message for you. I found it.", "MARA-MSG-COLD-1", {
@@ -1445,7 +1445,7 @@ local Case001: Types.CaseDefinition = {
 				["VIC-CONFIRM-1"] = {
 					id = "VIC-CONFIRM-1",
 					speaker = "Victor Lim",
-					text = "Sam saw me go. Ask him.",
+					text = "Arif saw me go. Ask him.",
 					next = "VIC-CONFIRM-2",
 				},
 				["VIC-CONFIRM-2"] = {
@@ -1540,7 +1540,7 @@ local Case001: Types.CaseDefinition = {
 				["VIC-BADGE-1"] = {
 					id = "VIC-BADGE-1",
 					speaker = "Victor Lim",
-					text = "Aiya. Then the system's wrong, lah.",
+					text = "Oh. Then the system's wrong.",
 					next = "VIC-BADGE-2",
 				},
 				["VIC-BADGE-2"] = {
@@ -1579,7 +1579,7 @@ local Case001: Types.CaseDefinition = {
 				["VIC-WATCH-1"] = {
 					id = "VIC-WATCH-1",
 					speaker = "Victor Lim",
-					text = "Aiya, those things lose signal all the time. It means nothing.",
+					text = "Those things lose signal all the time. It means nothing.",
 					next = "VIC-WATCH-2",
 				},
 				["VIC-WATCH-2"] = {
@@ -1705,14 +1705,14 @@ local Case001: Types.CaseDefinition = {
 			id = "STMT-SUS-003-VICTOR",
 			suspectId = "SUS-003",
 			label = "Victor Leaving",
-			text = "Victor said goodnight around half ten. Sam never saw him actually leave.",
+			text = "Victor said goodnight around half ten. Arif never saw him actually leave.",
 		},
 		{
 			-- A lead, not an answer -- only where the log is.
 			id = "STMT-SUS-003-BADGE",
 			suspectId = "SUS-003",
 			label = "The Badge Log",
-			text = "Every door locks at nine. Sam printed tonight's badge log for you at reception.",
+			text = "Every door locks at nine. Arif printed tonight's badge log for you at reception.",
 		},
 		{
 			id = "STMT-SUS-003-CAMERAS",
@@ -1730,8 +1730,8 @@ local Case001: Types.CaseDefinition = {
 			id = "STMT-SUS-003-TAPE",
 			suspectId = "SUS-003",
 			label = "The Tape",
-			text = "Nobody past the tape since the ambulance crew. Mr. Lim asked to go in; Sam said no. "
-				.. "Sam told him only that Daniel had passed.",
+			text = "Nobody past the tape since the ambulance crew. Mr. Lim asked to go in; Arif said no. "
+				.. "Arif told him only that Daniel had passed.",
 		},
 		{
 			id = "STMT-SUS-002-MEERA",
@@ -1827,7 +1827,7 @@ local Case001: Types.CaseDefinition = {
 			question = {
 				prompt = "Who came back to the office tonight, and why?",
 				options = {
-					{ id = "sam", text = "Sam, finishing his rounds." },
+					{ id = "sam", text = "Arif, finishing his rounds." },
 					{ id = "victor", text = "Victor, to talk Daniel out of signing." },
 					{ id = "mara", text = "Meera, to have it out with Daniel." },
 					{ id = "fault", text = "Nobody. The badge system is wrong." },
@@ -1867,7 +1867,7 @@ local Case001: Types.CaseDefinition = {
 					{ id = "awake", text = "Daniel drank both to stay awake." },
 					{ id = "visitor", text = "Someone sat with Daniel late tonight." },
 					{ id = "earlier", text = "The cups were left from the afternoon." },
-					{ id = "sam", text = "Sam brought him one on his rounds." },
+					{ id = "sam", text = "Arif brought him one on his rounds." },
 				},
 				answer = "visitor",
 			},
@@ -1884,7 +1884,7 @@ local Case001: Types.CaseDefinition = {
 				options = {
 					{ id = "ten", text = "Half past ten, as he said." },
 					{ id = "after", text = "11:52, minutes after Daniel's last call." },
-					{ id = "midnight", text = "Just after midnight, before Sam's rounds." },
+					{ id = "midnight", text = "Just after midnight, before Arif's rounds." },
 					{ id = "never", text = "He never left the building." },
 				},
 				answer = "after",
@@ -1952,7 +1952,7 @@ local Case001: Types.CaseDefinition = {
 	-- Who may be formally accused. `supportedBy` names the reasoning that
 	-- points at a suspect; `motives`/`proofs` are the motive and proof
 	-- that make the case hold. The verdict itself comes from `solution`.
-	-- Sam is not accusable. Accusing opens once the partner and the wife
+	-- Arif is not accusable. Accusing opens once the partner and the wife
 	-- have both been spoken to (OBJ-002), with the rest still to find.
 	accusationRules = { opensAfter = "OBJ-002", requiresCase = true },
 	accusations = {

@@ -1,3 +1,9 @@
+# NOTE (Phase 5.6, 2026-10-03)
+
+Historical phase sheet. The code-switching lines below shipped in 5.3 and
+were retired in 5.6, when the player-facing script became English-only. The
+guard's name is now Arif Rahman.
+
 # CASE-001 v2: Phase 5.4 content sheet
 
 Status: **approved and applied in Phase 5.4.**

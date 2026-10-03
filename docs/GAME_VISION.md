@@ -116,14 +116,14 @@ Canonical facts every document must agree with. Change them here first.
   - **Meera Rozario**, 38, his wife: hospital pharmacist, Indian Malaysian.
   - **Victor Lim**, 44, the managing partner, who runs the contracts and money:
     Chinese Malaysian.
-  - **Samir "Sam" Gurung**, 31, the night security guard: from Nepal, six years
+  - **Arif Rahman**, 31, the night security guard: from Nepal, six years
     in Kota Arwana.
 - The night, fixed times:
   - 11:04 PM Victor badges back in.
   - 11:47 PM the last call, declined.
   - 11:49 PM Daniel's heart-rate data ends.
   - 11:52 PM Victor badges out.
-  - 12:10 AM Sam finds him.
+  - 12:10 AM Arif finds him.
   - 12:40 AM you arrive.
   - About 6:00 AM forensics are due and the case closes at dawn.
 

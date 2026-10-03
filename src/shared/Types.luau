@@ -441,7 +441,7 @@ export type CaseBriefing = {
 	title: string,
 	description: string,
 	-- The briefing's time/place line ("12:40 AM", "Rozario & Lim ·
-	-- Tingkat 9"). Optional: absent means the line is not shown.
+	-- Level 9"). Optional: absent means the line is not shown.
 	time: string?,
 	place: string?,
 }

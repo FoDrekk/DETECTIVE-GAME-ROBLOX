@@ -250,9 +250,9 @@ function CitySkyline.start()
 	local sky = backdrop:FindFirstChild("NightSky")
 	local skyZ = if sky and sky:IsA("BasePart") then sky.Position.Z + 6 else northZ - SKY_BEYOND + 6
 	local bands = {
-		{ height = 90, color = Color3.fromRGB(150, 100, 78) },
-		{ height = 200, color = Color3.fromRGB(88, 70, 86) },
-		{ height = 340, color = Color3.fromRGB(46, 46, 72) },
+		{ height = 90, color = Color3.fromRGB(20, 30, 48) },
+		{ height = 200, color = Color3.fromRGB(13, 21, 38) },
+		{ height = 340, color = Color3.fromRGB(7, 12, 26) },
 	}
 	for index, band in ipairs(bands) do
 		-- Wider bands sit further back so the narrower, brighter ones overlap

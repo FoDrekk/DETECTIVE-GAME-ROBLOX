@@ -91,7 +91,7 @@ function Car.build(origin: Vector3, parent: Folder)
 	identity.Position = UDim2.fromScale(0.39, 0.06)
 	identity.Size = UDim2.fromScale(0.57, 0.88)
 	identity.BackgroundTransparency = 1
-	identity.Text = `JABATAN POLIS KOTA ARWANA\nUNIT KES KHAS  /  SCU\n\nINSPEKTOR\n{investigator.DisplayName}\n\nAUTHORISED ENTRY  ·  UNIT 14`
+	identity.Text = `KOTA ARWANA POLICE\nSPECIAL CASES UNIT  /  SCU\n\nINSPECTOR\n{investigator.DisplayName}\n\nAUTHORISED ENTRY  ·  UNIT 14`
 	identity.TextColor3 = C(32, 40, 47)
 	identity.TextSize = 16
 	identity.Font = Enum.Font.GothamBold

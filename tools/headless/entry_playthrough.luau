@@ -585,7 +585,7 @@ check(
 )
 converse(
 	"SUS-003",
-	"Sam Gurung",
+	"Arif Rahman",
 	{ "You found him?", "anyone else", "Has anyone been in his office", "get in after hours", "cameras" },
 	"That's all"
 )
@@ -945,7 +945,7 @@ end
 say("\n== Second run: the harsh road, and the code worked out ==")
 converse(
 	"SUS-003",
-	"Sam Gurung (route B)",
+	"Arif Rahman (route B)",
 	{ "You found him?", "Has anyone been in his office", "get in after hours" },
 	"That's all"
 )
@@ -1049,7 +1049,7 @@ check(
 --------------------------------------------------------------------------
 
 say("\n== Third run: in a hurry ==")
-converse("SUS-003", "Sam Gurung (second run)", {}, "That's all")
+converse("SUS-003", "Arif Rahman (second run)", {}, "That's all")
 examine(evidenceProp("EV-001"), "the phone")
 examine(evidenceProp("EV-002"), "the laptop")
 examine(evidenceProp("EV-003"), "the agenda")

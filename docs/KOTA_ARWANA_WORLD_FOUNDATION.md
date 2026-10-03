@@ -23,7 +23,7 @@ In the last thirty years the **towers** went up behind it, the **LRT** was
 threaded over the roads, and condos climbed the hills where the rubber estates
 used to be. The city is prosperous, humid, crowded and always slightly
 unfinished: a new mall beside a mamak that has been there since 1987, a CCTV
-camera beside a hand-painted *DILARANG MELETAK KENDERAAN* sign.
+camera beside a hand-painted *NO PARKING* sign.
 
 For a detective that texture is the point. **Kota Arwana is a city that writes
 everything down and still loses track of people:**
@@ -138,10 +138,11 @@ The sources are real Malaysian urban life. The rules are in §8.
   everywhere.
 
 **Signage**
-- Malay first, with English and Chinese (and Tamil where the neighbourhood
-  would have it).
-- Official and handmade notices: *DILARANG MELETAK KENDERAAN*, *AWAS*,
-  *KELUAR*, *ROSAK*, *Sila imbas kad*.
+- A real mix: Malay, English and Chinese (and Tamil where the neighbourhood
+  would have it). In-game player-facing signage is English (Phase 5.6);
+  proper nouns stay local (*Wisma Delima*, *ROSAK*).
+- Official and handmade notices: *NO PARKING*, *AWAS*,
+  *EXIT*, *ROSAK*, *Tap access card*.
 - Hand-written shop signs; prices in RM.
 
 **Businesses**

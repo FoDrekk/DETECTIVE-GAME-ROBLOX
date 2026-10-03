@@ -88,7 +88,10 @@ function MeetingRoom.build(interior: Instance)
 	if text then
 		text.RichText = true
 		text.TextScaled = false
-		text.TextSize = 34
+		-- Fixed size is the exception here (every other label scales): budget
+		-- the rows against the 9x4.5-stud canvas at 60 pixels/stud (540x270)
+		-- with margin, so the last line never runs off the board.
+		text.TextSize = 30
 		text.Font = Enum.Font.PermanentMarker
 		text.TextColor3 = Color3.fromRGB(34, 52, 110)
 		text.TextXAlignment = Enum.TextXAlignment.Left
@@ -96,7 +99,7 @@ function MeetingRoom.build(interior: Instance)
 		text.Text = "Q3 TARGETS\n\n<s>R&amp;L</s>   <font color=\"#9a2a2a\">R</font>\n\nretainers +12%\nnew clients: 4\n\n<font color=\"#9a2a2a\">sign by FRI</font>"
 		local padding = Instance.new("UIPadding")
 		padding.PaddingLeft = UDim.new(0, 40)
-		padding.PaddingTop = UDim.new(0, 26)
+		padding.PaddingTop = UDim.new(0, 20)
 		padding.Parent = text
 	end
 	PropKit.newPart(room, "MarkerTray", Vector3.new(4, 0.1, 0.35), CFrame.new(21, 3.62, wallZ - 0.4), P.Steel, M.Metal)

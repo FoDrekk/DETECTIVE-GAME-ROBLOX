@@ -14,13 +14,13 @@ Decisions and rejected alternatives: `DESIGN_DECISIONS.md` D-17 to D-19.
 
 | Job | How it's done |
 |---|---|
-| Establish Malaysia | The city in rain; LRT, mamak, rider, signage, Malay radio, "Dah sampai?" |
+| Establish Malaysia | The city in rain; LRT, mamak, rider, signage, radio |
 | Establish the detective | Your own avatar, your display name on an SCU warrant card, your reflection in the lift mirror |
 | Establish the SCU | The dispatch, the warrant card, and Nora's call: who sends you and why you're alone |
 | Establish the tone | Quiet, wet, late; a city that keeps going; one lit window |
 | Establish the case | Who died, where, who is upstairs, and the deadline (forensics at six) |
 | Create curiosity | The cold open: someone, somewhere, declines Daniel's call at 11:47 |
-| Hand over control | The lift doors open onto Level 9. Sam is waiting. |
+| Hand over control | The lift doors open onto Level 9. Arif is waiting. |
 
 **Hard rule:** show nothing the player should discover themselves.
 - No phone on the desk.
@@ -75,7 +75,7 @@ times below describe the current implementation.
 | 10 | 0:47.5–0:52.5 | Warrant insert | Player-specific SCU identity and headshot; Nora calls. |
 | 11–13 | 0:52.5–1:38 | Three car framings | Caller ID and the detective's silhouette; Nora gives the complete case setup and deadline; the final move finds the tower through the windshield. Dialogue stays text-first. |
 | 14–16 | 1:38–2:00 | Forecourt, ninth-floor tilt, entrance | Sedan stops; the one lit window anchors the upward move; the investigator steps into the building. |
-| 17–18 | 2:00–2:14 | Constable, access reader | Sam is upstairs; the badge is accepted and logged at 12:38 AM; the investigator passes through. |
+| 17–18 | 2:00–2:14 | Constable, access reader | Arif is upstairs; the badge is accepted and logged at 12:38 AM; the investigator passes through. |
 | 19–21 | 2:14–2:49 | Lift ride, arrival pause, doors | Floors climb; the mirror and ROSAK dome are discoverable by looking; Nora's message arrives; score falls away before the doors open. |
 
 The ROSAK tape remains unexplained and has no interaction prompt. The access
@@ -113,13 +113,13 @@ We never see a face, a room detail that names her, or a lanyard.
 | 5 | 0:22–0:30 | Aerial wide, slow push over the city at night in rain | The towers of Dataran Arwana; the dark curve of the Sungai Arwana; the old town's low roofs lit orange | Rain; distant traffic. The **motif** enters: low keys and a single plucked-string line. | — |
 | 6 | 0:30–0:36 | Low wide, under an LRT viaduct | A two-car LRT crosses overhead; the rails' light washes the wet road | The train's rising whine and rattle | — |
 | 7 | 0:36–0:42 | Street level, across the road | A 24-hour mamak, full at half twelve. Football on a wall TV, a teh tarik pulled high. A delivery rider in a rain poncho waits by his bike. A sign on the lamppost: *DILARANG MELETAK KENDERAAN*. | Mamak chatter, a TV cheer, rain on awnings | — |
-| 8 | 0:42–0:50 | Tracking alongside an unmarked sedan at a red light | Wipers. The police radio crackles. | **Radio, in Malay:** "Kawalan kepada semua unit. Kes mati mengejut, Wisma Delima, Jalan Merbau, tingkat sembilan. Dilaporkan pengawal keselamatan, dua belas empat belas pagi." | Subtitle: *"Control to all units. Sudden death, Wisma Delima, Jalan Merbau, ninth floor. Reported by the security guard at 12:14 AM."* |
+| 8 | 0:42–0:50 | Tracking alongside an unmarked sedan at a red light | Wipers. The police radio crackles. | **Radio:** "Control to all units. Sudden death. Wisma Delima, level nine." / "Reported by the security guard at 12:14 AM." | - | |
 
 #### Scene 3 — The call, 0:50–1:40
 
 | # | Time | Shot | Action | Sound | On screen |
 |---|---|---|---|---|---|
-| 9 | 0:50–0:56 | Insert: the passenger seat | A lanyard and warrant card: **JABATAN POLIS KOTA ARWANA · UNIT KES KHAS / SPECIAL CASES UNIT**, the player's avatar headshot, **INSPEKTOR [DisplayName]** | The phone starts ringing | — |
+| 9 | 0:50–0:56 | Insert: the passenger seat | A lanyard and warrant card: **KOTA ARWANA POLICE · SPECIAL CASES UNIT / SCU**, the player's avatar headshot, **INSPECTOR [DisplayName]** | The phone starts ringing | — |
 | 10 | 0:56–1:30 | Medium, the driver's side through a rain-streaked window, the face lit by the dashboard phone | The detective answers on speaker. The light turns green. | Nora's call (script §4); the motif low underneath | Caller ID: **SUPT. NORA — SCU**. Dialogue in the conversation style. |
 | 11 | 1:30–1:40 | Over-the-shoulder through the windscreen | Between towers, **Wisma Delima**: mostly dark, and **one lit window on the ninth floor** | The motif lifts slightly; wipers | — |
 
@@ -129,16 +129,16 @@ We never see a face, a room detail that names her, or a lanyard.
 |---|---|---|---|---|---|
 | 12 | 1:40–1:48 | Wide, the tower forecourt | The sedan stops beside a patrol car, lights off. The detective (the player's avatar) steps out into the rain. | Car door; rain gets louder | — |
 | 13 | 1:48–1:56 | Tilt up the tower face | The ninth-floor window is still lit | Rain; the motif at its peak, then easing | — |
-| 14 | 1:56–2:05 | Lobby, medium | Marble, a closed coffee kiosk, an empty guard desk (Sam is upstairs). A patrol constable by the door straightens and nods the detective through ("Tingkat sembilan, Inspektor."). The detective taps the warrant card on a turnstile reader. | *Beep* | Reader screen: **SILA IMBAS KAD** changes to **DITERIMA · 00:38**. A small caption: *Access logged 12:38 AM.* Subtitle: *"Ninth floor, Inspector."* |
+| 14 | 1:56–2:05 | Lobby, medium | Marble, a closed coffee kiosk, an empty guard desk (Arif is upstairs). A patrol constable by the door straightens and nods the detective through ("Level nine, Inspector."). The detective taps the warrant card on a turnstile reader. | *Beep* | Reader screen: **TAP ACCESS CARD** changes to **ACCESS GRANTED · 12:38 AM**. |
 
 Shot 14 quietly teaches that the building remembers every badge. It pays off
-when Sam prints the log. It does not mention Victor.
+when Arif prints the log. It does not mention Victor.
 
 #### Scene 5 — The lift, 2:05–2:40 (mouse-look, no movement)
 
 | # | Time | Shot | Action | Sound | On screen |
 |---|---|---|---|---|---|
-| 15 | 2:05–2:30 | First-person-ish, inside the lift car, player controls the look | The floor display climbs G → 9. A mirrored back wall shows the player's avatar. A lift certificate in a frame. In the ceiling corner, a small CCTV dome with **ROSAK** tape across it. | Lift hum; the motif fades to nothing | Floor numbers. At about 2:15 the phone buzzes: a message from **Nora**: *"Jangan lupa makan."* ("Don't forget to eat.") |
+| 15 | 2:05–2:30 | First-person-ish, inside the lift car, player controls the look | The floor display climbs G → 9. A mirrored back wall shows the player's avatar. A lift certificate in a frame. In the ceiling corner, a small CCTV dome with **ROSAK** tape across it. | Lift hum; the motif fades to nothing | Floor numbers. At about 2:15 the phone buzzes: a message from **Nora**: *"Don't forget to eat."* |
 | 16 | 2:30–2:36 | Hold | The display reads **9** | *Ding* | — |
 
 The ROSAK tape is the first thread of *Titik Buta* (`LONG_TERM_MYSTERY.md`).
@@ -150,15 +150,15 @@ The ROSAK tape is the first thread of *Titik Buta* (`LONG_TERM_MYSTERY.md`).
 
 | # | Time | Shot | Action | Sound | On screen |
 |---|---|---|---|---|---|
-| 17 | 2:36–2:40 | The player's own camera, as the doors slide open | Level 9 reception in after-hours light. **Sam** steps forward from beside the counter. | Doors; air-conditioning; the records-room tube flickering. **Silence where the music was.** | Title card over the opening doors: **CASE 001 — THE LAST CALL** · *Rozario & Lim · Tingkat 9 · 12:40 AM*. It fades as Sam speaks. |
-| — | 2:40 | **Control.** The letterbox retracts. | Sam: "Detective? Hey. Over here." (v1's first line, unchanged) | — | The first interaction prompt |
+| 17 | 2:36–2:40 | The player's own camera, as the doors slide open | Level 9 reception in after-hours light. **Arif** steps forward from beside the counter. | Doors; air-conditioning; the records-room tube flickering. **Silence where the music was.** | Title card over the opening doors: **CASE 001 — THE LAST CALL** · *Rozario & Lim · Level 9 · 12:40 AM*. It fades as Arif speaks. |
+| — | 2:40 | **Control.** The letterbox retracts. | Arif: "Detective? Hey. Over here." (v1's first line, unchanged) | — | The first interaction prompt |
 
 ## 4. Dialogue (Scene 3)
 
 Speaker names appear as in conversations. The detective's lines are short and
 neutral. The player is never gendered.
 
-> **NORA:** *Dah sampai?* (There yet?)
+> **NORA:** There yet?
 > **YOU:** Five minutes.
 > **NORA:** Daniel Rozario. Forty-one. Half of Rozario and Lim, the design firm on nine.
 > **NORA:** The guard found him just after twelve. The ambulance took him to Hospital Besar. Patrol taped the floor. Forensics can't get there till six.
@@ -171,7 +171,7 @@ neutral. The player is never gendered.
 > **NORA:** I'll be asleep. Call me when you know.
 
 Line by line, what each one is doing:
-- **"Dah sampai?"** Malaysia in two words; Nora's economy.
+- **"There yet?"** Two words; Nora's economy.
 - **"Half of Rozario and Lim"** plants the partnership without explaining it.
 - **"Forensics can't get there till six"** justifies a lone detective and sets
   a deadline that pays off at dawn. It also explains the tape marks with no
@@ -180,8 +180,7 @@ Line by line, what each one is doing:
   without saying why.
 - **"Believe the room"** is the game's thesis, said once, in character. It is
   never repeated as a tooltip.
-- **"Jangan lupa makan"** (the message in the lift) is Nora's care, in the most
-  Malaysian way she knows.
+- **"Don't forget to eat"** (the message in the lift) is Nora's care, plain.
 
 **Voice.** The intro is written text-first, with subtitles. VO is optional
 later. If it is recorded, Nora's actor should be a Malaysian Malay woman in her

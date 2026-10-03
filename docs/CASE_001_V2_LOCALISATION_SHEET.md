@@ -6,12 +6,16 @@ sheet and the skin tones were approved as written; section E was decided as
 times in section C below are the pre-decision ones; the built values are
 10:28 and 10:29).
 
+**Superseded (Phase 5.6, 2026-10-03):** the player-facing script is now
+English-only, and the guard's name is Arif Rahman. Section A's second column
+records what shipped in 5.2 and was later retired; the built lines keep the
+sentence shapes without the Malay particles.
+
 Small differences between this sheet and what was built:
-- The name displayed for the guard is "Sam Gurung" (the bible's full name,
-  Samir "Sam" Gurung, would put quotation marks in name tags).
-- The surau sign reads "SURAU · TINGKAT 8" and sits above "Sila imbas kad"
-  by the lift, not on a door: there is no spare door, and the waiting area's
-  walls are too dark to read a sign on.
+- The name displayed for the guard is "Arif Rahman".
+- The quiet-room sign reads "QUIET ROOM · LEVEL 8" and sits above "Tap access
+  card" by the lift, not on a door: there is no spare door, and the waiting
+  area's walls are too dark to read a sign on.
 - The visitors'-book placard stands beside the printout (the camera monitor
   hides the book itself from the visitors' side).
 - The EV-007 description now reads "The camera monitor behind the reception
@@ -26,7 +30,7 @@ Owner decisions so far (2026-09-29):
 - **D4B:** leave the briefing shot until 5.5.
 
 Rules used (`CASE_001_V2_STORY_BIBLE.md` §5 and §14):
-- Sam switches most, Victor only when rattled, Meera least (Daniel's words).
+- Arif switches most, Victor only when rattled, Meera least (Daniel's words).
 - Any Malay word whose meaning matters has an obvious meaning from context.
 - The player is only ever "Detective". Dialogue lines stay at 130 characters or
   fewer and choices at 80 or fewer.
@@ -34,7 +38,10 @@ Rules used (`CASE_001_V2_STORY_BIBLE.md` §5 and §14):
 
 ## A. Code-switching touches (8 lines)
 
-| Node | Now | Proposed |
+Phase 5.2 shipped the second column; Phase 5.6 retired the particles, so the
+first column (cleaned of particles) is what the game says today.
+
+| Node | Built today (English-only) | Was (5.2 code-switching) |
 |---|---|---|
 | SAM-OPEN-2 | Sorry. I've been stood here half an hour. Didn't know if I was allowed to sit down. | Sorry ah. I've been standing here half an hour. Didn't know if I'm allowed to sit down. |
 | SAM-AGAIN | Still here. Not going anywhere, apparently. | Still here lah. Not going anywhere, apparently. |
@@ -45,29 +52,29 @@ Rules used (`CASE_001_V2_STORY_BIBLE.md` §5 and §14):
 | VIC-BADGE-1 (Victor, rattled) | Then the system's wrong. | Aiya. Then the system's wrong, lah. |
 | MARA-LAST-1 (Meera, Daniel's words) | He rang at seven to say he'd miss dinner. Again. | He rang at seven. "Sayang, sorry, I'll miss dinner." Again. |
 
-Meaning from context: *kan* = right?; *kesian* = poor thing (Sam, about a
+Meaning from context: *kan* = right?; *kesian* = poor thing (Arif, about a
 grieving woman standing alone); *sayang* = darling (Daniel's word, with the
 English beside it).
 
 Deliberately not touched:
 - Lines whose meaning would depend on the Malay ("Contractor's expensive").
 - Victor's other lines (polished until he cracks).
-- Lines tied to 5.3 mechanics: Sam printing the log, the tape line,
+- Lines tied to 5.3 mechanics: Arif printing the log, the tape line,
   "ask her why she didn't pick up".
 
 ## B. Renames and the story-bible map (mechanical)
 
 Applied across all player-facing case text (about 20 lines beyond section A):
 - **Names:** Daniel Reyes → Daniel Rozario, Mara Reyes → Meera Rozario,
-  Victor Lane → Victor Lim, Sam Okafor → Samir "Sam" Gurung.
-- **Sam's usage:** "Mr. Lane" → "Mr. Lim"; "Mr. Reyes" → "Mr. Rozario".
+  Victor Lane → Victor Lim, Sam Okafor -- Arif Rahman.
+- **Arif's usage:** "Mr. Lane" → "Mr. Lim"; "Mr. Reyes" → "Mr. Rozario".
 - **The detective's usage:** "Mrs. Reyes" → "Puan Meera" (two lines).
-- **Sam's timings and places:**
+- **Arif's timings and places:**
   - "twenty past twelve" → "half twelve";
   - "from the lobby" → "from reception".
 - **Camera wording:** "lobby cameras/footage" → "reception cameras/footage"
   (v2 has a ground-floor lobby in the intro, so "lobby" would be ambiguous).
-- **Place line:** "Reyes & Lane · Ninth floor" → "Rozario & Lim · Tingkat 9".
+- **Place line:** "Reyes & Lane · Ninth floor" → "Rozario & Lim . Level 9".
 - **Deduction option:** "Signing the end of Reyes & Lane." → "Signing the end of
   Rozario & Lim."
 - **Contradiction label:** "Mara's Missed Call" → "Meera's Missed Call".
@@ -86,15 +93,15 @@ Applied across all player-facing case text (about 20 lines beyond section A):
   LIM, V. OUT. No other badge used after 9 PM except security."
   - Times depend on decision 5 below.
 - **Printout on the counter:** the same lines in its 24-hour format, headed
-  "AFTER-HOURS ACCESS · TINGKAT 9", with the security line "S. GURUNG".
+  "AFTER-HOURS ACCESS . LEVEL 9", with the security line "A. RAHMAN".
 - **Signage** (targeted patch of the baked props):
   - **Relabelled:** the door nameplate, the reception fascia, the logo wall
     ("ROZARIO & LIM" over "DESIGN SDN. BHD. · EST. 2010"), the monitor lock
     caption, and the anniversary poster.
-  - **Exit signs:** "EXIT" → "KELUAR".
-  - **Pantry note:** "LABEL YOUR MILK" → "Label susu anda. TQ."
-  - **New small signs:** "DILARANG MEROKOK", "Sila imbas kad", "BUKU PELAWAT"
-    and a Surau door sign. No gameplay attaches to any of them.
+  - **Exit signs:** "KELUAR" in 5.2, back to "EXIT" in 5.6.
+  - **Pantry note:** "Label susu anda. TQ." in 5.2, "Label your milk. Thanks." in 5.6.
+  - **New small signs:** "NO SMOKING", "Tap access card", "VISITORS' BOOK"
+    and a quiet-room sign (a Surau sign in 5.2; changed in 5.6). No gameplay attaches to any of them.
 - **Tape:** the chalk outline is replaced by a flat tape outline plus a
   numbered marker at the same spot.
 
@@ -103,7 +110,7 @@ Applied across all player-facing case text (about 20 lines beyond section A):
 | Character | Now (RGB) | Proposed (RGB) | Reason |
 |---|---|---|---|
 | Meera | 234, 198, 170 | 150, 102, 72 | Indian Malaysian: warm medium-deep brown |
-| Sam | 116, 78, 56 | 176, 130, 96 | Nepali: warm tan-brown (the old tone was written for Okafor) |
+| Arif | 116, 78, 56 | 176, 130, 96 | Nepali: warm tan-brown (the old tone was written for Okafor) |
 | Victor | 198, 152, 122 | unchanged | Chinese Malaysian: already a mid tone |
 
 I'll check the result in a Studio screenshot after patching the baked NPCs,
@@ -122,7 +129,7 @@ CONTRA-001 is titled "Half Past Ten".
   (the CONTRA-001 label, the OBJ-003 title, one DEDUCT-004 option and its
   dialogue).
 - **C (recommended):** move the badge-out to **10:28 PM** and the lift down to
-  10:29. Sam then hears "Night, Sam. I'm off" at about half ten.
+  10:29. Arif then hears "Night, Arif. I'm off" at about half ten.
   - "Half Past Ten" stays everywhere.
-  - Sam's "about ten" line and his statement become "about half ten".
+  - Arif's "about ten" line and his statement become "about half ten".
   - The bible's timeline gets the two new times.

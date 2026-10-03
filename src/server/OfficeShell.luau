@@ -512,7 +512,7 @@ local function liftCar(parent: Instance)
 	-- shot lets the player look around at it).
 	local cert = PropKit.newPart(folder, "Certificate", Vector3.new(1.5, 1.1, 0.06), CFrame.new(cx + 0.45, 5.6, car.z1 - 0.19), Color3.fromRGB(226, 222, 210), M.SmoothPlastic)
 	cert.CastShadow = false
-	PropKit.label(cert, Enum.NormalId.Front, "PERAKUAN KELAYAKAN\nTingkat 1 - 9\nLuput: 03/2027", {
+	PropKit.label(cert, Enum.NormalId.Front, "CERTIFICATE OF FITNESS\nLevels 1 - 9\nExpires: 03/2027", {
 		color = Color3.fromRGB(40, 40, 46),
 		font = Enum.Font.GothamMedium,
 		pixelsPerStud = 120,

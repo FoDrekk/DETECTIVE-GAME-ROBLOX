@@ -53,14 +53,28 @@ function Street.build(origin: Vector3, parent: Folder)
 	part("Saucer", Vector3.new(1, 0.08, 1), at(-10.6, 2.25, -17), C(190, 185, 173), M.CeramicTiles)
 	SetKit.pillar(parent, "Glass", 0.9, 0.46, at(-22, 2.72, -21.4), C(150, 82, 40), M.Glass, { transparency = 0.15 })
 	SetKit.pillar(parent, "Glass", 0.9, 0.46, at(-20.2, 2.72, -20.6), C(214, 190, 150), M.Glass, { transparency = 0.15 })
-	-- Rider: helmet, rain jacket, still waiting astride a compact bike.
+	-- Rider: a dressed R15 figure in a rain jacket and helmet, waiting astride
+	-- a compact bike (block figure fallback when the client cannot build one).
 	part("BikeBody", Vector3.new(1.4, 1.2, 5.2), at(8, 1.45, -17), C(155, 35, 34), M.Metal)
 	for _, z in ipairs({ -19.5, -14.5 }) do
 		SetKit.cylinder(parent, "BikeWheel", 0.32, 1.45, CFrame.new(at(8, 0.9, z)), C(20, 22, 26), M.Rubber)
 	end
-	part("RiderJacket", Vector3.new(1.8, 2.4, 1.1), at(8, 3.25, -17), C(30, 76, 78), M.Fabric)
-	SetKit.ball(parent, "RiderHelmet", 1.35, at(8, 5.05, -17.1), C(28, 35, 45), M.SmoothPlastic)
-	SetKit.neon(parent, "HelmetStripe", Vector3.new(0.1, 0.16, 1.1), CFrame.new(at(8, 5.1, -17.75)), C(220, 185, 89))
+	local riderSeat = CFrame.lookAt(at(8, 2.1, -17), at(8, 2.1, -18))
+	local rider = SetKit.figureDouble(parent, riderSeat, {
+		shirt = C(30, 76, 78),
+		pants = C(24, 28, 34),
+		skin = C(176, 130, 96),
+		headgear = "helmet",
+		headgearColor = C(28, 35, 45),
+	})
+	if rider then
+		rider.sitOn(riderSeat)
+		scope.add(function() rider.destroy() end)
+	else
+		part("RiderJacket", Vector3.new(1.8, 2.4, 1.1), at(8, 3.25, -17), C(30, 76, 78), M.Fabric)
+		SetKit.ball(parent, "RiderHelmet", 1.35, at(8, 5.05, -17.1), C(28, 35, 45), M.SmoothPlastic)
+		SetKit.neon(parent, "HelmetStripe", Vector3.new(0.1, 0.16, 1.1), CFrame.new(at(8, 5.1, -17.75)), C(220, 185, 89))
+	end
 	-- The LRT: a guideway on piers above the street, which the train crosses.
 	part("Guideway", Vector3.new(8, 2, 170), at(-18, 15.4, 0), C(116, 118, 124), M.Concrete)
 	part("GuidewayEdge", Vector3.new(8.4, 0.6, 170), at(-18, 16.6, 0), C(92, 94, 100), M.Concrete)
@@ -88,18 +102,30 @@ function Street.build(origin: Vector3, parent: Folder)
 	local sedan = Instance.new("Model")
 	sedan.Name = "Sedan"
 	sedan.Parent = parent
-	local body = SetKit.part(sedan, "Body", Vector3.new(7.6, 2, 15), CFrame.new(at(0, 1.9, 0)), C(38, 47, 59), M.SmoothPlastic)
-	SetKit.part(sedan, "Roof", Vector3.new(6.5, 1.8, 7), CFrame.new(at(0, 3.65, 0.6)), C(31, 38, 48), M.SmoothPlastic)
+	-- Contemporary executive sedan: low metallic body, glasshouse cabin, grille,
+	-- mirrors and full-width rear lamp bar. Faces -Z (front at -Z).
+	local body = SetKit.part(sedan, "Body", Vector3.new(7.4, 1.5, 15), CFrame.new(at(0, 1.65, 0)), C(26, 32, 42), M.Metal)
+	body.Reflectance = 0.12
+	SetKit.part(sedan, "Hood", Vector3.new(7.0, 0.35, 3.4), CFrame.new(at(0, 2.5, -5.6)), C(32, 39, 51), M.Metal)
+	SetKit.part(sedan, "Trunk", Vector3.new(7.0, 0.35, 2.6), CFrame.new(at(0, 2.5, 6.0)), C(32, 39, 51), M.Metal)
+	local cabin = SetKit.part(sedan, "Cabin", Vector3.new(6.2, 1.7, 6.4), CFrame.new(at(0, 3.3, 0.4)), C(16, 26, 38), M.Glass)
+	cabin.Transparency = 0.25
+	cabin.Reflectance = 0.15
+	SetKit.part(sedan, "Grille", Vector3.new(3.6, 0.6, 0.15), CFrame.new(at(0, 1.7, -7.55)), C(120, 130, 142), M.Metal)
+	for _, x in ipairs({ -2.9, 2.9 }) do
+		SetKit.part(sedan, "Mirror", Vector3.new(0.5, 0.3, 0.7), CFrame.new(at(x, 3.1, -2.6)), C(26, 32, 42), M.Metal)
+	end
 	for _, x in ipairs({ -3.9, 3.9 }) do
 		for _, z in ipairs({ -5.6, 5.6 }) do
-			SetKit.cylinder(sedan, "Wheel", 0.7, 2.3, CFrame.new(at(x, 1.05, z)), C(17, 18, 20), M.Rubber)
+			SetKit.cylinder(sedan, "Wheel", 0.75, 2.3, CFrame.new(at(x, 1.0, z)), C(12, 13, 15), M.Rubber)
+			SetKit.cylinder(sedan, "Rim", 0.4, 2.36, CFrame.new(at(x, 1.0, z)), C(150, 156, 164), M.Metal)
 		end
 	end
-	for _, x in ipairs({ -3, 3 }) do
-		local lamp = SetKit.neon(sedan, "Headlamp", Vector3.new(1.15, 0.4, 0.18), CFrame.new(at(x, 2.05, -7.55)), C(255, 235, 191))
+	for _, x in ipairs({ -2.6, 2.6 }) do
+		local lamp = SetKit.neon(sedan, "Headlamp", Vector3.new(1.5, 0.42, 0.18), CFrame.new(at(x, 2.0, -7.55)), C(214, 232, 255))
 		SetKit.light(lamp, "SpotLight", 1.6, 26, C(255, 240, 210), { face = Enum.NormalId.Front, angle = 50 })
-		SetKit.neon(sedan, "TailLamp", Vector3.new(1.15, 0.35, 0.18), CFrame.new(at(x, 2.05, 7.55)), C(200, 30, 30))
 	end
+	SetKit.neon(sedan, "TailBar", Vector3.new(5.6, 0.32, 0.16), CFrame.new(at(0, 2.0, 7.55)), C(200, 30, 30))
 	sedan.PrimaryPart = body
 	-- Facing west (-X), driving along the near kerb.
 	local function onStreet(x: number): CFrame

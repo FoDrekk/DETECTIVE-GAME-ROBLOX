@@ -8,7 +8,7 @@
 
 	The counter's evidence (the printed badge log, the camera monitor) is case
 	data (Case001.propPlacement); this room keeps their stretches of counter
-	clear. Sam waits beside the desk (Case001.npcPlacement), turned toward the
+	clear. Arif waits beside the desk (Case001.npcPlacement), turned toward the
 	lift.
 
 	ReceptionDesk, GuardFlask and ElevatorPanel are interactable by name.
@@ -90,7 +90,7 @@ function Reception.build(interior: Instance)
 	local button = PropKit.newPart(room, "CallButton", Vector3.new(0.04, 0.18, 0.18), CFrame.new(faceX - 0.08, 3.6, panelZ), Color3.fromRGB(255, 196, 120), M.Neon)
 	button.Shape = Enum.PartType.Cylinder
 	button.CFrame = CFrame.new(faceX - 0.08, 3.6, panelZ)
-	PropKit.sign(room, at(faceX - 0.03, panelZ - 0.75, Kit.WEST, 4.7), "SURAU  ↓  TINGKAT 8", Vector2.new(1.7, 0.38), {
+	PropKit.sign(room, at(faceX - 0.03, panelZ - 0.75, Kit.WEST, 4.7), "QUIET ROOM  ↓  LEVEL 8", Vector2.new(1.7, 0.38), {
 		plate = Color3.fromRGB(224, 222, 212),
 		color = Color3.fromRGB(56, 68, 72),
 	})

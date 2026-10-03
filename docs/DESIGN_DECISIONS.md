@@ -147,14 +147,14 @@ Format: **Decision**, **Why**, **Alternatives**, **Why not**, **Impact**.
   - A male mentor is fine but less distinctive.
   - A mentor on scene undermines the player's ownership.
   - A partner implies co-op energy (OD-06).
-- **Impact:** her dry, caring voice ("Jangan lupa makan") and her long-term
+- **Impact:** her dry, caring voice ("Don't forget to eat") and her long-term
   history (D-37).
 
 **D-04 — The protagonist: your avatar, your name on the warrant card, never gendered**
 - **Why:**
   - OD-02 says you play yourself; putting the display name and avatar headshot
     on the SCU card makes it literal in the first minute.
-  - NPCs address you as "Detective" or "Inspektor" because Roblox avatars
+  - NPCs address you as "Detective" or "Inspector" because Roblox avatars
     aren't a reliable gender signal and *Tuan/Puan* would misgender someone.
 - **Alternatives:** a named hero; a player-chosen gender for address forms;
   a faceless role.
@@ -166,7 +166,7 @@ Format: **Decision**, **Why**, **Alternatives**, **Why not**, **Impact**.
 
 ### CASE-001 v2
 
-**D-05 — The localised cast: Daniel Rozario (Eurasian), Meera Rozario (Indian Malaysian), Victor Lim (Chinese Malaysian), Samir "Sam" Gurung (Nepali)**
+**D-05 — The localised cast: Daniel Rozario (Eurasian), Meera Rozario (Indian Malaysian), Victor Lim (Chinese Malaysian), Arif Rahman (Nepali)**
 - **Why:**
   - A believable KL-style office cast, mixed without tokenism.
   - It keeps **"R&L"** (the whiteboard, the file drawer) and **"V.L."** (the
@@ -318,14 +318,14 @@ Format: **Decision**, **Why**, **Alternatives**, **Why not**, **Impact**.
 
 **D-12 — The badge log is printed on request, not lying on the counter**
 - **Why:** v1 could be solved in about three minutes by walking past the
-  counter. Gating on *asking Sam how access works* rewards curiosity and slows
+  counter. Gating on *asking Arif how access works* rewards curiosity and slows
   the solve without a marker.
 - **Alternatives:** leave it; hide it in a drawer; require an objective.
 - **Why not:**
   - Leaving it keeps the three-minute solve.
   - A drawer is arbitrary.
   - An objective violates "don't make every clue mandatory".
-- **Impact:** a `revealWhen` capability; Sam's line "You nak tengok the badge
+- **Impact:** a `revealWhen` capability; Arif's line "Want to see the badge
   log?".
 
 **D-13 — Fix v1's continuity holes**

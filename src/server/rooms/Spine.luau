@@ -7,7 +7,7 @@
 	waits by the records wall, and the entrance hall at the south end has its
 	doormat, umbrella stand, exit sign and badge reader.
 
-	Signage (the badge reader, the surau plate, the no-smoking notice) lives in
+	Signage (the badge reader, the quiet-room plate, the no-smoking notice) lives in
 	its own folder so a baked place can be patched (OfficeInterior.patchSignage).
 ]]
 
@@ -58,24 +58,24 @@ function Spine.signage(interior: Instance)
 	local rect = OfficePlan.rect("Spine")
 	local z = rect.z1
 
-	-- "Sila imbas kad" (please tap your card) beside the suite entrance. The
-	-- surau directory is beside the lift call button in Reception, so the entry
-	-- itself cannot be mistaken for a prayer-room door.
-	PropKit.sign(room, at(rect.x1 - 0.55, z - 0.05, NORTH, 4.5), "Sila imbas kad", Vector2.new(1.3, 0.34))
+	-- "Tap access card" beside the suite entrance. The quiet-room directory
+	-- is beside the lift call button in Reception, so the entry itself cannot
+	-- be mistaken for a prayer-room door.
+	PropKit.sign(room, at(rect.x1 - 0.55, z - 0.05, NORTH, 4.5), "Tap access card", Vector2.new(1.3, 0.34))
 
-	-- "DILARANG MEROKOK" (no smoking) by the extinguisher.
-	PropKit.sign(room, at(rect.x0 - 0.05, -20.6, EAST, 4.4), "DILARANG MEROKOK", Vector2.new(2.0, 0.42), {
+	-- "NO SMOKING" by the extinguisher.
+	PropKit.sign(room, at(rect.x0 - 0.05, -20.6, EAST, 4.4), "NO SMOKING", Vector2.new(2.0, 0.42), {
 		plate = Color3.fromRGB(232, 232, 226),
 		color = Color3.fromRGB(170, 30, 30),
 	})
 
-	-- "BUKU PELAWAT" (visitors' book): a small placard on a flat foot on the
+	-- "VISITORS' BOOK": a small placard on a flat foot on the
 	-- reception counter, in the gap between the printout and the camera
 	-- monitor (which hides the book itself from the visitors' side).
 	local ink = Color3.fromRGB(34, 36, 40)
 	local desk = require(script.Parent:WaitForChild("Reception")).DESK
 	local plate = PropKit.newPart(room, "BookPlate", Vector3.new(0.86, 0.28, 0.04), at(desk.X + 0.1, desk.Z + 0.55, SOUTH, 3.26 + 0.04 + 0.14), ink, M.Metal)
-	PropKit.label(plate, Enum.NormalId.Front, "BUKU PELAWAT", {
+	PropKit.label(plate, Enum.NormalId.Front, "VISITORS' BOOK", {
 		color = Color3.fromRGB(214, 190, 138),
 		font = Enum.Font.GothamBold,
 		padding = 3,

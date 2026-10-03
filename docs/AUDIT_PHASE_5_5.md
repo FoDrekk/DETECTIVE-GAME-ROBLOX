@@ -161,7 +161,7 @@ server log line below was read from the console.
 
 Also checked on screen: a tap doesn't skip the intro and a hold does; the
 lift certificate, the restored whiteboard and the renumbered lift panel;
-the badge log appearing once Sam prints it; all 13 evidence items, all six
+the badge log appearing once Arif prints it; all 13 evidence items, all six
 contradictions and all seven deductions reached; the timeline puzzle; the
 closing screens' text.
 
@@ -222,7 +222,7 @@ the old skyline: the bake ran before Rojo had synced the v12 scripts. Check
 
 1. The lobby constable and the mamak rider are block figures.
 2. The open plan reads sparse at night.
-3. The studio noticeboard puts Sam (the night guard) on the firm's kitchen
+3. The studio noticeboard puts Arif (the night guard) on the firm's kitchen
    rota; probably unintended.
 4. Performance on low-end devices with the skyline is unmeasured.
 

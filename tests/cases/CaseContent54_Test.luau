@@ -580,7 +580,7 @@ return function(t)
 
 	t.test("Victor's watch-data lines read as approved, word for word", function()
 		expect.equal(nodeText("SUS-002", "VIC-WATCH-0"), "Daniel's watch stopped recording at 11:49. Your badge left at 11:52.")
-		expect.equal(nodeText("SUS-002", "VIC-WATCH-1"), "Aiya, those things lose signal all the time. It means nothing.")
+		expect.equal(nodeText("SUS-002", "VIC-WATCH-1"), "Those things lose signal all the time. It means nothing.")
 		expect.equal(
 			nodeText("SUS-002", "VIC-WATCH-2"),
 			"It means he was alive at 11:48 and gone by 11:49. You were still in the building."

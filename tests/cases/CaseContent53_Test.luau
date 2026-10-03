@@ -192,7 +192,7 @@ return function(t)
 	------------------------------------------------------------------
 
 	t.test("the approved lines and statements are in, word for word", function()
-		expect.equal(nodeText("SUS-003", "SAM-BADGE-2"), "You nak tengok the log? I can print it now.")
+		expect.equal(nodeText("SUS-003", "SAM-BADGE-2"), "Want to see the log? I can print it now.")
 		expect.equal(nodeText("SUS-003", "SAM-BADGE-3"), "Okay, it's printing. ...There. On the reception counter.")
 		expect.equal(nodeText("SUS-003", "SAM-BADGE-4"), "Haven't read it. Figured that's your job.")
 		expect.equal(nodeText("SUS-003", "SAM-TAPE-1"), "Nobody, since the ambulance crew.")
@@ -204,11 +204,11 @@ return function(t)
 		expect.equal(nodeText("SUS-001", "MARA-VICTOR-4"), "I haven't said a word to Victor tonight. I won't.")
 		expect.equal(
 			statementById("STMT-SUS-003-BADGE").text,
-			"Every door locks at nine. Sam printed tonight's badge log for you at reception."
+			"Every door locks at nine. Arif printed tonight's badge log for you at reception."
 		)
 		expect.equal(
 			statementById("STMT-SUS-003-TAPE").text,
-			"Nobody past the tape since the ambulance crew. Mr. Lim asked to go in; Sam said no. Sam told him only that Daniel had passed."
+			"Nobody past the tape since the ambulance crew. Mr. Lim asked to go in; Arif said no. Arif told him only that Daniel had passed."
 		)
 		expect.equal(
 			statementById("STMT-SUS-002-MEERA").text,
@@ -242,7 +242,7 @@ return function(t)
 		expect.truthy(ConversationService.choose(player, "badges"))
 		expect.equal(stepId(player), "SAM-BADGE-1")
 		ConversationService.advance(player)
-		expect.equal(stepId(player), "SAM-BADGE-2") -- "You nak tengok the log?"
+		expect.equal(stepId(player), "SAM-BADGE-2") -- "Want to see the log?"
 		expect.falsy(known(player, "STMT-SUS-003-BADGE"))
 		RevealService.refresh(player)
 		expect.falsy(RevealService.isInWorld("EV-004"))

@@ -44,7 +44,7 @@ or Tier-2 person.
    choice (the same outcome model as `present` today).
 2. **A topic reaction.** Items can carry a topic tag ("vehicle", "wedding",
    "rider jacket") and a person can have a reaction for the topic.
-3. **The character's default shrug**, in their voice. Sam: "Sorry. I do the
+3. **The character's default shrug**, in their voice. Arif: "Sorry. I do the
    doors."
 
 **Rules**
@@ -80,7 +80,7 @@ Every witness is authored with three columns:
 | Facts, at the resolution they would really have (time rounded, colours not faces) | Their interpretation, which can be wrong | Shame, loyalty, fear, a small crime of their own, **saving face** |
 
 Examples:
-- **Sam (CASE-001).** Saw Victor say goodnight at ten. Assumes Victor left and
+- **Arif (CASE-001).** Saw Victor say goodnight at ten. Assumes Victor left and
   stayed gone. Hides nothing. He's the honest one.
 - **Kavitha (CASE-002).** Saw Nadia arrive terrified on Sunday night. Assumes the
   danger is still out there. Hides Nadia, out of loyalty.
@@ -107,16 +107,16 @@ solvable, and they make the red herrings fair.
   - Nora: brief and warm ("Dah sampai?", "Jangan lupa makan.").
 - **Meaning never depends on a Malay word the player might not know.** Either
   the context makes it obvious or the line carries a subtitle.
-- **Official and environmental text is naturally Malay** (signs, notices,
-  receipts). The UI stays English.
+- **Environmental text reads as Malaysian** (Wisma Delima, ROSAK, the mamak
+  sign; notices in English since 5.6). The UI stays English.
 - **Address forms:**
-  - NPCs call the player **"Detective"** or **"Inspektor"**. Never *Tuan*,
+  - NPCs call the player **"Detective"** or **"Inspector"**. Never *Tuan*,
     *Puan*, sir or ma'am, because the player's gender is never assumed (D-04).
-  - NPCs among themselves use natural forms (*Puan Meera*, *Encik*, *Abang*,
+  - NPCs among themselves use natural forms (*Meera*, *Encik*, *Abang*,
     *Kak*, *Uncle*, *Aunty*, *boss*).
 - **No caricature.**
   - No phonetic accents, no broken-English jokes, no "lah" on every line.
-  - Every non-native English speaker (Sam, a Bangladeshi cook, an Indonesian
+  - Every non-native English speaker (Arif, a Bangladeshi cook, an Indonesian
     maid) speaks with dignity and clarity. They are often the most observant.
 
 ## 7. Recurring characters (Season 1)
@@ -126,7 +126,7 @@ solvable, and they make the red herrings fair.
 | **Supt. Noraini "Nora" Idris** | Story | Head of SCU; dispatcher, mentor, long-term thread | Malay |
 | **Dr. Chong Mei Ling** | 2 | Forensic pathologist, Hospital Besar Arwana. Post-mortem facts, never conclusions. | Chinese Malaysian |
 | **Encik Kumar Pillai** | 2 | JPKA records clerk. Processes Records Requests from CASE-003; dry, rule-bound, secretly delighted by good reasoning. | Indian Malaysian |
-| **Sam Gurung** | 2 (after CASE-001) | Still at Wisma Delima. A friendly face in the CBD; knows the building guards' network. | Nepali |
+| **Arif Rahman** | 2 (after CASE-001) | Still at Wisma Delima. A friendly face in the CBD; knows the building guards' network. | Nepali |
 | **Abang Rahim** | 2 (from CASE-002) | Restoran Seri Pagi. Knows every rider in Bukit Pelangi. | Indian Muslim |
 | **Jeffery anak Ngau** | 2 (from CASE-002) | Residensi Pelangi guard. Proud of his log book. | Iban |
 | **Tan Wei Jie** | 2 (from CASE-002) | A student delivery rider. The night city's eyes. | Chinese Malaysian |
@@ -139,7 +139,7 @@ no community's first appearance is only as a culprit.
 
 | Case | Culprit | Victim | Red herring | Key helpful witness |
 |---|---|---|---|---|
-| 001 | Victor Lim (Chinese Malaysian) | Daniel Rozario (Eurasian) | Meera Rozario (Indian Malaysian) | Sam Gurung (Nepali) |
+| 001 | Victor Lim (Chinese Malaysian) | Daniel Rozario (Eurasian) | Meera Rozario (Indian Malaysian) | Arif Rahman (Nepali) |
 | 002 | Shahrul Nizam (Malay) | Nadia Kamal (Malay) | Daren Ooi (Chinese Malaysian) | Tan Wei Jie (Chinese Malaysian); Jeffery anak Ngau (Iban) |
 | 003+ | *to be cast against this ledger* | | | |
 

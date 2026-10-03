@@ -45,7 +45,7 @@ function Studio.build(interior: Instance)
 	local notes: { Note } = {
 		{ x = -1.6, y = 0.6, text = "FIRE DRILL\nThursday 10:00", color = Color3.fromRGB(236, 226, 150), tilt = -4 },
 		{ x = 0.1, y = 0.5, text = "ROZARIO & LIM\n15 YEARS\nFriday drinks, 6pm\n<font color=\"#a02222\">CANCELLED</font>", color = P.Paper, tilt = 3 },
-		{ x = 1.7, y = 0.7, text = "Kitchen rota:\nweek 3 — Sam", color = Color3.fromRGB(190, 220, 236), tilt = -2 },
+		{ x = 1.7, y = 0.7, text = "Kitchen rota:\nweek 3 — Priya", color = Color3.fromRGB(190, 220, 236), tilt = -2 },
 		{ x = -1.5, y = -0.8, text = "Lost: grey scarf", color = Color3.fromRGB(236, 226, 150), tilt = 6 },
 	}
 	for _, n in ipairs(notes) do

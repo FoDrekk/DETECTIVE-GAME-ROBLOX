@@ -129,15 +129,15 @@ return function(t)
 		end
 	end)
 
-	t.test("the cast is the approved one, and the briefing place line is Tingkat 9", function()
+	t.test("the cast is the approved one, and the briefing place line is Level 9", function()
 		local names = {}
 		for _, suspect in ipairs(caseDef.suspects) do
 			names[suspect.id] = suspect.name
 		end
 		expect.equal(names["SUS-001"], "Meera Rozario")
 		expect.equal(names["SUS-002"], "Victor Lim")
-		expect.equal(names["SUS-003"], "Sam Gurung")
-		expect.equal(caseDef.setting.place, "Rozario & Lim · Tingkat 9")
+		expect.equal(names["SUS-003"], "Arif Rahman")
+		expect.equal(caseDef.setting.place, "Rozario & Lim · Level 9")
 	end)
 
 	t.test("the approved skin tones are applied, and the others left alone", function()
@@ -163,17 +163,17 @@ return function(t)
 		end
 	end)
 
-	t.test("the approved code-switching lines are in, and only those", function()
-		expect.equal(nodeText("SUS-003", "SAM-OPEN-2"), "Sorry ah. I've been standing here half an hour. Didn't know if I'm allowed to sit down.")
-		expect.equal(nodeText("SUS-003", "SAM-AGAIN"), "Still here lah. Not going anywhere, apparently.")
-		expect.truthy(string.find(nodeText("SUS-003", "SAM-FOUND-2"), "kan?", 1, true))
-		expect.truthy(string.find(nodeText("SUS-003", "SAM-COFFEE-1"), "No chance lah.", 1, true))
-		expect.truthy(string.find(nodeText("SUS-003", "SAM-MARA-2"), "Kesian.", 1, true))
+	t.test("CASE-001 dialogue uses English only", function()
+		expect.equal(nodeText("SUS-003", "SAM-OPEN-2"), "Sorry. I've been standing here half an hour. Didn't know if I'm allowed to sit down.")
+		expect.equal(nodeText("SUS-003", "SAM-AGAIN"), "Still here. Not going anywhere, apparently.")
+		expect.falsy(string.find(nodeText("SUS-003", "SAM-FOUND-2"), "kan?", 1, true))
+		expect.falsy(string.find(nodeText("SUS-003", "SAM-COFFEE-1"), "lah", 1, true))
+		expect.falsy(string.find(nodeText("SUS-003", "SAM-MARA-2"), "Kesian", 1, true))
 		expect.equal(nodeText("SUS-003", "SAM-BYE"), "Okay, okay. I'll be... here. Obviously.")
-		expect.equal(nodeText("SUS-002", "VIC-BADGE-1"), "Aiya. Then the system's wrong, lah.")
-		-- Phase 5.4: rattled by the watch data, he slips once more.
-		expect.truthy(string.find(nodeText("SUS-002", "VIC-WATCH-1"), "Aiya,", 1, true))
-		expect.truthy(string.find(nodeText("SUS-001", "MARA-LAST-1"), "Sayang", 1, true))
+		expect.equal(nodeText("SUS-002", "VIC-BADGE-1"), "Oh. Then the system's wrong.")
+		-- The watch response stays English under pressure.
+		expect.falsy(string.find(nodeText("SUS-002", "VIC-WATCH-1"), "Aiya", 1, true))
+		expect.falsy(string.find(nodeText("SUS-001", "MARA-LAST-1"), "Sayang", 1, true))
 		-- Victor is polished until he cracks, and Meera rarely switches: no
 		-- other line of theirs carries a Malay or Manglish particle.
 		for _, conversation in ipairs(caseDef.conversations) do
@@ -194,10 +194,10 @@ return function(t)
 		end
 	end)
 
-	t.test("Sam's forms of address and timings follow the localisation map", function()
+	t.test("Arif's forms of address and timings follow the localisation map", function()
 		expect.truthy(string.find(nodeText("SUS-003", "SAM-FOUND-4"), "from reception", 1, true))
 		expect.truthy(string.find(nodeText("SUS-003", "SAM-MARA-1"), "half twelve", 1, true))
-		expect.truthy(string.find(nodeText("SUS-003", "SAM-MARA-2"), "Puan Meera", 1, true))
+		expect.truthy(string.find(nodeText("SUS-003", "SAM-MARA-2"), "Meera", 1, true))
 		expect.truthy(string.find(nodeText("SUS-003", "SAM-COFFEE-2"), "Mr. Rozario", 1, true))
 		expect.truthy(string.find(nodeText("SUS-003", "SAM-ANYONE-1"), "Mr. Lim", 1, true))
 	end)
@@ -206,7 +206,7 @@ return function(t)
 	-- The night agrees with itself (timing decision C: 10:28 and 10:29)
 	------------------------------------------------------------------
 
-	t.test("Victor leaves at half ten: Sam, his statement and Victor's own alibi agree", function()
+	t.test("Victor leaves at half ten: Arif, his statement and Victor's own alibi agree", function()
 		expect.truthy(string.find(nodeText("SUS-003", "SAM-ANYONE-3"), "half ten", 1, true))
 		expect.truthy(string.find(statementText("STMT-SUS-003-VICTOR"), "half ten", 1, true))
 		local alibi
@@ -244,8 +244,8 @@ return function(t)
 		local _, sheet = PropKit.evidence("Printout", folder, CFrame.new())
 		local gui = sheet:FindFirstChildOfClass("SurfaceGui") :: SurfaceGui
 		local text = (gui:FindFirstChildOfClass("TextLabel") :: TextLabel).Text
-		expect.truthy(string.find(text, "TINGKAT 9", 1, true))
-		expect.truthy(string.find(text, "S. GURUNG", 1, true))
+		expect.truthy(string.find(text, "LEVEL 9", 1, true))
+		expect.truthy(string.find(text, "A. RAHMAN", 1, true))
 		expect.falsy(bannedIn(text))
 		local printed = {}
 		for hour, minute, direction in string.gmatch(text, "(%d+):(%d+)%s+LIM, V%.%s+(%a+)") do
@@ -345,15 +345,15 @@ return function(t)
 		end
 	end)
 
-	t.test("the signage is Malaysian: KELUAR, no smoking, card reader, visitors' book, surau, milk note", function()
-		expect.truthy(anyText("KELUAR"))
-		expect.truthy(anyText("DILARANG MEROKOK"))
-		expect.truthy(anyText("Sila imbas kad"))
-		expect.truthy(anyText("BUKU PELAWAT"))
-		expect.truthy(anyText("SURAU"))
-		expect.truthy(anyText("Label susu anda. TQ."))
+	t.test("the signage uses English player-facing copy", function()
+		expect.truthy(anyText("EXIT"))
+		expect.truthy(anyText("NO SMOKING"))
+		expect.truthy(anyText("Tap access card"))
+		expect.truthy(anyText("VISITORS' BOOK"))
+		expect.truthy(anyText("QUIET ROOM"))
+		expect.truthy(anyText("Label your milk. Thanks."))
 		for _, text in ipairs(worldTexts()) do
-			expect.falsy(text == "EXIT")
+			expect.falsy(text == "KELUAR")
 		end
 	end)
 

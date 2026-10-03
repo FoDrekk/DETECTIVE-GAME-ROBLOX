@@ -537,9 +537,9 @@ return function(t)
 			"Wisma Delima, level nine",
 			"Believe the room.",
 			"I'll be asleep. Call me when you know.",
-			"Tingkat sembilan, Inspektor.",
-			"Access logged 12:38 AM.",
-			"Jangan lupa makan.",
+			"Level nine, Inspector.",
+			"12:38 AM",
+			"Don't forget to eat.",
 		}) do
 			expect.truthy(string.find(dialogue, beat, 1, true))
 		end

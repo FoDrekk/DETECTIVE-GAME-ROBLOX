@@ -146,7 +146,7 @@ recommended default; the product owner can redirect.)
   statements, contradictions) and on how earlier conversations went (flags,
   entry lines). Server-authoritative: the client only ever sees the words of
   the choices it may pick. Linear conversations still work unchanged.
-- **CASE-001 rewritten** around the same culprit and ids: Sam Okafor, the
+- **CASE-001 rewritten** around the same culprit and ids: Arif Okafor, the
   night guard (a normal person, not a suspect); three new clues (two
   espressos at 11:31, a second cup on the visitor's side, the dead lobby
   cameras with Victor's note); Victor's alibi breaks on the badge log, his
@@ -405,7 +405,7 @@ story, the evidence or the reasoning.
 7. **The open plan reads sparse** at night. Add desk-level clutter and a
    second rank of task lamps along the studio desks (PropKit only, no new
    interactables). While there: the studio noticeboard's "Kitchen rota:
-   week 3 — Sam" puts the night guard on the firm's kitchen rota; check that against
+   week 3 — Arif" puts the night guard on the firm's kitchen rota; check that against
    the story bible.
 
 **Process**

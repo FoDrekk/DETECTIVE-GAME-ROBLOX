@@ -53,7 +53,7 @@ are in `DESIGN_DECISIONS.md` (D-05 to D-16).
 | Beat | v1 state | v2 fix |
 |---|---|---|
 | Protagonist | Unnamed "investigator", no context | The intro: SCU, Nora, the warrant card (see screenplay) |
-| Why these people are here at 12:40 | Never explained | Canon: patrol phoned next of kin; Sam phoned the company's emergency contact |
+| Why these people are here at 12:40 | Never explained | Canon: patrol phoned next of kin; Arif phoned the company's emergency contact |
 | Cause of death | **Never stated** | A fall against the credenza during a struggle; ambulance tag; tape marks |
 | Time of death | Implied only | Daniel's watch data: heart rate ends at 11:49 PM |
 | Victor's motive | "The dissolution", while the reveal implies premeditation via cameras dark since Tuesday. Contradictory. | Fraud through a paper vendor; the cameras were bought dark to empty a drawer, not to kill. The death was not planned. |
@@ -65,7 +65,7 @@ are in `DESIGN_DECISIONS.md` (D-05 to D-16).
 
 ### Continuity holes found in v1 (must fix)
 1. **Victor never badges out at ten.**
-   - Sam hears "Night, Sam. I'm off" around half ten.
+   - Arif hears "Night, Arif. I'm off" around half ten.
    - The log's only entries are 11:04 IN and 11:52 OUT, with "no other badge
      used after 9 PM".
    - He cannot badge *in* at 11:04 without having left. The log needs a
@@ -102,10 +102,10 @@ This is the version the player can reconstruct, and the reveal tells.
 | Time | Event | How the player can know |
 |---|---|---|
 | 7:00 PM | Daniel calls Meera: he'll miss dinner, again. They argue. He tells her Victor is "coming back tonight to talk me out of it". | Meera (statements) |
-| 9:00 PM | Doors lock; after hours is badge only | Sam |
-| 10:28 PM | Victor says "Night, Sam. I'm off" and **badges out**. The lift goes down at 10:29. | Sam, badge log, lift log |
+| 9:00 PM | Doors lock; after hours is badge only | Arif |
+| 10:28 PM | Victor says "Night, Arif. I'm off" and **badges out**. The lift goes down at 10:29. | Arif, badge log, lift log |
 | 11:03 / 11:04 PM | Lift up; **Victor badges back in** | Lift log, badge log |
-| 11:31 PM | Two espressos from the pantry machine. Daniel is trying to keep it civil. | Coffee machine, second cup, Sam |
+| 11:31 PM | Two espressos from the pantry machine. Daniel is trying to keep it civil. | Coffee machine, second cup, Arif |
 | 11:42 PM | Daniel saves the buy-out draft | Laptop |
 | 11:47 PM | Daniel steps to the window and calls Meera. It rings 31 seconds and is **declined**. | Phone; the cold open |
 | 11:48 PM | Daniel types a message to Meera and never sends it | **New:** unsent message (phone, unlocked) |
@@ -114,16 +114,16 @@ This is the version the player can reconstruct, and the reveal tells.
 | 11:49–11:52 PM | Victor doesn't call anyone. He turns their photo face down, takes the last invoice folder and leaves. | Face-down photo, missing folder |
 | 11:52 PM | **Victor badges out** | Badge log |
 | 11:53 PM | Lift down | Lift log |
-| 12:10 AM | Sam finds Daniel on his rounds. The light is on; it's always on. | Sam |
-| 12:14 AM | Sam calls 999 from the reception phone on Level 9 | Sam ("I called it in from reception"; v1 said "the lobby"); the intro radio |
-| 12:16 AM | Sam prints the badge log for the police | **New:** a print time on the log |
-| 12:18 AM | Sam phones the company's emergency contact: Victor | **New:** Sam |
+| 12:10 AM | Arif finds Daniel on his rounds. The light is on; it's always on. | Arif |
+| 12:14 AM | Arif calls 999 from the reception phone on Level 9 | Arif ("I called it in from reception"; v1 said "the lobby"); the intro radio |
+| 12:16 AM | Arif prints the badge log for the police | **New:** a print time on the log |
+| 12:18 AM | Arif phones the company's emergency contact: Victor | **New:** Arif |
 | 12:22 AM | Ambulance crew and a patrol car arrive; lift up | Lift log |
 | 12:26 AM | Death pronounced at the scene: head injury | **New:** ambulance tag |
-| 12:28 AM | Patrol officers phone next of kin: Meera | Sam ("your lot called her") |
-| 12:31 AM | Victor arrives with a patrol officer. He uses no badge. He asks to go into the office; Sam refuses. | **New:** Sam |
+| 12:28 AM | Patrol officers phone next of kin: Meera | Arif ("your lot called her") |
+| 12:31 AM | Victor arrives with a patrol officer. He uses no badge. He asks to go into the office; Arif refuses. | **New:** Arif |
 | 12:34 AM | The patrol tapes the floor. The ambulance takes Daniel to the mortuary at Hospital Besar Arwana, and the patrol officers go down with it to hold the lobby for the SCU. | Nora (intro), tape marks, lift log, the constable in the lobby (intro) |
-| 12:35 AM | Meera arrives. She goes to the far window and speaks to no one. | Sam |
+| 12:35 AM | Meera arrives. She goes to the far window and speaks to no one. | Arif |
 | 12:38 AM | The detective badges in at the lobby | The intro |
 | 12:40 AM | The detective reaches Level 9 | The intro title card |
 | ~6:00 AM | Forensics due. At dawn the case closes. | Nora; the outro |
@@ -153,7 +153,7 @@ panic, not from who he is. The casting ledger across cases is in
 - **Background.** Eurasian (Kristang family from Melaka), Catholic. Moved to
   Kota Arwana for architecture school and stayed.
 - **Character.** A designer who keeps the lights on late and drinks chamomile
-  after six. He makes coffee for whoever he's keeping late ("a bribe", per Sam).
+  after six. He makes coffee for whoever he's keeping late ("a bribe", per Arif).
   Stubborn, generous, bad at letting go.
 - **In the room.**
   - His mug, on the desk.
@@ -186,7 +186,7 @@ panic, not from who he is. The casting ledger across cases is in
 - **Background.** Chinese Malaysian: *Lim Wei Keat*, Victor since school.
   Charming in meetings, curt with staff. He is in debt and has been for years.
 - **Voice.** Polished, impatient, in control until he isn't. Business English.
-  Manglish only when rattled ("Aiya, the system's wrong, lah.").
+  Plain English; loses polish only when rattled ("Oh. Then the system's wrong.").
 - **What he hides.**
   - The fraud.
   - That he came back.
@@ -201,13 +201,13 @@ panic, not from who he is. The casting ledger across cases is in
 - **Why he isn't a cartoon.** He didn't plan it. He didn't call for help, and
   that is the thing he'll never say out loud.
 
-### Samir "Sam" Gurung, 31 — night security (SUS-003, witness, never accusable)
+### Arif Rahman, 31 — night security (SUS-003, witness, never accusable)
 - **Background.** From Pokhara, Nepal; six years in Kota Arwana; night shifts at
   Wisma Delima for three. His Malay is better than most of the tenants'. He
   brings his own flask of strong tea because he doesn't trust the office
   machine.
-- **Voice.** Casual, dry, a little shaken, and genuinely helpful. He mixes
-  English and Malay naturally ("Detective, you nak tengok the badge log?").
+- **Voice.** Casual, dry, a little shaken, and genuinely helpful. Plain,
+  unhurried English ("Detective, want to see the badge log?").
 - **Role.** He knows the building, not the case. He is the most honest person on
   the floor, and the game treats him that way.
 - **Care rules.**
@@ -234,18 +234,18 @@ panic, not from who he is. The casting ledger across cases is in
 | Daniel Reyes | **Daniel Rozario** | "R&L" preserved |
 | Mara Reyes | **Meera Rozario** | "MARA" is a well-known Malaysian government agency acronym, so it's avoided |
 | Victor Lane | **Victor Lim** | Initials **V.L.** preserved, so the monitor note and "V. will fight the buy-out" survive |
-| Sam Okafor | **Samir "Sam" Gurung** | "Sam" preserved |
+| Sam Okafor | **Arif Rahman** | Renamed in 5.6; "Arif" preserved |
 | Reyes & Lane | **Rozario & Lim Design Sdn. Bhd.** | "R&L" on the whiteboard and file drawer preserved |
-| Reyes & Lane · Ninth floor | **Rozario & Lim · Tingkat 9**, Wisma Delima | Title card: *Rozario & Lim · Tingkat 9 · 12:40 AM* |
-| "Mrs. Reyes" | "Puan Meera" | Sam's usage; Victor says "Meera" |
-| Sam: "Came in about twenty past twelve" | "Came in about half twelve" | Matches the v2 timeline (Meera arrives 12:35) |
-| Sam: "I called it in from the lobby" | "I called it in from reception" | Matches the lift trip log (Sam isn't in it) |
+| Reyes & Lane · Ninth floor | **Rozario & Lim · Level 9**, Wisma Delima | Title card: *Rozario & Lim · Level 9 · 12:40 AM* |
+| "Mrs. Reyes" | "Meera" | Arif's usage; Victor says "Meera" |
+| Arif: "Came in about twenty past twelve" | "Came in about half twelve" | Matches the v2 timeline (Meera arrives 12:35) |
+| Arif: "I called it in from the lobby" | "I called it in from reception" | Matches the lift trip log (Arif isn't in it) |
 | "your officers" / "your lot" | unchanged in spirit | Patrol officers of the Kota Arwana Police |
 | "LANE, V." (log) | "LIM, V." | Plus the 10:28 PM OUT line |
-| Pantry note "LABEL YOUR MILK" | "Label susu anda. TQ." | Office humour; TQ is Malaysian shorthand for thank you |
-| (none) | Stairwell "KELUAR", "DILARANG MEROKOK"; reader "Sila imbas kad"; "BUKU PELAWAT"; a small **Surau** door sign | Environment only; no gameplay on religious spaces |
+| Pantry note "LABEL YOUR MILK" | "Label your milk. Thanks." | Office humour; English since 5.6 (was "Label susu anda. TQ.") |
+| (none) | Stairwell "EXIT", "NO SMOKING"; reader "Tap access card"; "VISITORS' BOOK"; a quiet-room sign | Environment only; English since 5.6 |
 
-**Rule.** Players address you only as "Detective" or "Inspektor". The detective
+**Rule.** Players address you only as "Detective" or "Inspector". The detective
 is never gendered, so there is no *Tuan* or *Puan* for the player.
 
 ## 6. Evidence (v2)
@@ -260,7 +260,7 @@ Legend:
 | EV-001 | Phone | Daniel's desk | Last call 11:47 PM to MEERA ♥, rang 31s, **declined**. The screen is locked beyond the call log. | Why he called; who declined | Contact reads "MEERA ♥"; "locked" line added |
 | EV-002 | Laptop | Desk | Draft *Termination of Shareholders' Agreement & Buy-Out*, saved 11:42 PM. Margin: "V. will fight the buy-out. Don't back down." **Clause 14:** on a shareholder's death before completion, the shares pass to the estate. | That Victor was there | Retitled; Clause 14 added (misdirection toward Meera) |
 | EV-003 | Agenda | Desk | 12:00 AM with V. Lim: "Sign it. No more delays." | — | Name only |
-| EV-004 | Badge Log | **Reception printer (G: appears after Sam prints it)** | 10:28 PM LIM V. OUT · 11:04 PM LIM V. IN · 11:52 PM LIM V. OUT · "Printed 12:16 AM" | That he was in Daniel's office | 10:02 OUT line (continuity fix); print time; **gated** |
+| EV-004 | Badge Log | **Reception printer (G: appears after Arif prints it)** | 10:28 PM LIM V. OUT · 11:04 PM LIM V. IN · 11:52 PM LIM V. OUT · "Printed 12:16 AM" | That he was in Daniel's office | 10:02 OUT line (continuity fix); print time; **gated** |
 | EV-005 | Coffee Machine | Pantry | LAST BREW 11:31 PM · 2 × ESPRESSO | Who drank it | — |
 | EV-006 | Second Cup | Visitor's side of the desk | Half-finished espresso; Daniel's mug holds tea | Whose it was | — |
 | EV-007 | Camera Monitor | Reception | All four feeds NO SIGNAL. Note: "Don't call the contractor out. Next week. — V.L." Sticker: **PANTAU Sekuriti · Servis 24 Jam · Tiket #4471** | Why they're dark | Sticker added (long-term seed, never required) |
@@ -281,7 +281,7 @@ Flavour observations that stay flavour (updated for v2):
   - The 11:53 is the one that matters.
   - The rest explain everyone else: the ambulance and patrol, Victor, the
     ambulance leaving, Meera, you.
-  - Sam uses the stairs on his rounds, which is why he isn't in the log.
+  - Arif uses the stairs on his rounds, which is why he isn't in the log.
 - **Reception visitor book:** the last entry is a courier at 6:12 PM.
 
 ## 7. Statements (v2 additions)
@@ -290,8 +290,8 @@ Existing statements stay, with names localised. New ones:
 
 | ID | Who | Label | Text (Case File) | How it's unlocked |
 |---|---|---|---|---|
-| STMT-SUS-003-BADGE (changed) | Sam | The Badge Log | "Every door locks at nine. Sam printed tonight's log for you at reception." | Ask Sam "How does anyone get in after hours?" He prints it and the printer runs. |
-| **STMT-SUS-003-TAPE** | Sam | The Tape | "Nobody past the tape since the ambulance crew. Mr. Lim asked to go in; Sam said no. Sam told him only that Daniel had passed." | New question: "Has anyone been in his office since?" |
+| STMT-SUS-003-BADGE (changed) | Arif | The Badge Log | "Every door locks at nine. Arif printed tonight's log for you at reception." | Ask Arif "How does anyone get in after hours?" He prints it and the printer runs. |
+| **STMT-SUS-003-TAPE** | Arif | The Tape | "Nobody past the tape since the ambulance crew. Mr. Lim asked to go in; Arif said no. Arif told him only that Daniel had passed." | New question: "Has anyone been in his office since?" |
 | **STMT-SUS-002-MEERA** | Victor | On Meera | "Ask her why she didn't pick up when he rang. That's your mystery, Detective." | New question: "Have you spoken to Meera tonight?" |
 | **STMT-SUS-001-SILENT** | Meera | Not a Word | "I haven't said a word to Victor tonight. I won't." | Part of her "Tell me about Victor" answer |
 | **STMT-SUS-001-HOME** | Meera | Coming Home | "He was coming home." She opened his phone for you. | Unlock scene (§11) |
@@ -411,11 +411,11 @@ The last line grants EV-011 and EV-012 and records STMT-SUS-001-HOME.
   printer step.
 - Three movements, all order-free:
   1. **The floor (0–6 min).**
-     - Sam; the office read (phone, laptop, agenda, both cups).
+     - Arif; the office read (phone, laptop, agenda, both cups).
      - First statements.
      - The player learns what the room is.
   2. **The lie (6–12 min).**
-     - The badge log arrives only when you ask Sam about access.
+     - The badge log arrives only when you ask Arif about access.
      - Victor revises.
      - Meanwhile Meera starts to look bad: the declined call, Clause 14, and
        Victor's "ask her why she didn't pick up".
@@ -470,22 +470,23 @@ No beat is forced. A player can accuse after beat 1.
 ## 14. Dialogue guidance and samples
 
 - **Code-switching is character, not decoration.**
-  - Sam switches most.
+  - Arif switches most.
   - Victor switches only when rattled.
   - Meera switches least.
   - Nora switches for warmth and brevity.
-- **Target density:** one Malay or Manglish touch every few lines for Sam; at
+- **Target density:** one Malay or Manglish touch every few lines for Arif; at
   most one per scene for Meera.
 - **Subtitles:** any Malay line whose meaning matters also carries an English
   subtitle or an obvious context meaning.
 
-Samples (new or localised lines):
-> **SAM:** Detective? Hey. Over here. *(unchanged)*
-> **SAM:** Badge. Every door locks at nine. You nak tengok the log? I can print it now. *(prints)* Haven't read it. That's your job, right?
-> **SAM:** Mr. Lim came up with the police at half twelve. Wanted to go in the office. I said sorry boss, police tape. He wasn't happy.
-> **SAM:** I told him Mr. Rozario passed. That's all I know, what else I'm going to tell him?
+Samples (the built lines; Phase 5.6 made the player-facing script English-only,
+so the code-switching column in the 5.2 localisation sheet is historical):
+> **ARIF:** Detective? Hey. Over here. *(unchanged)*
+> **ARIF:** Badge. Every door locks at nine. Want to see the log? I can print it now. *(prints)* Haven't read it. That's your job, right?
+> **ARIF:** Mr. Lim came up with the police at half twelve. Wanted to go in the office. I said sorry boss, police tape. He wasn't happy.
+> **ARIF:** I told him Mr. Rozario passed. That's all I know, what else I'm going to tell him?
 > **VICTOR:** Speak to her? She won't look at me. Ask her why she didn't pick up when he rang. That's your mystery, Detective.
-> **VICTOR:** *(the badge log)* Aiya. Then the system's wrong, lah. ...Fine. I came back.
+> **VICTOR:** *(the badge log)* Oh. Then the system's wrong. ...Fine. I came back.
 > **MEERA:** I haven't said a word to Victor tonight. I won't.
 
 ## 15. Kept out, on purpose
