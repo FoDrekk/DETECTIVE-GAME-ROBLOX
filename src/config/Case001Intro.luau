@@ -36,9 +36,12 @@ local function bedroom(): { Shot }
 	return {
 		{
 			id = "BED-WIDE", duration = 6, set = "Bedroom", lighting = "Bedroom", fadeIn = 2.2,
+			-- Both stops stay inside the room (the south wall stands at z 6.0):
+			-- the dolly reads as drifting in from the doorway corner, never
+			-- passing through plaster.
 			camera = {
-				from = point(Vector3.new(2.5, 4.2, 7.2), Vector3.new(-1.5, 3.4, -4.5)),
-				to = point(Vector3.new(1.4, 3.8, 5.9), Vector3.new(-1.7, 3.25, -4.6)),
+				from = point(Vector3.new(2.5, 4.2, 5.4), Vector3.new(-1.5, 3.4, -4.5)),
+				to = point(Vector3.new(1.4, 3.8, 4.2), Vector3.new(-1.7, 3.25, -4.6)),
 				fieldOfView = 58, fieldOfViewTo = 52, ease = "InOut",
 			},
 			sounds = roomBeds(2),
