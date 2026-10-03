@@ -324,6 +324,29 @@ function SoundController.start()
 	for name, spec in pairs(Config.Audio.Ambience) do
 		local loop = makeSound(name, spec, root, ambience)
 		loop.Looped = true
+		-- A configured position makes the ambience spatial: the rain comes
+		-- from the windows, the hum from the middle of the floor. Roll-off
+		-- stays generous so it never falls away to nothing while walking.
+		local pos = (spec :: any).position
+		if typeof(pos) == "Vector3" then
+			pcall(function()
+				loop.RollOffMaxDistance = 220
+				loop.RollOffMinDistance = 60
+				loop.RollOffMode = Enum.RollOffMode.InverseTapered
+			end)
+			-- One part per sound: an emitter at the configured spot.
+			local emitter = Instance.new("Part")
+			emitter.Name = `Emitter_{name}`
+			emitter.Size = Vector3.new(1, 1, 1)
+			emitter.Transparency = 1
+			emitter.CanCollide = false
+			emitter.CanQuery = false
+			emitter.CanTouch = false
+			emitter.Anchored = true
+			emitter.CFrame = CFrame.new(pos)
+			emitter.Parent = workspace
+			loop.Parent = emitter
+		end
 		loop:Play()
 	end
 

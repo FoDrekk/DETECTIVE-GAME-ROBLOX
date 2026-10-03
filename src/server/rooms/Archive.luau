@@ -73,6 +73,22 @@ function Archive.build(interior: Instance)
 	for i, spec in ipairs(boxes) do
 		PropKit.newPart(room, `Box_{i}`, spec[1], CFrame.new(spec[2]) * CFrame.Angles(0, math.rad(i * 9), 0), Color3.fromRGB(176, 150, 112), M.Cardboard)
 	end
+
+	-- A document trolley mid-room: the night's pulled files, waiting to go
+	-- back. It gives the open floor a reason to exist without blocking the
+	-- walk from door to shelves.
+	local trolley = Instance.new("Folder")
+	trolley.Name = "DocumentTrolley"
+	trolley.Parent = room
+	local cart = PropKit.newPart(trolley, "Cart", Vector3.new(2.2, 0.12, 1.4), CFrame.new(-11.0, 1.7, -23.0) * CFrame.Angles(0, math.rad(14), 0), P.Steel, M.Metal)
+	cart.CastShadow = false
+	for _, corner in ipairs({ { -0.9, -0.5 }, { 0.9, -0.5 }, { -0.9, 0.5 }, { 0.9, 0.5 } }) do
+		PropKit.newPart(trolley, "Leg", Vector3.new(0.08, 1.64, 0.08), CFrame.new(-11.0 + corner[1], 0.82, -23.0 + corner[2]) * CFrame.Angles(0, math.rad(14), 0), P.SteelDark, M.Metal)
+	end
+	PropKit.paperStack(trolley, CFrame.new(-11.05, 1.78, -23.05) * CFrame.Angles(0, math.rad(20), 0), 6)
+	PropKit.paperStack(trolley, CFrame.new(-10.7, 1.77, -22.9) * CFrame.Angles(0, math.rad(-14), 0), 3)
+	local folder = PropKit.newPart(trolley, "Folder", Vector3.new(0.5, 0.3, 0.36), CFrame.new(-11.4, 1.92, -22.85) * CFrame.Angles(0, math.rad(52), 0), Color3.fromRGB(150, 128, 92), M.Cardboard)
+	folder.CastShadow = false
 end
 
 return Archive

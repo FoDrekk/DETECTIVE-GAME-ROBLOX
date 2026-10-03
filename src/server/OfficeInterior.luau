@@ -233,6 +233,35 @@ local function startFlicker(parts: { BasePart })
 	end
 end
 
+-- Rain running down the office's north windows: slow beads on the glass,
+-- city-cool, in the same spirit as the cold open's window. Runtime state
+-- (particles never belong in a saved bake), armed on the shell's glass panes.
+local function startWindowRain(office: Instance)
+	local shell = office:FindFirstChild("Shell")
+	if not shell then
+		return
+	end
+	for _, pane in ipairs(shell:GetDescendants()) do
+		if pane:IsA("BasePart") and pane.Name:match("^WinGlass") then
+			local beads = Instance.new("ParticleEmitter")
+			beads.Name = "RainBeads"
+			beads.Rate = 9
+			beads.Lifetime = NumberRange.new(4, 8)
+			beads.Speed = NumberRange.new(0.1, 0.45)
+			beads.SpreadAngle = Vector2.new(4, 4)
+			beads.EmissionDirection = Enum.NormalId.Bottom
+			beads.Size = NumberSequence.new(0.08, 0.045)
+			beads.Transparency = NumberSequence.new(0.25, 0.85)
+			beads.Color = ColorSequence.new(Color3.fromRGB(170, 198, 232))
+			beads.LightEmission = 0.55
+			beads.Acceleration = Vector3.new(0, -0.55, 0)
+			-- The plane of the glass: north wall, so beads slide along it.
+			beads.Orientation = Enum.ParticleOrientation.VelocityPerpendicular
+			beads.Parent = pane
+		end
+	end
+end
+
 --------------------------------------------------------------------------
 -- Public entry points
 --------------------------------------------------------------------------
@@ -286,10 +315,11 @@ function OfficeInterior.start()
 		Spine.signage(interior)
 	end
 
-	-- The flicker loop is runtime state: an Edit-mode bake only positions
-	-- the parts; a running game arms the loop.
+	-- The flicker loop and the window rain are runtime state: an Edit-mode
+	-- bake only positions the parts; a running game arms the loops.
 	if RunService:IsRunning() then
 		startFlicker(findFlickerParts(interior))
+		startWindowRain(office)
 	end
 
 	local parts, lights = 0, 0

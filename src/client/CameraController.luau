@@ -25,6 +25,11 @@ local HIDE_IN_SHOT_STEP = "MysteryCase_HideAvatarInShot"
 
 local mode: "Explore" | "Examine" | "Cinematic" = "Explore"
 local focusPart: BasePart? = nil
+-- The settled examine framing; a slow hand-held drift is layered on it so a
+-- held close-up never reads as a frozen screenshot. The drift only starts
+-- once the blend into the framing has finished (examineHoldFrom).
+local examineBase: CFrame? = nil
+local examineHoldFrom = 0
 local savedMaxZoom: number? = nil
 local savedMinZoom: number? = nil
 local savedCameraType: Enum.CameraType? = nil
@@ -86,6 +91,7 @@ local function blendTo(target: CFrame, duration: number)
 	local token = blendToken
 	local cam = getCamera()
 	local from = cam.CFrame
+	examineHoldFrom = os.clock() + duration
 	task.spawn(function()
 		local startClock = os.clock()
 		while os.clock() - startClock < duration do
@@ -107,6 +113,7 @@ local function setExplore()
 	end
 	mode = "Explore"
 	focusPart = nil
+	examineBase = nil
 	RunService:UnbindFromRenderStep(HIDE_AVATAR_STEP)
 	setAvatarHidden(false)
 
@@ -143,6 +150,7 @@ local function frame(part: BasePart, target: CFrame)
 	end
 	mode = "Examine"
 	focusPart = part
+	examineBase = target
 
 	getCamera().CameraType = Enum.CameraType.Scriptable
 	blendTo(target, Config.Camera.ExamineBlendTime)
@@ -585,10 +593,21 @@ end
 function CameraController.start()
 	getCamera().CameraType = Enum.CameraType.Custom
 
-	-- Keep framing stable if a focus part is destroyed.
+	-- Keep framing stable if a focus part is destroyed, and breathe while a
+	-- close-up is held: a fraction of a stud of drift, well under the blend
+	-- speed, so the panel beside it never swims.
 	RunService.RenderStepped:Connect(function()
 		if mode == "Examine" and focusPart and not focusPart:IsDescendantOf(workspace) then
 			setExplore()
+		end
+		if mode == "Examine" and examineBase and os.clock() >= examineHoldFrom then
+			local t = os.clock()
+			local sway = CFrame.new(
+				math.noise(t * 0.18, 1.7) * 0.06,
+				math.noise(t * 0.14, 8.3) * 0.05,
+				math.noise(t * 0.11, 4.9) * 0.04
+			) * CFrame.Angles(math.noise(t * 0.12, 2.6) * 0.004, math.noise(t * 0.1, 6.1) * 0.006, 0)
+			getCamera().CFrame = examineBase * sway
 		end
 	end)
 end

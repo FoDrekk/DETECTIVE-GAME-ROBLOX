@@ -331,6 +331,35 @@ local function playIdle(humanoid: Humanoid)
 	end
 end
 
+-- A person standing for a long time is never perfectly still. The rig's
+-- breathing idle is the base; this adds a slow, barely-there weight shift
+-- (a few degrees of hip roll and a small sway), unique per suspect, so
+-- nobody reads as a mannequin between conversations. The rig is anchored,
+-- so the sway moves the root pivot directly -- one looping tween, no
+-- per-frame work.
+local function startWeightShift(model: Model)
+	local root = model:FindFirstChild("HumanoidRootPart")
+	if not root or not root:IsA("BasePart") or not root.Anchored then
+		return
+	end
+	local rng = Random.new(model.Name:len() * 977 + math.floor(root.Position.X * 31))
+	local base = root.CFrame
+	local rollA = base * CFrame.Angles(0, 0, math.rad(rng:NextNumber(1.2, 2.4)))
+	local rollB = base * CFrame.Angles(0, 0, math.rad(-rng:NextNumber(1.2, 2.4)))
+	local half = rng:NextNumber(3.5, 5.5)
+	task.spawn(function()
+		local side = false
+		while root.Parent do
+			side = not side
+			local goal = if side then rollA else rollB
+			local tween = TweenService:Create(root, TweenInfo.new(half * 2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), { CFrame = goal })
+			tween:Play()
+			tween.Completed:Wait()
+			task.wait(rng:NextNumber(0.5, 2.5))
+		end
+	end)
+end
+
 local function buildNpc(suspect: Types.SuspectDefinition): Model?
 	local placement = suspect.npcPlacement
 	if not placement then
@@ -536,14 +565,15 @@ function SuspectSpawner.start()
 			if placement then
 				table.insert(staged, { model = model, placement = placement })
 			end
-			-- The idle loop and the conversation listener are runtime state:
-			-- an Edit-mode bake only stages the models.
-			if RunService:IsRunning() then
-				local humanoid = model:FindFirstChildOfClass("Humanoid")
-				if humanoid then
-					playIdle(humanoid)
-				end
+		-- The idle loop, a slow weight shift, and the conversation listener
+		-- are runtime state: an Edit-mode bake only stages the models.
+		if RunService:IsRunning() then
+			local humanoid = model:FindFirstChildOfClass("Humanoid")
+			if humanoid then
+				playIdle(humanoid)
 			end
+			startWeightShift(model)
+		end
 			spawned += 1
 		end
 	end

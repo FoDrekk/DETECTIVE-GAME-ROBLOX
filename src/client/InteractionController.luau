@@ -143,12 +143,39 @@ end
 function InteractionController.start()
 	requestEvent = Signals.wait(Signals.Names.InteractionRequest)
 
-	-- Rescan at a fixed cadence rather than every frame.
+	-- Rescan at a fixed cadence, and immediately when the player (or the
+	-- camera) has moved enough to change what is in reach or in front of
+	-- them: standing still, the cadence is plenty; turning toward a desk,
+	-- the prompt follows the look, not the clock.
 	local accumulator = 0
+	local lastRoot: Vector3? = nil
+	local lastLook: Vector3? = nil
 	RunService.Heartbeat:Connect(function(dt)
 		accumulator += dt
 		if accumulator >= Config.Interaction.ScanInterval then
 			accumulator = 0
+			scan()
+			local root = getRoot()
+			local camera = workspace.CurrentCamera
+			lastRoot = root and root.Position
+			lastLook = camera and Vector3.new(camera.CFrame.LookVector.X, 0, camera.CFrame.LookVector.Z)
+			return
+		end
+		if paused then
+			return
+		end
+		local root = getRoot()
+		local camera = workspace.CurrentCamera
+		local rootPos = root and root.Position
+		local look = camera and Vector3.new(camera.CFrame.LookVector.X, 0, camera.CFrame.LookVector.Z)
+		if rootPos == nil then
+			return
+		end
+		local moved = lastRoot == nil or (rootPos - lastRoot).Magnitude > 0.25
+		local turned = lastLook == nil or look == nil or (look - lastLook).Magnitude > 0.08
+		if moved or turned then
+			lastRoot = rootPos
+			lastLook = look
 			scan()
 		end
 	end)

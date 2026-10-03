@@ -34,7 +34,7 @@ Config.Environment = {
 	-- saved. See `815064d` for the incident this exists to catch: a floor fix
 	-- landed in the builders, but the already-baked `.rbxl` was never
 	-- re-baked, so the fix never reached the saved place.
-	BuilderVersion = 14,
+	BuilderVersion = 15,
 	-- 12:40 AM, after hours (OfficeRoom). Readability first: the local lights
 	-- carry the mood, ambient and exposure keep every room playable.
 	Night = {
@@ -127,10 +127,12 @@ Config.Interaction = {
 -- Volumes are per sound, before the ambience/effects group volumes.
 Config.Audio = {
 	Ambience = {
-		-- Rain On Window 3 (ProSoundEffects), 53.7s loop.
-		Rain = { id = "rbxassetid://9112856768", volume = 0.35 },
+		-- Rain On Window 3 (ProSoundEffects), 53.7s loop. Positioned at the
+		-- office's north windows so it comes from the glass, not everywhere.
+		Rain = { id = "rbxassetid://9112856768", volume = 0.35, position = Vector3.new(0, 7, -28) },
 		-- Hollow Rumble 1 (ProSoundEffects): deep, dark, steady drone, 106s.
-		Drone = { id = "rbxassetid://9112795463", volume = 0.18 },
+		-- The city hum: broad, so it stays put at the floor's centre.
+		Drone = { id = "rbxassetid://9112795463", volume = 0.18, position = Vector3.new(0, 5, 0) },
 	},
 	Cues = {
 		-- Document Movement, Thick Papers (ProSoundEffects), 4.1s.
