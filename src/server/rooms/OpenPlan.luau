@@ -84,10 +84,11 @@ function OpenPlan.build(interior: Instance)
 	PropKit.floorLamp(room, at(-29.6, rect.z1 - 0.8, EAST), true)
 	PropKit.framedArt(room, at(-21, rect.z1 - 0.05, NORTH, 7.2), 6, 3.2, 21)
 
-	-- A bench under Daniel's glass, and greenery.
+	-- A bench under Daniel's glass, and greenery. The trees stand far enough
+	-- off the west wall that a ficus in full leaf never touches the plaster.
 	PropKit.bench(room, at(-31.5, -6.2, SOUTH), 4.5)
-	PropKit.plant(room, at(rect.x0 + 0.9, 1.5, EAST), 0.9, "tree")
-	PropKit.plant(room, at(rect.x0 + 0.9, 20.5, EAST), 0.9, "tree")
+	PropKit.plant(room, at(rect.x0 + 1.45, 1.5, EAST), 0.9, "tree")
+	PropKit.plant(room, at(rect.x0 + 1.45, 20.5, EAST), 0.9, "tree")
 	PropKit.plant(room, at(rect.x1 - 1.0, rect.z1 - 1.0, NORTH), 0.7, "bush")
 end
 
